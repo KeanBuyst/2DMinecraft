@@ -61,14 +61,14 @@ std::vector<Block>& Chunk::getBlocks(){
     return blocks;
 }
 
-void World::draw(sf::RenderWindow* window){
+void World::draw(sf::RenderWindow* window,sf::Shader* shader){
     for (unsigned short i = 0; i <= SIZE*2; i++){
         for (Sprite sprite : chunks[i].getBlocks()){
             sprite.move(offset);
             Vector2f vector = sprite.getPosition();
             if (vector.x + 16 <= 0 || vector.x >= 800) continue;
             if (vector.y <= 0 || vector.y - 16 >= 600) continue;
-            window->draw(sprite);
+            window->draw(sprite,shader);
         }
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <SFML/Graphics.hpp>
-#include <Resources.h>
+#include <MetaData.h>
 
 #include <Components.h>
 
@@ -51,7 +51,7 @@ class World {
     Vector2f offset;
     unsigned short currentBiome;
     void update(Textures* textures);
-    void draw(sf::RenderWindow* window);
+    void draw(sf::RenderWindow* window,sf::Shader* shader);
     CHUNK getChunkCord(int x);
     Chunk* getChunk(CHUNK pos);
     static float RANDOM();

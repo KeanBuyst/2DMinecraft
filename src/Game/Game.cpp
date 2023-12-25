@@ -4,9 +4,9 @@
 
 GameObject GeneratePlayer(Vector2f position,Texture* textures);
 
-Game::Game(sf::RenderWindow* w){
-    window = w;
+Game::Game(sf::RenderWindow* w,sf::Shader* s) : window(w), shader(s) {
     world = new World(&TEXTURES);
+    shader->setUniform("texture", sf::Shader::CurrentTexture);
 
     GameObject* player = build(PLAYER);
     player->position = Vector2f(600/2,400/2);
@@ -17,9 +17,9 @@ Game::~Game(){
 }
 
 void Game::draw(){
-    world->draw(window);
+    world->draw(window,shader);
     for (GameObject* entity : world->entities)
-        entity->Render(window);
+        entity->Render(window,shader);
 }
 
 void Game::update(float delta){
@@ -65,9 +65,8 @@ GameObject* Game::build(EntityType type){
         player->addComponent(arm);
         player->addComponent(head);
 
-        sf::FloatRect bounds(0,-8,4,30);
+        sf::FloatRect bounds(0,-8,4,31);
         HitBox* box = new HitBox(world,bounds);
-        box->debug = true;
         player->addComponent(box);
 
         player->addComponent(new PlayerController(world));

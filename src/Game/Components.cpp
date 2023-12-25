@@ -25,16 +25,23 @@ GameObject::GameObject(sf::Vector2f& pos){
 }
 
 void GameObject::setTexture(sf::Texture* texture)
-{Sprite::setTexture(*texture);}
+{
+    Sprite::setTexture(*texture);
+    trect = Sprite::getTextureRect();
+}
 void GameObject::setRotation(float angle)
 {Sprite::setRotation(angle);}
 
+void GameObject::flip(bool backwords){
+    if (backwords) Sprite::setTextureRect(sf::IntRect(trect.width, 0, -trect.width, trect.height));
+    else Sprite::setTextureRect(trect);
+}
 
-void GameObject::Render(sf::RenderWindow* window){
+void GameObject::Render(sf::RenderWindow* window,sf::Shader* shader){
     if (draw)
-        window->draw(*this);
+        window->draw(*this,shader);
     for (Component* component : components){
-        component->Render(window);
+        component->Render(window,shader);
     }
 }
 

@@ -19,7 +19,7 @@ class Component
     void init(GameObject* parent);
 
     virtual void Update(float delta) = 0;
-    virtual void Render(sf::RenderWindow* window) = 0;
+    virtual void Render(sf::RenderWindow* window,sf::Shader* shader) = 0;
     virtual void Event(sf::Event* event) = 0;
     ComponentType type;
     protected:
@@ -34,7 +34,7 @@ class GameObject : public Component,private sf::Sprite
     GameObject(sf::Vector2f& pos);
 
     void Update(float delta);
-    void Render(sf::RenderWindow* window);
+    void Render(sf::RenderWindow* window,sf::Shader* shader);
     void Event(sf::Event* event);
 
     void addComponent(Component* component);
@@ -52,6 +52,7 @@ class GameObject : public Component,private sf::Sprite
         return nullptr;
     }
 
+    void flip(bool backwords);
     void setTexture(sf::Texture* texture);
     void setPivotPoint(sf::Vector2f point);
     void setRotation(float angle);
@@ -64,6 +65,7 @@ class GameObject : public Component,private sf::Sprite
     bool draw = true;
     sf::Vector2f position;
     private:
+    sf::IntRect trect;
     std::vector<Component*> components;
     sf::Vector2f parent;
 };
@@ -72,7 +74,7 @@ class HeadMove : public Component
 {
     public:
     HeadMove();
-    void Render(sf::RenderWindow* window){};
+    void Render(sf::RenderWindow* window,sf::Shader* shader){};
     void Update(float delta){};
     void Event(sf::Event* event);
 };

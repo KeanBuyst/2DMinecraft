@@ -308,6 +308,30 @@ src/Game/Game.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/2DMinecraft.dir/build.make CMakeFiles/2DMinecraft.dir/src/Game/Game.cpp.s
 .PHONY : src/Game/Game.cpp.s
 
+src/Game/MetaData.o: src/Game/MetaData.cpp.o
+.PHONY : src/Game/MetaData.o
+
+# target to build an object file
+src/Game/MetaData.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2DMinecraft.dir/build.make CMakeFiles/2DMinecraft.dir/src/Game/MetaData.cpp.o
+.PHONY : src/Game/MetaData.cpp.o
+
+src/Game/MetaData.i: src/Game/MetaData.cpp.i
+.PHONY : src/Game/MetaData.i
+
+# target to preprocess a source file
+src/Game/MetaData.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2DMinecraft.dir/build.make CMakeFiles/2DMinecraft.dir/src/Game/MetaData.cpp.i
+.PHONY : src/Game/MetaData.cpp.i
+
+src/Game/MetaData.s: src/Game/MetaData.cpp.s
+.PHONY : src/Game/MetaData.s
+
+# target to generate assembly for a file
+src/Game/MetaData.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2DMinecraft.dir/build.make CMakeFiles/2DMinecraft.dir/src/Game/MetaData.cpp.s
+.PHONY : src/Game/MetaData.cpp.s
+
 src/Game/World.o: src/Game/World.cpp.o
 .PHONY : src/Game/World.o
 
@@ -430,6 +454,9 @@ help:
 	@echo "... src/Game/Game.o"
 	@echo "... src/Game/Game.i"
 	@echo "... src/Game/Game.s"
+	@echo "... src/Game/MetaData.o"
+	@echo "... src/Game/MetaData.i"
+	@echo "... src/Game/MetaData.s"
 	@echo "... src/Game/World.o"
 	@echo "... src/Game/World.i"
 	@echo "... src/Game/World.s"

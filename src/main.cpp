@@ -28,7 +28,20 @@ int main(){
     XInitThreads();
     RenderWindow window(VideoMode(600,400),"2D Minecraft");
 
-    Game game(&window);
+    // load shaders
+    if (!sf::Shader::isAvailable())
+    {
+        std::cout << "Shaders are not supported by your graphics card\nThis game requires shaders\n";
+        return -1;
+    }
+    sf::Shader shader;
+    if (!shader.loadFromFile("shaders/vertex.glsl","shaders/fragment.glsl"))
+    {
+        std::cout << "Failed to load shader\n";
+        return -1;
+    }
+
+    Game game(&window,&shader);
 
     // render thread
     Thread thread(&RenderThread,&game);

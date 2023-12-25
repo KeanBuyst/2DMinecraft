@@ -8,9 +8,10 @@ class Game {
     public:
     Textures TEXTURES;
     sf::RenderWindow* window;
+    sf::Shader* shader;
     World* world;
 
-    Game(sf::RenderWindow* w);
+    Game(sf::RenderWindow* w, sf::Shader* shader);
     ~Game();
 
     void draw();
