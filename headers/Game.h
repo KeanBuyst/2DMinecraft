@@ -10,6 +10,7 @@ class Game {
     sf::RenderWindow* window;
     sf::Shader* shader;
     World* world;
+    bool running = true;
 
     Game(sf::RenderWindow* w, sf::Shader* shader);
     ~Game();

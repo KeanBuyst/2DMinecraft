@@ -3,12 +3,11 @@
 #include <iostream>
 #include <math.h>
 
-#define RAD2DEG 180 / M_PI
-
 using namespace sf;
 
 void Component::init(GameObject* parent){
     gameObject = parent;
+    Awake();
 }
 
 GameObject::GameObject() {
@@ -22,6 +21,13 @@ GameObject::GameObject(float x, float y){
 GameObject::GameObject(sf::Vector2f& pos){
     type = ComponentType::GameObject;
     position = pos;
+}
+
+bool GameObject::hasComponent(ComponentType type)
+{
+    for (Component* comp : components)
+        if (comp->type == type) return true;
+    return false;
 }
 
 void GameObject::setTexture(sf::Texture* texture)
@@ -66,6 +72,14 @@ void GameObject::setParent(sf::Vector2f p){
     parent = p;
 }
 
+void GameObject::rotate(float angle){
+    Sprite::rotate(angle);
+}
+
+float GameObject::getRotation(){
+    return Sprite::getRotation();
+}
+
 FloatRect GameObject::transform(FloatRect rect){
     return getTransform().transformRect(rect);
 }
@@ -88,15 +102,43 @@ void GameObject::addComponent(Component* component){
     components.push_back(component);
 }
 
-HeadMove::HeadMove()
-{type = ComponentType::HeadMove;}
+Animation::Animation(INPUT* in) : in(in)
+{
+    type = ComponentType::Animation;
+}
 
-void HeadMove::Event(sf::Event* event){
-    if (event->type == sf::Event::MouseMoved)
+WalkingAnimation::WalkingAnimation(INPUT* in) : Animation(in)
+{
+    step = 1;
+}
+
+void WalkingAnimation::Awake()
+{
+    legs = gameObject->getComponents<GameObject>(ComponentType::GameObject);
+    r1 = 0;
+    r2 = 0;
+    change = 2.5f;
+}
+
+void WalkingAnimation::Update(float delta)
+{
+    if (in->LEFT || in->RIGHT)
     {
-        sf::Event::MouseMoveEvent e = event->mouseMove;
-        int y = e.y - gameObject->position.y;
-        int x = e.x - gameObject->position.x;
-        gameObject->setRotation(atan2(y,x) * RAD2DEG);
+        if (r1 >= 35 || r1 <= -35)
+            change *= -1;
+        r1 += change;
+        legs[0]->setRotation(r1);
+        r2 -= change;
+        legs[1]->setRotation(r2);
+    }
+    else
+    {
+        legs[0]->setRotation(0);
+        legs[1]->setRotation(0);
     }
 }
+
+std::string WalkingAnimation::getName()
+{
+    return "walking";
+};

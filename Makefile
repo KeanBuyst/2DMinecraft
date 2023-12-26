@@ -57,10 +57,10 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = "/home/kean/Projects/C langs/2DMinecraft"
+CMAKE_SOURCE_DIR = /home/kean/Projects/c-based/2DMinecraft
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = "/home/kean/Projects/C langs/2DMinecraft"
+CMAKE_BINARY_DIR = /home/kean/Projects/c-based/2DMinecraft
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -78,7 +78,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/kean/Projects/C\ langs/2DMinecraft/CPackSourceConfig.cmake
+	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/kean/Projects/c-based/2DMinecraft/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -152,9 +152,9 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start "/home/kean/Projects/C langs/2DMinecraft/CMakeFiles" "/home/kean/Projects/C langs/2DMinecraft//CMakeFiles/progress.marks"
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/kean/Projects/c-based/2DMinecraft/CMakeFiles /home/kean/Projects/c-based/2DMinecraft//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start "/home/kean/Projects/C langs/2DMinecraft/CMakeFiles" 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/kean/Projects/c-based/2DMinecraft/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -178,7 +178,7 @@ preinstall/fast:
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -P "/home/kean/Projects/C langs/2DMinecraft/CMakeFiles/VerifyGlobs.cmake"
+	$(CMAKE_COMMAND) -P /home/kean/Projects/c-based/2DMinecraft/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
@@ -480,7 +480,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -P "/home/kean/Projects/C langs/2DMinecraft/CMakeFiles/VerifyGlobs.cmake"
+	$(CMAKE_COMMAND) -P /home/kean/Projects/c-based/2DMinecraft/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

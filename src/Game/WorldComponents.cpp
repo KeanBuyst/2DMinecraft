@@ -1,6 +1,7 @@
 #include "WorldComponents.h"
 
 #include <iostream>
+#include <cmath>
 
 void apply(float& x, float friction);
 
@@ -16,7 +17,7 @@ void PhysicsObject::Update(float delta)
 
     apply(velocity.x, FRICTION);
 
-    if (!onGround) force.y -= GRAVITY;
+    if (!onGround) force.y += GRAVITY;
     if (std::abs(velocity.x) <= 1) velocity.x += force.x;
     velocity.y += force.y;
 
@@ -26,14 +27,14 @@ void PhysicsObject::Update(float delta)
     if (result.shift.x == 0){
         gameObject->position.x += velocity.x;
     } else {
-        gameObject->position.x += result.shift.x;
+        gameObject->position.x -= result.shift.x;
         velocity.x = 0;
     }
 
     if (result.shift.y == 0){
         gameObject->position.y += velocity.y;
     } else {
-        gameObject->position.y += result.shift.y;
+        gameObject->position.y -= result.shift.y;
         velocity.y = 0;
     }
 }
@@ -58,16 +59,15 @@ PlayerController::PlayerController(World* world) : world(world) {
 
 void PlayerController::Update(float delta){
     if (in.JUMP && onGround)
-        force.y += JUMP;
+        force.y -= JUMP;
     if (in.LEFT)
-        force.x += SPEED;
-    if (in.RIGHT)
         force.x -= SPEED;
+    if (in.RIGHT)
+        force.x += SPEED;
 
-    gameObject->position = world->offset;
     PhysicsObject::Update(delta);
-    world->offset = gameObject->position;
-    gameObject->position = Vector2f(300,200);
+
+    world->camera = gameObject->position - Vector2f(300,200);
 }
 
 void PlayerController::Event(sf::Event* event){
@@ -104,7 +104,7 @@ void PlayerController::Input(int key,bool down){
     }
 }
 
-HitBox::HitBox(World* world,FloatRect bounds) : world(world), bounds(bounds)
+HitBox::HitBox(World* world,FloatRect bounds) : WorldComponent(world), bounds(bounds)
 {type = ComponentType::HitBox;}
 
 void HitBox::Update(float delta){
@@ -118,15 +118,14 @@ void HitBox::Update(float delta){
             std::cout << "Entitiy collison\n";
         }
     }
-    CHUNK pos = world->getChunkCord(gameObject->position.x);
-    Chunk* chunk = world->getChunk(pos);
+    CHUNK c = Chunk::getChunkCord(gameObject->position.x);
+    Chunk* chunk = world->getChunk(c);
     FloatRect rect = getRect();
     if (chunk)
     {
-        for (Block block : chunk->getBlocks()){
+        for (Block& block : chunk->getBlocks()){
             if(!MetaData::GetStaticMeta(block.material).colliable) continue;
-            block.move(world->offset);
-            Vector2f pos = block.getPosition();
+            Vector2i pos = Block::getBlockCord(block.getPosition());
             FloatRect bounds = block.getGlobalBounds();
             if (intersects(bounds)){
                 result.shift += getPenetration(rect,bounds);
@@ -134,11 +133,22 @@ void HitBox::Update(float delta){
 
                 result.blocks.push_back(block);
             }
-            if (((int) pos.y / Block::SIZE) == (int) ( rect.top + rect.height) / Block::SIZE)
+            // do weird magic
+            if (pos.x < 0) pos.x++;
+            // increase precision
+            Vector2i other[2];
+            other[0] = Block::getBlockCord(rect.left + rect.width,rect.top + rect.height);
+            other[1] = Block::getBlockCord(rect.left,rect.top + rect.height);
+            unsigned short amount = other[0] == other[1] ? 1 : 2;
+            for (unsigned short i = 0; i < amount; i++)
             {
-                if (((int) pos.x / Block::SIZE) == (int) (rect.left / Block::SIZE)){
-                    result.onGround = true;
-                    result.blocks.push_back(block);
+                if (pos.y == other[i].y)
+                {
+                    if (pos.x == other[i].x){
+                        result.onGround = true;
+                        result.blocks.push_back(block);
+                        break;
+                    }
                 }
             }
         }
@@ -192,7 +202,7 @@ void HitBox::Render(RenderWindow* window,sf::Shader* shader){
 
         rect.setFillColor(Color::Transparent);
 
-        window->draw(rect);
+        window->draw(rect,shader);
 
         // draw blocks
         for (Block& block : result.blocks){
@@ -205,7 +215,81 @@ void HitBox::Render(RenderWindow* window,sf::Shader* shader){
 
             r.setFillColor(Color::Transparent);
 
-            window->draw(r);
+            window->draw(r,shader);
         }
     }
 }
+/*
+void PlayerWorldInteract::Event(sf::Event* event)
+{
+    switch (event->type)
+    {
+        case sf::Event::MouseMoved:
+            {
+                sf::Event::MouseMoveEvent e = event->mouseMove;
+                breakData.current = Vector2i(e.x,e.y) / Block::SIZE;
+                int y = e.y - gameObject->position.y;
+                int x = e.x - gameObject->position.x;
+                gameObject->setRotation(atan2(y,x) * RAD2DEG);
+            }
+            break;
+        case sf::Event::MouseButtonPressed:
+            {
+                sf::Event::MouseButtonEvent e = event->mouseButton;
+                switch (e.button)
+                {
+                    case Mouse::Right:
+                        // break block over time
+                        breakData.block = world->getBlock(e.x,e.y);
+                        if (!breakData.block) return;
+                        breakData.durationRequired = MetaData::GetStaticMeta(breakData.block->material).breakTime;
+                        breakData.breaking = true;
+                        break;
+                    // case Mouse::Right:
+                    //     // TODO place block
+                    //     break;
+                }
+            }
+            break;
+        case sf::Event::MouseButtonReleased:
+            {
+                sf::Event::MouseButtonEvent e = event->mouseButton;
+                switch (e.button)
+                {
+                    case Mouse::Left:
+                        breakData.breaking = false;
+                        break;
+                }
+            }
+            break;
+    }
+}
+
+void PlayerWorldInteract::Update(float delta)
+{
+    if (!breakData.breaking) return;
+    Vector2i pos = Vector2i(breakData.block->getPosition());
+    pos /= Block::SIZE;
+    if (pos != breakData.current)
+    {
+        std::cout << "Nope\n";
+        breakData.breaking = false;
+        return;
+    }
+    breakData.durationLeft += 1;
+    if (breakData.durationLeft < breakData.durationRequired)
+    {
+        std::cout << "Block broken" << std::endl;
+    }
+};
+
+void PlayerWorldInteract::Render(RenderWindow* window, Shader* shader)
+{
+    RectangleShape rect(Vector2f(Block::SIZE,Block::SIZE));
+    rect.setPosition(Vector2f(breakData.current * Block::SIZE));
+    rect.setOutlineColor(Color::Yellow);
+    rect.setOutlineThickness(-1);
+    rect.setFillColor(Color::Transparent);
+
+    window->draw(rect);
+}*/

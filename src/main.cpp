@@ -7,10 +7,11 @@
 using namespace sf;
 
 void RenderThread(Game* game){
-    // Load textures;
+    // allow Update thread to catch up
+    sf::sleep(sf::seconds(0.1));
     std::cout << "Starting render thread\n";
     Color color(135, 206, 235);
-    while (game->window->isOpen())
+    while (game->running)
     {
         game->window->clear(color);
         game->draw();
@@ -62,8 +63,7 @@ int main(){
             switch (event.type)
             {
                 case Event::Closed:
-                    window.close();
-                    break;
+                    goto stop;
             }
             game.event(&event);
         }
@@ -74,6 +74,9 @@ int main(){
             accumulator -= dt;
         }
     }
-
+    stop:
+    game.running = false;
+    thread.wait();
+    window.close();
     return 0;
 }

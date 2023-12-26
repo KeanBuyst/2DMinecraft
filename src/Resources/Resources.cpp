@@ -48,8 +48,8 @@ Textures::Textures(){
 }
 
 Textures::~Textures(){
-    delete materials;
-    delete entities;
+    delete[] materials;
+    delete[] entities;
 }
 
 Texture* Textures::getTexture(Material mat){

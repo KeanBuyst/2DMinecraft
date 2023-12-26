@@ -9,6 +9,7 @@ namespace MetaData
         const char* name;
         bool colliable;
         bool transparent;
+        unsigned int breakTime;
     };
 
     StaticMeta GetStaticMeta(Material mat);

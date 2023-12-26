@@ -61,16 +61,32 @@ std::vector<Block>& Chunk::getBlocks(){
     return blocks;
 }
 
-void World::draw(sf::RenderWindow* window,sf::Shader* shader){
+void World::draw(sf::RenderWindow* window){
+    shader->setUniform("camera",camera);
     for (unsigned short i = 0; i <= SIZE*2; i++){
         for (Sprite sprite : chunks[i].getBlocks()){
-            sprite.move(offset);
-            Vector2f vector = sprite.getPosition();
-            if (vector.x + 16 <= 0 || vector.x >= 800) continue;
-            if (vector.y <= 0 || vector.y - 16 >= 600) continue;
+            Vector2f vector = sprite.getPosition() - camera;
+            if (vector.x + Block::SIZE <= 0 || vector.x >= 600) continue;
+            if (vector.y <= 0 || vector.y - Block::SIZE >= 400) continue;
             window->draw(sprite,shader);
         }
     }
+    for (GameObject* entity : entities)
+    {
+        entity->Render(window,shader);
+    }
+}
+
+Block* World::getBlock(int x,int y)
+{
+    Chunk* chunk = getChunk(Chunk::getChunkCord(x));
+    for (Block& block : chunk->blocks)
+    {
+        Vector2f pos = block.getPosition();
+        if ((int) (pos.x) == x)
+            return &block;
+    }
+    return nullptr;
 }
 
 Material Biome::getMaterial(int layer){
@@ -88,7 +104,7 @@ Material Biome::getMaterial(int layer){
     }
 }
 
-World::World(Textures* textures) : offset(400,300) {
+World::World(Textures* textures,Shader* shader) : shader(shader) {
     srand(seed);
 
     biomes = new Biome*[1] 
@@ -96,7 +112,7 @@ World::World(Textures* textures) : offset(400,300) {
         new PlanesBiome()
     };
     currentBiome = (unsigned short) (((float) rand() / RAND_MAX) * (sizeof(biomes) / sizeof(Biome)));
-    CHUNK pos = Chunk::worldToChunk(offset.x);
+    CHUNK pos = Chunk::worldToChunk(300);
     chunks = new Chunk[5]
     {
         Chunk(pos - 2,textures,biomes[currentBiome]),
@@ -114,12 +130,12 @@ Chunk* World::getChunk(CHUNK pos){
 }
 
 World::~World(){
-    delete biomes;
-    delete chunks;
+    delete[] biomes;
+    delete[] chunks;
 }
 
-void World::update(Textures* textures){
-    CHUNK cord = Chunk::worldToChunk(offset.x);
+void World::update(float delta,Textures* textures){
+    CHUNK cord = Chunk::worldToChunk(entities[0]->position.x);
     
     unsigned short index;
     if (chunks[3].x <= cord){
@@ -136,6 +152,9 @@ void World::update(Textures* textures){
             index--;
         }
     }
+    // entities
+    for (GameObject* entity : entities)
+        entity->Update(delta);
 }
 
 void World::rechunk(unsigned short index,CHUNK pos, Textures* textures){
@@ -152,9 +171,14 @@ void World::rechunk(unsigned short index,CHUNK pos, Textures* textures){
     chunks[index] = Chunk(pos,textures,biomes[currentBiome]);;
 }
 
-CHUNK World::getChunkCord(int x){
-    int pos = x - offset.x;
-    return (pos / (Block::SIZE * Chunk::WIDTH)) - (pos < 0);
+CHUNK Chunk::getChunkCord(int x){
+    return (x / (Block::SIZE * Chunk::WIDTH)) - (x < 0);
+}
+Vector2<BLOCK> Block::getBlockCord(int x,int y){
+    return Vector2<BLOCK>((x / Block::SIZE) - (x < 0),(y / Block::SIZE) - (y < 0));
+}
+Vector2<BLOCK> Block::getBlockCord(Vector2f pos){
+    return Block::getBlockCord(pos.x,pos.y);
 }
 
 float World::RANDOM(){
@@ -162,13 +186,13 @@ float World::RANDOM(){
 }
 
 CHUNK Chunk::worldToChunk(int x){
-    return ((x / (Block::SIZE * Chunk::WIDTH)) * -1);
+    return x / (Block::SIZE * Chunk::WIDTH);
 }
 
 Biome::Biome(float s,int a,int h) : smoothness(s), amplitude(a), height(h)
 {}
 
-PlanesBiome::PlanesBiome() : Biome(10,5,0)
+PlanesBiome::PlanesBiome() : Biome(10,5,-20)
 {}
 
 std::vector<Block> PlanesBiome::getPlant(Vector2<BLOCK> pos){
@@ -177,7 +201,6 @@ std::vector<Block> PlanesBiome::getPlant(Vector2<BLOCK> pos){
     if (rand < 0.1)
     {
         BLOCK height = pos.y - (World::RANDOM() * 2 + 1);
-        std::cout << height / 16.0 << std::endl;
         for (BLOCK h = pos.y; h > height; h--){
             Block block(Material::OAK_LOG);
             block.setPosition(pos.x,h);

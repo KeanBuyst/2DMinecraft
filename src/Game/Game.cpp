@@ -5,11 +5,11 @@
 GameObject GeneratePlayer(Vector2f position,Texture* textures);
 
 Game::Game(sf::RenderWindow* w,sf::Shader* s) : window(w), shader(s) {
-    world = new World(&TEXTURES);
     shader->setUniform("texture", sf::Shader::CurrentTexture);
+    world = new World(&TEXTURES,shader);
 
     GameObject* player = build(PLAYER);
-    player->position = Vector2f(600/2,400/2);
+    player->position = Vector2f(300,200);
     world->entities.push_back(player);
 }
 Game::~Game(){
@@ -17,15 +17,11 @@ Game::~Game(){
 }
 
 void Game::draw(){
-    world->draw(window,shader);
-    for (GameObject* entity : world->entities)
-        entity->Render(window,shader);
+    world->draw(window);
 }
 
 void Game::update(float delta){
-    world->update(&TEXTURES);
-    for (GameObject* entity : world->entities)
-        entity->Update(delta);
+    world->update(delta,&TEXTURES);
 }
 
 void Game::event(sf::Event* event){
@@ -45,10 +41,13 @@ GameObject* Game::build(EntityType type){
         GameObject* head = new GameObject(-2,-8);
         head->setTexture(&textures[3]);
         head->setPivotPoint(Vector2f(4,8));
-        head->addComponent(new HeadMove());
+        //head->addComponent(new PlayerWorldInteract(world));
 
         GameObject* body = new GameObject();
         body->setTexture(&textures[0]);
+
+        GameObject* legs = new GameObject();
+        legs->draw = false;
 
         GameObject* leftLeg = new GameObject(0,12);
         leftLeg->setTexture(&textures[2]);
@@ -56,23 +55,28 @@ GameObject* Game::build(EntityType type){
         GameObject* rightLeg = new GameObject(0,12);
         rightLeg->setTexture(&textures[2]);
 
+        legs->addComponent(leftLeg);
+        legs->addComponent(rightLeg);
+
         GameObject* arm = new GameObject(0,0);
         arm->setTexture(&textures[1]);
 
         player->addComponent(body);
-        player->addComponent(leftLeg);
-        player->addComponent(rightLeg);
+        player->addComponent(legs);
         player->addComponent(arm);
+
         player->addComponent(head);
 
         sf::FloatRect bounds(0,-8,4,31);
         HitBox* box = new HitBox(world,bounds);
         player->addComponent(box);
 
-        player->addComponent(new PlayerController(world));
+        PlayerController* controller = new PlayerController(world);
+        player->addComponent(controller);
+        legs->addComponent(new WalkingAnimation(&controller->in));
+        
 
         return player;
-    
     }
 
     throw "Failed to build component";

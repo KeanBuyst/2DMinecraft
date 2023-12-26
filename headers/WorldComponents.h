@@ -2,6 +2,14 @@
 
 #include <World.h>
 
+class WorldComponent : public Component
+{
+    public:
+    WorldComponent(World* world) : world(world){};
+    protected:
+    World* world;
+};
+
 struct CollisonResult
 {
     bool collison = false;
@@ -13,11 +21,12 @@ struct CollisonResult
     std::vector<Block> blocks;
 };
 
-class HitBox : public Component 
+class HitBox : public WorldComponent 
 {
     public:
     HitBox(World* world, sf::FloatRect bounds);
 
+    void Awake(){};
     void Render(sf::RenderWindow* window,sf::Shader* shader);
     void Update(float delta);
     void Event(sf::Event* event){};
@@ -29,14 +38,6 @@ class HitBox : public Component
     CollisonResult result;
     private:
     sf::FloatRect bounds;
-    World* world;
-};
-
-struct INPUT 
-{
-    bool RIGHT = false;
-    bool LEFT = false;
-    bool JUMP = false;
 };
 
 class PhysicsObject : public Component 
@@ -47,6 +48,7 @@ class PhysicsObject : public Component
     bool moving = false;
     bool onGround = false;
     PhysicsObject();
+    void Awake(){};
     void Update(float delta);
     void Render(sf::RenderWindow* window,sf::Shader* shader){};
     static constexpr float GRAVITY = .8f;
@@ -57,13 +59,36 @@ class PlayerController : public PhysicsObject
 {
     public:
     PlayerController(World* world);
+    void Awake(){};
     void Render(sf::RenderWindow* window,sf::Shader* shader){};
     void Update(float delta);
     void Event(sf::Event* event);
-    private:
+
     INPUT in;
+    private:
     void Input(int key,bool down);
     World* world;
     const float SPEED = 1;
     const float JUMP = 3.5f;
 };
+
+struct BreakData
+{
+    Block* block = nullptr;
+    Vector2i current;
+    unsigned int durationLeft = 0;
+    unsigned int durationRequired = 0;
+    bool breaking = false;
+};
+/*
+class PlayerWorldInteract : public WorldComponent
+{
+    public:
+    PlayerWorldInteract(World* world) : WorldComponent(world) {};
+    void Render(sf::RenderWindow* window,sf::Shader* shader);
+    void Update(float delta);
+    void Event(sf::Event* event);
+    private:
+    BreakData breakData;
+    Vector2i blockPos;
+};*/

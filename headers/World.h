@@ -14,6 +14,9 @@ class Block : public Sprite {
     Block(Material mat);
     void setPosition(BLOCK x,BLOCK y);
     Material material;
+
+    static Vector2<BLOCK> getBlockCord(int x, int y);
+    static Vector2<BLOCK> getBlockCord(Vector2f pos);
 };
 
 class Biome {
@@ -36,29 +39,33 @@ class Chunk {
     ~Chunk();
     void upload();
     std::vector<Block>& getBlocks();
-    private:
     std::vector<Block> blocks;
+
+    static CHUNK getChunkCord(int x);
 };
 
 class World {
     public:
     static const unsigned long seed = 1234435436u;
 
-    World(Textures* textures);
+    World(Textures* textures, Shader* shader);
     ~World();
 
     static const CHUNK SIZE = 2;
-    Vector2f offset;
     unsigned short currentBiome;
-    void update(Textures* textures);
-    void draw(sf::RenderWindow* window,sf::Shader* shader);
-    CHUNK getChunkCord(int x);
+    void update(float delta,Textures* textures);
+    void draw(sf::RenderWindow* window);
     Chunk* getChunk(CHUNK pos);
+    Block* getBlock(int x,int y);
     static float RANDOM();
     Biome** biomes;
     Chunk* chunks;
+
+    sf::Vector2f camera;
+
     std::vector<GameObject*> entities;
     private:
+    Shader* shader;
     void rechunk(unsigned short index,CHUNK pos,Textures* textures);
 };
 

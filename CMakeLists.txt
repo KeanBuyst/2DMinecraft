@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
+
+set(CMAKE_BUILD_TYPE Debug)
+
 project(2DMinecraft LANGUAGES CXX)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

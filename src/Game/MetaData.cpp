@@ -10,7 +10,8 @@ StaticMeta MetaData::GetStaticMeta(Material mat){
         {
             "Grass",
             false,
-            true
+            true,
+            0u
         };
 
     default:
@@ -18,7 +19,8 @@ StaticMeta MetaData::GetStaticMeta(Material mat){
         {
             "N/A",
             true,
-            false
+            false,
+            100u
         };
     }
 }
