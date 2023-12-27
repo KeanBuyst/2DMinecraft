@@ -12,7 +12,8 @@ class Block : public Sprite {
     public:
     static const int SIZE = 16;
     Block(Material mat);
-    void setPosition(BLOCK x,BLOCK y);
+    void setBlockPos(Vector2<BLOCK> block);
+    Vector2<BLOCK> getBlockPos();
     Material material;
 
     static Vector2<BLOCK> getBlockCord(int x, int y);
@@ -38,8 +39,9 @@ class Chunk {
     Chunk(CHUNK x,Textures* textures, Biome* biome);
     ~Chunk();
     void upload();
-    std::vector<Block>& getBlocks();
-    std::vector<Block> blocks;
+    std::vector<Block> blocks[WIDTH];
+    Block* getBlock(Vector2<BLOCK> position);
+    void addBlock(Block& block);
 
     static CHUNK getChunkCord(int x);
 };
@@ -56,7 +58,7 @@ class World {
     void update(float delta,Textures* textures);
     void draw(sf::RenderWindow* window);
     Chunk* getChunk(CHUNK pos);
-    Block* getBlock(int x,int y);
+    Block* getBlock(Vector2f pos);
     static float RANDOM();
     Biome** biomes;
     Chunk* chunks;

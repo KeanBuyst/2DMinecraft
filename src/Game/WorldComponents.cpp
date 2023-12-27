@@ -89,17 +89,9 @@ void PlayerController::Input(int key,bool down){
             break;
         case Keyboard::A: // A
             in.LEFT = down;
-            if (down){
-                for (GameObject* obj : gameObject->getComponents<GameObject>(ComponentType::GameObject))
-                    obj->flip(true);
-            }
             break;
         case Keyboard::D: // D
             in.RIGHT = down;
-            if (down){
-                for (GameObject* obj : gameObject->getComponents<GameObject>(ComponentType::GameObject))
-                    obj->flip(false);
-            }
             break;
     }
 }
@@ -123,35 +115,38 @@ void HitBox::Update(float delta){
     FloatRect rect = getRect();
     if (chunk)
     {
-        for (Block& block : chunk->getBlocks()){
-            if(!MetaData::GetStaticMeta(block.material).colliable) continue;
-            Vector2i pos = Block::getBlockCord(block.getPosition());
-            FloatRect bounds = block.getGlobalBounds();
-            if (intersects(bounds)){
-                result.shift += getPenetration(rect,bounds);
-                result.collison = true;
+        for (int i = 0; i < Chunk::WIDTH; i++){
+            for (Block& block : chunk->blocks[i]){
+                if(!MetaData::GetStaticMeta(block.material).colliable) continue;
+                Vector2i pos = Block::getBlockCord(block.getPosition());
+                FloatRect bounds = block.getGlobalBounds();
+                if (intersects(bounds)){
+                    result.shift += getPenetration(rect,bounds);
+                    result.collison = true;
 
-                result.blocks.push_back(block);
-            }
-            // do weird magic
-            if (pos.x < 0) pos.x++;
-            // increase precision
-            Vector2i other[2];
-            other[0] = Block::getBlockCord(rect.left + rect.width,rect.top + rect.height);
-            other[1] = Block::getBlockCord(rect.left,rect.top + rect.height);
-            unsigned short amount = other[0] == other[1] ? 1 : 2;
-            for (unsigned short i = 0; i < amount; i++)
-            {
-                if (pos.y == other[i].y)
+                    result.blocks.push_back(block);
+                }
+                // do weird magic
+                if (pos.x < 0) pos.x++;
+                // increase precision
+                Vector2i other[2];
+                other[0] = Block::getBlockCord(rect.left + rect.width,rect.top + rect.height);
+                other[1] = Block::getBlockCord(rect.left,rect.top + rect.height);
+                unsigned short amount = other[0] == other[1] ? 1 : 2;
+                for (unsigned short i = 0; i < amount; i++)
                 {
-                    if (pos.x == other[i].x){
-                        result.onGround = true;
-                        result.blocks.push_back(block);
-                        break;
+                    if (pos.y == other[i].y)
+                    {
+                        if (pos.x == other[i].x){
+                            result.onGround = true;
+                            result.blocks.push_back(block);
+                            break;
+                        }
                     }
                 }
             }
         }
+        
     }
 
     this->result = result;
@@ -219,18 +214,33 @@ void HitBox::Render(RenderWindow* window,sf::Shader* shader){
         }
     }
 }
-/*
+
+float headMove(float x, float y){
+    float angle = atan2(y,x) * RAD2DEG;
+    if (angle > 70)
+        angle = 70;
+    if (angle < -70)
+        angle = -70;
+    return angle;
+}
+
 void PlayerWorldInteract::Event(sf::Event* event)
 {
     switch (event->type)
     {
         case sf::Event::MouseMoved:
             {
-                sf::Event::MouseMoveEvent e = event->mouseMove;
-                breakData.current = Vector2i(e.x,e.y) / Block::SIZE;
-                int y = e.y - gameObject->position.y;
-                int x = e.x - gameObject->position.x;
-                gameObject->setRotation(atan2(y,x) * RAD2DEG);
+                Vector2f pos = mousePos - Vector2f(300,200);
+                if (pos.x < 0)
+                {
+                    gameObject->flip(true);
+                    gameObject->setRotation(headMove(-pos.x,-pos.y));
+                }
+                else
+                {
+                    gameObject->flip(false);
+                    gameObject->setRotation(headMove(pos.x,pos.y));
+                }
             }
             break;
         case sf::Event::MouseButtonPressed:
@@ -238,9 +248,9 @@ void PlayerWorldInteract::Event(sf::Event* event)
                 sf::Event::MouseButtonEvent e = event->mouseButton;
                 switch (e.button)
                 {
-                    case Mouse::Right:
+                    case Mouse::Left:
                         // break block over time
-                        breakData.block = world->getBlock(e.x,e.y);
+                        breakData.block = world->getBlock(mousePos + world->camera);
                         if (!breakData.block) return;
                         breakData.durationRequired = MetaData::GetStaticMeta(breakData.block->material).breakTime;
                         breakData.breaking = true;
@@ -268,11 +278,9 @@ void PlayerWorldInteract::Event(sf::Event* event)
 void PlayerWorldInteract::Update(float delta)
 {
     if (!breakData.breaking) return;
-    Vector2i pos = Vector2i(breakData.block->getPosition());
-    pos /= Block::SIZE;
-    if (pos != breakData.current)
+    Vector2i pos = Block::getBlockCord(breakData.block->getPosition());
+    if (pos != Vector2i(mousePos))
     {
-        std::cout << "Nope\n";
         breakData.breaking = false;
         return;
     }
@@ -285,11 +293,20 @@ void PlayerWorldInteract::Update(float delta)
 
 void PlayerWorldInteract::Render(RenderWindow* window, Shader* shader)
 {
-    RectangleShape rect(Vector2f(Block::SIZE,Block::SIZE));
-    rect.setPosition(Vector2f(breakData.current * Block::SIZE));
-    rect.setOutlineColor(Color::Yellow);
-    rect.setOutlineThickness(-1);
-    rect.setFillColor(Color::Transparent);
+    // get relative postition
+    Vector2i pos = Mouse::getPosition(*window);
+    Vector2u size = window->getSize();
+    mousePos = Vector2f((float) pos.x / size.x,(float) pos.y / size.y);
+    mousePos.x *= 600;
+    mousePos.y *= 400;
 
-    window->draw(rect);
-}*/
+    if(!breakData.block) return;
+    FloatRect bounds = breakData.block->getGlobalBounds();
+    RectangleShape shape(bounds.getSize());
+    shape.setPosition(bounds.getPosition());
+
+    shape.setOutlineThickness(-1);
+    shape.setFillColor(Color::Transparent);
+
+    window->draw(shape,shader);
+}

@@ -7,8 +7,12 @@
 
 Block::Block(Material mat) : material(mat) {}
 
-void Block::setPosition(BLOCK x,BLOCK y){
-    Sprite::setPosition(x * Block::SIZE,y * Block::SIZE);
+void Block::setBlockPos(Vector2<BLOCK> block){
+    Sprite::setPosition(block.x * Block::SIZE,block.y * Block::SIZE);
+}
+
+Vector2<BLOCK> Block::getBlockPos(){
+    return Block::getBlockCord(Sprite::getPosition());
 }
 
 Chunk::Chunk(CHUNK x,Textures* textures, Biome* biome) : x(x) {
@@ -16,23 +20,40 @@ Chunk::Chunk(CHUNK x,Textures* textures, Biome* biome) : x(x) {
         // create Noise
         siv::PerlinNoise Noise { World::seed };
         int pos = x * WIDTH;
+        int index = 0;
         for (BLOCK X = pos; X < pos + WIDTH; X++){
             BLOCK noise = Noise.noise1D(X / biome->smoothness) * biome->amplitude - biome->height;
             Vector2i vect(X,noise - 1);
             for (Block& block : biome->getPlant(vect))
             {
                 block.setTexture(*textures->getTexture(block.material));
-                blocks.push_back(block);
+                blocks[index].push_back(block);
             }
             for (BLOCK Y = noise; Y <= HEIGHT; Y++){
                 int layer = Y - noise;
                 Material mat = biome->getMaterial(layer);
                 Block block(mat);
                 block.setTexture(*textures->getTexture(mat));
-                block.setPosition(X,Y);
-                blocks.push_back(block);
+                block.setBlockPos(Vector2i(X,Y));
+                blocks[index].push_back(block);
             }
+            index++;
         }
+}
+
+void Chunk::addBlock(Block& block)
+{
+    int pos = block.getBlockPos().x % Chunk::WIDTH;
+    blocks[pos].push_back(block);
+}
+
+Block* Chunk::getBlock(Vector2<BLOCK> pos)
+{
+    for (Block& block : blocks[pos.x % Chunk::WIDTH]){
+        if (block.getBlockPos().y == pos.y)
+            return &block;
+    }
+    return nullptr;
 }
 
 Chunk::~Chunk(){
@@ -57,18 +78,17 @@ void Chunk::upload(){
     // stream.close();
 }
 
-std::vector<Block>& Chunk::getBlocks(){
-    return blocks;
-}
-
 void World::draw(sf::RenderWindow* window){
     shader->setUniform("camera",camera);
     for (unsigned short i = 0; i <= SIZE*2; i++){
-        for (Sprite sprite : chunks[i].getBlocks()){
-            Vector2f vector = sprite.getPosition() - camera;
-            if (vector.x + Block::SIZE <= 0 || vector.x >= 600) continue;
-            if (vector.y <= 0 || vector.y - Block::SIZE >= 400) continue;
-            window->draw(sprite,shader);
+        for (std::vector<Block>& blocks : chunks[i].blocks)
+        {
+            for (Sprite sprite : blocks){
+                Vector2f vector = sprite.getPosition() - camera;
+                if (vector.x + Block::SIZE <= 0 || vector.x >= 600) continue;
+                if (vector.y <= 0 || vector.y - Block::SIZE >= 400) continue;
+                window->draw(sprite,shader);
+            }
         }
     }
     // stop laggy player movement
@@ -79,16 +99,10 @@ void World::draw(sf::RenderWindow* window){
     }
 }
 
-Block* World::getBlock(int x,int y)
+Block* World::getBlock(Vector2f p)
 {
-    Chunk* chunk = getChunk(Chunk::getChunkCord(x));
-    for (Block& block : chunk->blocks)
-    {
-        Vector2f pos = block.getPosition();
-        if ((int) (pos.x) == x)
-            return &block;
-    }
-    return nullptr;
+    Chunk* chunk = getChunk(Chunk::getChunkCord(p.x));
+    return chunk->getBlock(Block::getBlockCord(p));
 }
 
 Material Biome::getMaterial(int layer){
@@ -205,14 +219,14 @@ std::vector<Block> PlanesBiome::getPlant(Vector2<BLOCK> pos){
         BLOCK height = pos.y - (World::RANDOM() * 2 + 1);
         for (BLOCK h = pos.y; h > height; h--){
             Block block(Material::OAK_LOG);
-            block.setPosition(pos.x,h);
+            block.setBlockPos(Vector2i(pos.x,h));
             block.setColor(Color::Green);
             blocks.push_back(block);
         }
         for (int y = height; y >= height-2; y--){
             for (int x = pos.x - 2; x <= pos.x + 2; x++){
                 Block block(Material::OAK_LEAVES);
-                block.setPosition(x,y);
+                block.setBlockPos(Vector2i(x,y));
                 block.setColor(Color::Green);
                 blocks.push_back(block);
             }
@@ -221,7 +235,7 @@ std::vector<Block> PlanesBiome::getPlant(Vector2<BLOCK> pos){
     else if (rand < 0.6)
     {
         Block block(Material::GRASS);
-        block.setPosition(pos.x,pos.y);
+        block.setBlockPos(Vector2i(pos.x,pos.y));
         block.setColor(Color::Green);
         blocks.push_back(block);
     }

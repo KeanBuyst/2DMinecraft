@@ -75,20 +75,21 @@ class PlayerController : public PhysicsObject
 struct BreakData
 {
     Block* block = nullptr;
-    Vector2i current;
     unsigned int durationLeft = 0;
     unsigned int durationRequired = 0;
     bool breaking = false;
 };
-/*
+
 class PlayerWorldInteract : public WorldComponent
 {
     public:
     PlayerWorldInteract(World* world) : WorldComponent(world) {};
+    void Awake() {};
     void Render(sf::RenderWindow* window,sf::Shader* shader);
     void Update(float delta);
     void Event(sf::Event* event);
+    Vector2f mousePos;
     private:
     BreakData breakData;
     Vector2i blockPos;
-};*/
+};

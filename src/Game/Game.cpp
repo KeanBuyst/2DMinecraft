@@ -2,8 +2,6 @@
 
 #include<iostream>
 
-GameObject GeneratePlayer(Vector2f position,Texture* textures);
-
 Game::Game(sf::RenderWindow* w,sf::Shader* s) : window(w), shader(s) {
     shader->setUniform("texture", sf::Shader::CurrentTexture);
     world = new World(&TEXTURES,shader);
@@ -41,7 +39,7 @@ GameObject* Game::build(EntityType type){
         GameObject* head = new GameObject(-2,-8);
         head->setTexture(&textures[3]);
         head->setPivotPoint(Vector2f(4,8));
-        //head->addComponent(new PlayerWorldInteract(world));
+        head->addComponent(new PlayerWorldInteract(world));
 
         GameObject* body = new GameObject();
         body->setTexture(&textures[0]);
