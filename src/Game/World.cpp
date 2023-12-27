@@ -71,6 +71,8 @@ void World::draw(sf::RenderWindow* window){
             window->draw(sprite,shader);
         }
     }
+    // stop laggy player movement
+    shader->setUniform("camera",camera);
     for (GameObject* entity : entities)
     {
         entity->Render(window,shader);
