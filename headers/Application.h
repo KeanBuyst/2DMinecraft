@@ -6,6 +6,10 @@
 #include "World.h"
 #include "Shader.h"
 
+extern int SCREEN_WIDTH;
+extern int SCREEN_HEIGHT;
+extern glm::vec4 VIEW_PORT;
+
 class Application {
 public:
   ~Application();

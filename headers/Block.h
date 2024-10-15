@@ -23,6 +23,7 @@ namespace world
 
 		MATERIAL type;
 		glm::ivec2 pos;
+		bool transparent = false; // TODO make this depicted by material type
 	};
 
 	class MetaBlock : Block

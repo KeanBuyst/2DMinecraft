@@ -4,6 +4,7 @@
 
 #include "Util.h"
 #include "vector"
+#include "Application.h"
 
 using namespace world;
 
@@ -86,8 +87,18 @@ void World::render()
 				if (blocks == 0) continue;
 				glm::ivec2 pos(colomn, 0);
 				ToGlobal(pos, chunk.position);
-				pos *= 16; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
-				VertexData data = {static_cast<float>(pos.x),static_cast<float>(pos.y),blocks};
+				glm::vec2 pixelCoord(pos);
+				static constexpr float PIXEL_SIZE = 16.0f;
+				pixelCoord -= origin;
+				pixelCoord *= PIXEL_SIZE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
+
+				// optimizations
+				if (pixelCoord.x + PIXEL_SIZE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
+					pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w) {
+					continue;
+				}
+
+				VertexData data = {pixelCoord.x,pixelCoord.y,blocks};
 				vertices.push_back(data);
 			}
 		}
@@ -213,7 +224,7 @@ inline void World::ToGlobal(glm::ivec2& position,glm::ivec2 chunk)
 	if (chunk.y < 0)
 	{
 		chunk.y++;
-		position.y = -(position.y + 1);
+		position.y = -(position.y + CHUNK_SIZE);
 	}
 	position += chunk * CHUNK_SIZE;
 }

@@ -10,6 +10,8 @@
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
 
+glm::vec4 VIEW_PORT;
+
 Application::Application() {
     // initialize SDL
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
@@ -101,8 +103,6 @@ void Application::run() {
                 break;
             }
         }
-        glm::vec2 pixelOrigin = world::origin * 16.0f;
-        shader->sendVector2("origin", pixelOrigin);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         // draw
@@ -161,12 +161,13 @@ void Application::KeyDown(const SDL_Keycode key)
 }
 
 void Application::updateViewPort() const {
-    static constexpr int SIZE = world::CHUNK_SIZE * 16 + world::CHUNK_SIZE / 2;
+    constexpr int SIZE = world::CHUNK_SIZE * 16 + world::CHUNK_SIZE / 2;
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / SCREEN_HEIGHT) * SIZE); // round to help against artifcates
+    const float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * SIZE); // round to help against artifcates
 
     glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -SIZE, SIZE);
+    VIEW_PORT = glm::vec4(-aspect,aspect,-SIZE,SIZE);
 
     shader->sendMatrix("ortho", mat);
 }

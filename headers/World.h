@@ -9,8 +9,8 @@ namespace world
 	constexpr int WORLD_SEED = 4563456;
 
 	constexpr float WORLD_SIZE = 10.0f; // since we want a block postion to represent 1. 1/10 = 0.1
-	constexpr int WORLD_WIDTH = 3; // min is 3x3
-	constexpr int WORLD_HEIGHT = 3;
+	constexpr int WORLD_WIDTH = 5; // min is 3x3
+	constexpr int WORLD_HEIGHT = 4;
 
 	extern RegionHandler handler;
 	extern glm::vec2 origin;
