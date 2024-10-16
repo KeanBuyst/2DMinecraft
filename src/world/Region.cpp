@@ -52,9 +52,9 @@ void Region::fetch(Chunk &chunk) const
 	}
 }
 
-bool Region::contains(glm::ivec2 pos) const
+bool Region::contains(const glm::ivec2 chunk) const
 {
-	return ToRegionSpace(pos) == position;
+	return ToRegionSpace(chunk) == position;
 }
 
 void Region::save(const Chunk& chunk)
@@ -76,7 +76,7 @@ RegionHandler::~RegionHandler()
 		delete stack[i];
 }
 
-Region* RegionHandler::GetRegion(glm::ivec2 pos)
+Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 {
 	//to sort array to remove open spaces
 	Region* reg = nullptr;
@@ -84,7 +84,6 @@ Region* RegionHandler::GetRegion(glm::ivec2 pos)
 	for (auto i = 0; i < size; i++)
 	{
 		Region*& region = stack[i];
-		assert(region);
 		uint8_t& miss = call_miss[i];
 		if (region->contains(pos))
 		{
@@ -124,9 +123,11 @@ Region* RegionHandler::GetRegion(glm::ivec2 pos)
 		else
 		{
 			// no more spaces left in stack. Replace first and oldest element
-			delete stack[0];
-			call_miss[0] = 0;
-			stack[0] = reg;
+			delete stack[old];
+			call_miss[old] = 0;
+			stack[old] = reg;
+			old++;
+			if (old == SIZE) old = 0;
 		}
 	}
 	return reg;
@@ -135,29 +136,14 @@ Region* RegionHandler::GetRegion(glm::ivec2 pos)
 void RegionHandler::fetch(Chunk& chunk)
 {
 	GetRegion(chunk.position)->fetch(chunk);
-	/*if (!stack[0])
-		stack[0] = new Region(ToRegionSpace(chunk.position));
-	if (stack[0]->contains(chunk.position)) {
-		stack[0]->fetch(chunk);
-	} else {
-		chunk = Chunk();
-		printf("Requested (fetch) chunk out of bounds: %i, %i\n",chunk.position.x,chunk.position.y);
-	}*/
 }
 
 void RegionHandler::save(const Chunk& chunk)
 {
 	GetRegion(chunk.position)->save(chunk);
-	/*if (!stack[0])
-		stack[0] = new Region(ToRegionSpace(chunk.position));
-	if (stack[0]->contains(chunk.position)) {
-		stack[0]->save(chunk);
-	} else {
-		printf("Requested (save) chunk out of bounds: %i, %i\n",chunk.position.x,chunk.position.y);
-	}*/
 }
 
-glm::ivec2 world::ToRegionSpace(glm::ivec2 pos)
+glm::ivec2 world::ToRegionSpace(const glm::ivec2 pos)
 {
 	// fix division problem. E.g. -1 / 32 = 0 && 1 / 32 = 0
 	glm::ivec2 fix = pos / REGION_SIZE;

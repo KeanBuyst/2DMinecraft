@@ -44,6 +44,7 @@ namespace world
 		// max 4 regions for times of intersection between 4 different regions
 		uint8_t call_miss[STACK_SIZE] = { 0 };
 		uint8_t size = 0;
+		uint8_t old = 0;
 		Region* stack[STACK_SIZE] = { nullptr };
 
 		Region* GetRegion(glm::ivec2 pos);

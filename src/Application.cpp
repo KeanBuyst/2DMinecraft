@@ -63,6 +63,9 @@ Application::Application() {
     shader->bind(GetShader("test.geom"));
     shader->bind(GetShader("test.frag"));
     shader->build();
+
+    // vsync
+    SDL_GL_SetSwapInterval(1);
 }
 
 Application& Application::GetInstance() {
@@ -79,6 +82,8 @@ void Application::run() {
 
     texture.bind(0);
     shader->useTexture("atlas",0);
+
+    glClearColor(0.529f,0.8078f,0.9215686f,1);
 
     // creating loop
     SDL_Event e;
@@ -104,7 +109,7 @@ void Application::run() {
             }
         }
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         // draw
 
         world.render();

@@ -19,7 +19,8 @@ namespace world
 
 		void generate();
 
-		uint64_t blocks[8] = { 0 };
+		uint64_t blocks[CHUNK_SIZE] = { 0 };
+
 		glm::ivec2 position;
 	private:
 		// std::unordered_map<glm::uvec2, Metadata> blockData;

@@ -94,7 +94,8 @@ void World::render()
 
 				// optimizations
 				if (pixelCoord.x + PIXEL_SIZE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
-					pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w) {
+					pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w)
+				{
 					continue;
 				}
 
@@ -133,7 +134,7 @@ Block World::getBlock(const glm::ivec2 position)
 	}
 }
 
-inline void World::generate(int x, int y)
+inline void World::generate(const int x, const int y)
 {
 	glm::ivec2 pos(x, y);
 	FromArray(pos);
@@ -157,24 +158,39 @@ inline void World::update_chunks()
 			for (auto y = 0; y < WORLD_HEIGHT; y++)
 			{
 				// check if shifting is applicable
-				if (quantity.x < WORLD_WIDTH || quantity.y < WORLD_HEIGHT) {
-					auto index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
-					if (x <= quantity.x)
-					{
-						chunks[index][y] = chunks[index + direction.x][y];
-					}
-					else {
-						generate(index, y);
-						continue;
-					}
-					index = direction.y < 0 ? (WORLD_HEIGHT - 1) - y : y;
-					if (y <= quantity.y)
-					{
-						chunks[x][index] = chunks[x][index + direction.y];
-					}
-					else generate(x, index);
+				if (quantity.x >= WORLD_WIDTH || quantity.y >= WORLD_HEIGHT)
+				{
+					generate(x,y);
 				}
-				else generate(x, y);
+				else
+				{
+					int index;
+					if (quantity.x != 0) // don't generate if no change accorded
+					{
+						index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
+						if (x <= quantity.x)
+						{
+							chunks[index][y] = chunks[index + direction.x][y];
+						}
+						else
+						{
+							generate(index, y);
+							continue;
+						}
+					}
+					if (quantity.y != 0)
+					{
+						index = direction.y < 0 ? (WORLD_HEIGHT - 1) - y : y;
+						if (y <= quantity.y)
+						{
+							chunks[x][index] = chunks[x][index + direction.y];
+						}
+						else if (quantity.y != 0)
+						{
+							generate(x, index);
+						}
+					}
+				};
 			}
 		}
 		chunkOrigin = current;

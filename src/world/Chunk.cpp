@@ -20,7 +20,7 @@ void Chunk::generate()
 		if (relative < 0) relative = 0;
 		for (int y = relative; y <= CHUNK_SIZE - 1; y++)
 		{
-			blocks[x] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * 8);
+			blocks[x] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * CHUNK_SIZE);
 		}
 	}
 }
