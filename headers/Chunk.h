@@ -20,6 +20,7 @@ namespace world
 		void generate();
 
 		uint64_t blocks[CHUNK_SIZE] = { 0 };
+		uint8_t depth[CHUNK_SIZE] = { 0 }; // 0 = foreground & 1 = background
 
 		glm::ivec2 position;
 	private:

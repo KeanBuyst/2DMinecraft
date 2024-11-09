@@ -11,6 +11,7 @@ using namespace world;
 struct VertexData {
 	float x, y;      // The base position (x, y)
 	uint64_t blocks; // 64-bit integer representing 8 blocks
+	uint8_t depth;
 };
 
 glm::vec2 world::origin = glm::vec2(CHUNK_SIZE / 2.0f,CHUNK_SIZE / 2.0f);
@@ -47,8 +48,11 @@ void World::init()
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), nullptr);
 	glEnableVertexAttribArray(0);
 	// The row for 64 bit int
-	glVertexAttribLPointer(1, 1, GL_UNSIGNED_INT64_ARB, sizeof(VertexData), (void*)(offsetof(VertexData, blocks)));
+	glVertexAttribLPointer(1, 1, GL_UNSIGNED_INT64_ARB, sizeof(VertexData), reinterpret_cast<void *>(offsetof(VertexData, blocks)));
 	glEnableVertexAttribArray(1);
+	// The depth data
+	glVertexAttribIPointer(2,1,GL_UNSIGNED_BYTE,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, depth)));
+	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -83,7 +87,7 @@ void World::render()
 			Chunk& chunk = chunks[x][y];
 			for (auto colomn = 0; colomn < CHUNK_SIZE; colomn++)
 			{
-				uint64_t blocks = chunks[x][y].blocks[colomn];
+				uint64_t blocks = chunk.blocks[colomn];
 				if (blocks == 0) continue;
 				glm::ivec2 pos(colomn, 0);
 				ToGlobal(pos, chunk.position);
@@ -99,7 +103,12 @@ void World::render()
 					continue;
 				}
 
-				VertexData data = {pixelCoord.x,pixelCoord.y,blocks};
+				VertexData data = {
+					pixelCoord.x,
+					pixelCoord.y,
+					blocks,
+					chunk.depth[colomn]
+				};
 				vertices.push_back(data);
 			}
 		}

@@ -16,5 +16,6 @@ namespace Util
 	* @return value between [-1,1]
 	*/
 	float noise(float x);
+	float noise(float x,float y);
 }
 

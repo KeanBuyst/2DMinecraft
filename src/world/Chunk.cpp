@@ -3,7 +3,7 @@
 #include "Util.h"
 #include "Storage.h"
 
-#include <string>
+#include <iostream>
 
 using namespace world;
 
@@ -16,11 +16,21 @@ void Chunk::generate()
 		int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x) * biome->smoothness) * biome->min_max);
 		int relative = blockPos.y - surface;
 		blocks[x] = 0;
+		depth[x] = 0;
 		if (relative >= CHUNK_SIZE) continue;
 		if (relative < 0) relative = 0;
 		for (int y = relative; y <= CHUNK_SIZE - 1; y++)
 		{
-			blocks[x] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * CHUNK_SIZE);
+			glm::vec2 local = blockPos + glm::ivec2(x,y);
+
+			// do cave calculations
+			float amplifier = 30.f;
+			double limit = -0.2 * (sqrt(abs(position.y - 2)) / 1.5);
+			if (Util::noise(local.x / amplifier,local.y / amplifier) < limit)
+			{
+				depth[x] |= 1 << y;
+			}
+			blocks[x] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * 8);
 		}
 	}
 }
