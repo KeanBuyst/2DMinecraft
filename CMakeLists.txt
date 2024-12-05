@@ -1,9 +1,11 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.28)
 project(2DMC)
 
 set(CMAKE_CXX_STANDARD 17)
 
 include(FetchContent)
+
+find_package(OpenGL REQUIRED)
 
 # Fetch SDL2
 FetchContent_Declare(
@@ -37,7 +39,12 @@ ELSE ()
 ENDIF ()
 FetchContent_MakeAvailable(GLEW)
 
-# Add include directories for GLM
+if (NOT WIN32)
+    # Build GLEW as a static library
+    add_subdirectory(${glew_SOURCE_DIR}/build/cmake ${glew_BINARY_DIR})
+endif()
+
+# Add include directories
 include_directories(${SDL2_SOURCE_DIR}/include)
 include_directories(${glm_SOURCE_DIR}/glm)
 include_directories(${glew_SOURCE_DIR}/include)
@@ -57,5 +64,5 @@ add_executable(2DMC src/main.cpp src/Application.cpp
 if (WIN32)
     target_link_libraries(2DMC SDL2-static ${glew_SOURCE_DIR}/lib/Release/x64/glew32s.lib opengl32)
 else()
-    target_link_libraries(2DMC SDL2-static GLEW GL pthread)
+    target_link_libraries(2DMC SDL2-static glew_s GL GLU pthread)
 endif()
