@@ -2,17 +2,5 @@
 
 using namespace world;
 
-Block::Block(MATERIAL type, glm::ivec2 postion) : type(type), pos(postion)
-{
-
-}
-
-MetaBlock::MetaBlock(MATERIAL type, glm::ivec2 postion) : Block(type,postion)
-{
-
-}
-
-void MetaBlock::addMeta(Metadata data)
-{
-
-}
+Block::Block(const MATERIAL type, const glm::ivec2 position,const Layer layer,const uint8_t luminance) : type(type),position(position),layer(layer),luminance(luminance)
+{}

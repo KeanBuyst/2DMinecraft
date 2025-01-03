@@ -1,10 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <glm.hpp>
-#include <vector>
-#include <World.h>
-
 namespace Util 
 {
 

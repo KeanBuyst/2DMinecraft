@@ -4,9 +4,6 @@
 
 namespace world 
 {
-	constexpr int REGION_SIZE = 32;
-	constexpr int STACK_SIZE = 4;
-
 	enum FLAGS : uint8_t
 	{
 		GENERATED = 0b1
@@ -26,9 +23,9 @@ namespace world
 		void save(const Chunk& chunk);
 	private:
 		uint8_t flags[REGION_SIZE * REGION_SIZE] = { 0 };
-
-		uint64_t buffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE] = { 0 };
 		uint8_t depth_buffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE] = { 0 };
+		uint32_t lightMap[REGION_SIZE * REGION_SIZE * CHUNK_SIZE] = { 0 };
+		uint64_t buffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE] = { 0 };
 
 		static inline int GetIndex(const Chunk& chunk);
 	};
@@ -46,7 +43,7 @@ namespace world
 		// max 4 regions for times of intersection between 4 different regions
 		uint8_t call_miss[STACK_SIZE] = { 0 };
 		uint8_t size = 0;
-		uint8_t old = 0;
+		uint32_t old = 0;
 		Region* stack[STACK_SIZE] = { nullptr };
 
 		Region* GetRegion(glm::ivec2 pos);

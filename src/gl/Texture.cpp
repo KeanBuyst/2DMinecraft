@@ -1,5 +1,5 @@
 #include "Texture.h"
-#include <stb_image.h>
+#include "../libs/stb_image.h"
 #include <iostream>
 
 using namespace res;

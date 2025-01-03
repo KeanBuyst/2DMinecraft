@@ -8,7 +8,7 @@ namespace world
 	{
 	public:
 		Biome(float smoothness, int min_max);
-		MATERIAL getMaterial(int layer);
+		MATERIAL getMaterial(int depth);
 
 		float smoothness;
 		int min_max;

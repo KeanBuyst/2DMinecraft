@@ -1,10 +1,9 @@
 #pragma once
 
-#include <glew.h>
+#include "../glew.h"
 #include <string>
 #include <unordered_map>
 #include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
 #include "Texture.h"
 
 GLuint GetShader(std::string path);

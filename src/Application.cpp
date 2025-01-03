@@ -1,11 +1,11 @@
 #include "Application.h"
 
-#include <GL/glew.h>
-#include <iostream>
 #include <glm.hpp>
 #include <filesystem>
 
-#include "Storage.h"
+#include "glew.h"
+#include "ext/matrix_clip_space.hpp"
+#include "resources/Storage.h"
 
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;

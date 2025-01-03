@@ -9,9 +9,9 @@ Biome::Biome(float smoothness, int min_max) : smoothness(smoothness), min_max(mi
 	
 }
 
-MATERIAL Biome::getMaterial(int layer)
+MATERIAL Biome::getMaterial(const int depth)
 {
-	if (layer == 0) return GRASS_BLOCK;
-	if (layer > 4) return STONE;
+	if (depth == 0) return GRASS_BLOCK;
+	if (depth > 4) return STONE;
 	return DIRT;
 }

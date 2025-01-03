@@ -49,15 +49,18 @@ include_directories(${SDL2_SOURCE_DIR}/include)
 include_directories(${glm_SOURCE_DIR}/glm)
 include_directories(${glew_SOURCE_DIR}/include)
 
-# Add include directories for the project headers
-include_directories("headers")
-
 # Add the executable
 add_executable(2DMC src/main.cpp src/Application.cpp
         src/world/World.cpp src/world/Region.cpp src/world/Chunk.cpp
-        src/world/Block.cpp src/world/Biome.cpp src/resources/Texture.cpp
-        src/resources/Storage.cpp src/resources/Shader.cpp src/resources/Metadata.cpp
+        src/world/Block.cpp src/world/Biome.cpp src/gl/Texture.cpp
+        src/resources/Storage.cpp src/gl/Shader.cpp src/resources/Metadata.cpp
         src/libs/stb_image.cpp src/Util.cpp
+
+        src/Util.h src/glew.h src/Constants.h src/Application.h
+        src/world/World.h src/world/Region.h src/world/Chunk.h
+        src/world/Block.h src/world/Biome.h
+        src/resources/Storage.h src/resources/Metadata.h
+        src/libs/stb_image.h src/gl/Texture.h src/gl/Shader.h
 )
 
 # Link libraries based on the platform

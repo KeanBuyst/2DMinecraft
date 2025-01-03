@@ -3,8 +3,8 @@
 #include <memory>
 #include <SDL.h>
 
-#include "World.h"
-#include "Shader.h"
+#include "gl/Shader.h"
+#include "world/World.h"
 
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;

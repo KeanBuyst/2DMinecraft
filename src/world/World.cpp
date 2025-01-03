@@ -1,10 +1,10 @@
 #include "World.h"
 
-#include <stdexcept>
+#include <iostream>
 
-#include "Util.h"
+#include "../Util.h"
 #include "vector"
-#include "Application.h"
+#include "../Application.h"
 
 using namespace world;
 
@@ -12,6 +12,7 @@ struct VertexData {
 	float x, y;      // The base position (x, y)
 	uint64_t blocks; // 64-bit integer representing 8 blocks
 	uint8_t depth;
+	uint32_t lightMap;
 };
 
 glm::vec2 world::origin = glm::vec2(CHUNK_SIZE / 2.0f,CHUNK_SIZE / 2.0f);
@@ -29,7 +30,7 @@ void World::init()
 		for (auto wy = 0; wy < WORLD_HEIGHT; wy++)
 		{
 			glm::ivec2 pos(wx, wy);
-			FromArray(pos);
+			ArrayToChunk(pos);
 			Chunk& chunk = chunks[wx][wy];
 			chunk.position = pos;
 			handler.fetch(chunk);
@@ -53,6 +54,9 @@ void World::init()
 	// The depth data
 	glVertexAttribIPointer(2,1,GL_UNSIGNED_BYTE,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, depth)));
 	glEnableVertexAttribArray(2);
+	// light map
+	glVertexAttribIPointer(3,1,GL_UNSIGNED_INT,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, lightMap)));
+	glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -90,7 +94,7 @@ void World::render()
 				uint64_t blocks = chunk.blocks[colomn];
 				if (blocks == 0) continue;
 				glm::ivec2 pos(colomn, 0);
-				ToGlobal(pos, chunk.position);
+				ChunkToGlobal(pos, chunk.position);
 				glm::vec2 pixelCoord(pos);
 				static constexpr float PIXEL_SIZE = 16.0f;
 				pixelCoord -= origin;
@@ -107,8 +111,10 @@ void World::render()
 					pixelCoord.x,
 					pixelCoord.y,
 					blocks,
-					chunk.depth[colomn]
+					chunk.depth[colomn],
+					chunk.lightMap[colomn],
 				};
+
 				vertices.push_back(data);
 			}
 		}
@@ -121,32 +127,61 @@ void World::render()
 	glDrawArrays(GL_POINTS, 0, vertices.size());
 }
 
-void World::setBlock(Block block)
+void World::setBlock(const Block block,const bool force)
 {
-
-}
-
-Block World::getBlock(const glm::ivec2 position)
-{
-	// position relative to origin due to loaded chunks being around origin
-	glm::ivec2 chunk;
-	glm::ivec2 pos = position;
-	ToLocal(pos, chunk);
-	if(!ToArray(chunk))
+	glm::ivec2 c_pos;
+	glm::ivec2 pos = block.position;
+	GlobalToChunk(pos, c_pos);
+	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
 	{
-		throw std::runtime_error("Chunks out of bonds");
+		if (force)
+		{
+			Chunk chunk;
+			chunk.position = c_pos;
+			handler.fetch(chunk);
+			chunk.setBlock(block);
+			handler.save(chunk);
+		}
+		std::cerr << "Attempted to alter unloaded block (force is false)\nIgnoring request" << std::endl;
 	}
 	else
 	{
-		MATERIAL mat = chunks[chunk.x][chunk.y].getBlock(pos);
-		return Block(mat, position);
+		chunks[a_pos.x][a_pos.y].setBlock(block);
+	}
+}
+
+Block World::getBlock(const glm::ivec2 position, const bool force) const
+{
+	// position relative to origin due to loaded chunks being around origin
+	glm::ivec2 c_pos;
+	glm::ivec2 pos = position;
+	GlobalToChunk(pos, c_pos);
+	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
+	{
+		if (force)
+		{
+			Chunk chunk;
+			chunk.position = c_pos;
+			handler.fetch(chunk);
+			return chunk.getBlock(pos);
+		}
+		std::cerr << "Attempted to access unloaded block (force is false)\nZReturning EMPTY block" << std::endl;
+		return {
+			EMPTY,
+			position,
+			0,0,
+		};
+	}
+	else
+	{
+		return chunks[a_pos.x][a_pos.y].getBlock(pos);
 	}
 }
 
 inline void World::generate(const int x, const int y)
 {
 	glm::ivec2 pos(x, y);
-	FromArray(pos);
+	ArrayToChunk(pos);
 	Chunk& chunk = chunks[x][y];
 	handler.save(chunk);
 	chunk.position = pos;
@@ -215,7 +250,7 @@ inline glm::ivec2 World::ToChunkSpace(glm::ivec2 pos)
 	return fix;
 }
 
-inline bool World::ToArray(glm::ivec2& chunk)
+inline bool World::ChunkToArray(glm::ivec2& chunk)
 {
 	const glm::ivec2 centre = ToChunkSpace(origin);
 	chunk = (centre - chunk);
@@ -223,7 +258,7 @@ inline bool World::ToArray(glm::ivec2& chunk)
 	chunk.y += WORLD_HEIGHT / 2 + 1;
 	return chunk.x < 0 || chunk.x > WORLD_WIDTH || chunk.y < 0 || chunk.y > WORLD_HEIGHT;
 }
-inline void World::FromArray(glm::ivec2& chunk)
+inline void World::ArrayToChunk(glm::ivec2& chunk)
 {
 	const glm::ivec2 centre = ToChunkSpace(origin);
 	chunk.x -= WORLD_WIDTH / 2;
@@ -233,13 +268,13 @@ inline void World::FromArray(glm::ivec2& chunk)
 
 // Global static choord to chunk choord
 // Bool determins if its a successful choord in the chunk or its not within the loaded chunks
-inline void World::ToLocal(glm::ivec2& position,glm::ivec2& chunk)
+inline void World::GlobalToChunk(glm::ivec2& position,glm::ivec2& chunk)
 {
 	chunk = ToChunkSpace(position);
 	position = glm::abs(position % CHUNK_SIZE);
 }
 // Chunk choord to global static choord
-inline void World::ToGlobal(glm::ivec2& position,glm::ivec2 chunk)
+inline void World::ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk)
 {
 	if (chunk.x < 0)
 	{
