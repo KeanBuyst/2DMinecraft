@@ -8,7 +8,7 @@
 
 namespace world 
 {
-	typedef bool Layer;
+	typedef uint8_t Layer;
 
 	enum MATERIAL : unsigned char
 	{
@@ -24,10 +24,10 @@ namespace world
 	class Block
 	{
 	public:
-		Block(MATERIAL type,glm::ivec2 position,Layer layer,uint8_t luminance);
+		Block(MATERIAL type,glm::vec2 position,Layer layer,uint8_t luminance = 0);
 
 		const MATERIAL type;
-		const glm::ivec2 position;
+		const glm::vec2 position;
 		const Layer layer;
 		const uint8_t luminance; // from 0 to 15
 

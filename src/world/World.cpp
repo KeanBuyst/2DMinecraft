@@ -96,7 +96,6 @@ void World::render()
 				glm::ivec2 pos(colomn, 0);
 				ChunkToGlobal(pos, chunk.position);
 				glm::vec2 pixelCoord(pos);
-				static constexpr float PIXEL_SIZE = 16.0f;
 				pixelCoord -= origin;
 				pixelCoord *= PIXEL_SIZE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
 
@@ -130,7 +129,8 @@ void World::render()
 void World::setBlock(const Block block,const bool force)
 {
 	glm::ivec2 c_pos;
-	glm::ivec2 pos = block.position;
+	// floor brings -0.5 to -1 and 0.5 to 0
+	glm::ivec2 pos(floorf(block.position.x),floorf(block.position.y));
 	GlobalToChunk(pos, c_pos);
 	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
 	{
@@ -139,22 +139,22 @@ void World::setBlock(const Block block,const bool force)
 			Chunk chunk;
 			chunk.position = c_pos;
 			handler.fetch(chunk);
-			chunk.setBlock(block);
+			chunk.setBlock(pos, block);
 			handler.save(chunk);
 		}
 		std::cerr << "Attempted to alter unloaded block (force is false)\nIgnoring request" << std::endl;
 	}
 	else
 	{
-		chunks[a_pos.x][a_pos.y].setBlock(block);
+		chunks[a_pos.x][a_pos.y].setBlock(pos,block);
 	}
 }
 
-Block World::getBlock(const glm::ivec2 position, const bool force) const
+Block World::getBlock(const glm::vec2 position, const bool force) const
 {
 	// position relative to origin due to loaded chunks being around origin
 	glm::ivec2 c_pos;
-	glm::ivec2 pos = position;
+	glm::ivec2 pos(floorf(position.x),floorf(position.y));
 	GlobalToChunk(pos, c_pos);
 	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
 	{
@@ -187,7 +187,6 @@ inline void World::generate(const int x, const int y)
 	chunk.position = pos;
 	handler.fetch(chunk);
 }
-
 inline void World::update_chunks()
 {
 	glm::ivec2 current = ToChunkSpace(origin);
@@ -240,23 +239,20 @@ inline void World::update_chunks()
 		chunkOrigin = current;
 	}
 }
-
-inline glm::ivec2 World::ToChunkSpace(glm::ivec2 pos)
+inline glm::ivec2 World::ToChunkSpace(const glm::vec2 pos)
 {
 	// fix division problem. E.g. -1 / 32 = 0 && 1 / 32 = 0
-	glm::ivec2 fix = pos / CHUNK_SIZE;
-	if (pos.x < 0) fix.x--;
-	if (pos.y < 0) fix.y--;
-	return fix;
+	const glm::vec2 fix = glm::floor(pos / static_cast<float>(CHUNK_SIZE));
+	return glm::ivec2(fix);
 }
-
+// Bool determins if its a successful choord in the chunk or its not within the loaded chunks
 inline bool World::ChunkToArray(glm::ivec2& chunk)
 {
 	const glm::ivec2 centre = ToChunkSpace(origin);
-	chunk = (centre - chunk);
+	chunk += centre;
 	chunk.x += WORLD_WIDTH / 2;
 	chunk.y += WORLD_HEIGHT / 2 + 1;
-	return chunk.x < 0 || chunk.x > WORLD_WIDTH || chunk.y < 0 || chunk.y > WORLD_HEIGHT;
+	return chunk.x >= 0 && chunk.x < WORLD_WIDTH && chunk.y >= 0 && chunk.y < WORLD_HEIGHT;
 }
 inline void World::ArrayToChunk(glm::ivec2& chunk)
 {
@@ -265,15 +261,13 @@ inline void World::ArrayToChunk(glm::ivec2& chunk)
 	chunk.y -= WORLD_HEIGHT / 2 - 1;
 	chunk += centre;
 }
-
-// Global static choord to chunk choord
-// Bool determins if its a successful choord in the chunk or its not within the loaded chunks
+// Position to chunk local position and chunk position
 inline void World::GlobalToChunk(glm::ivec2& position,glm::ivec2& chunk)
 {
 	chunk = ToChunkSpace(position);
 	position = glm::abs(position % CHUNK_SIZE);
 }
-// Chunk choord to global static choord
+// Position in chunk to global position
 inline void World::ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk)
 {
 	if (chunk.x < 0)

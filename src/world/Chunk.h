@@ -12,7 +12,7 @@ namespace world
 	public:
 		// Chunk local choords
 		[[nodiscard]] Block getBlock(glm::ivec2 position) const;
-		void setBlock(const Block &block);
+		void setBlock(glm::ivec2 pos, const Block &block);
 
 		void generate();
 

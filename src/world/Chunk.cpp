@@ -47,15 +47,12 @@ void Chunk::generate()
 	}
 }
 
-void Chunk::setBlock(const Block &block)
+void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
-	if ((depth[block.position.x] >> block.position.y) & block.layer)
-	{
-		// clear
-		blocks[block.position.x] &= ~(0xFFULL << (block.position.y * 8));
-		// set
-		blocks[block.position.x] |= static_cast<uint64_t>(block.type) << (block.position.y * 8);
-	}
+	// clear
+	blocks[pos.x] &= ~(0xFFULL << (pos.y * 8));
+	// set
+	blocks[pos.x] |= static_cast<uint64_t>(block.type) << (pos.y * 8);
 }
 
 Block Chunk::getBlock(const glm::ivec2 position) const

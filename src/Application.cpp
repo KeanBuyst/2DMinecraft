@@ -2,6 +2,7 @@
 
 #include <glm.hpp>
 #include <filesystem>
+#include <iostream>
 
 #include "glew.h"
 #include "ext/matrix_clip_space.hpp"
@@ -95,17 +96,34 @@ void Application::run() {
             switch (e.type) {
                 case SDL_KEYDOWN:
                     KeyDown(e.key.keysym.sym);
-                break;
+                    break;
+                case SDL_MOUSEBUTTONDOWN:
+                {
+                    const glm::vec2 mouse = GetWorldMouse();
+                    switch (e.button.button)
+                    {
+                        case SDL_BUTTON_LEFT:
+                        {
+                            world::Block block(world::EMPTY,mouse,0);
+                            world.setBlock(block);
+                        }
+                        break;
+                        case SDL_BUTTON_RIGHT:
+                            std::cout << "Right Mouse Button Down at (" << mouse.x << "," << mouse.y << ")" << std::endl;
+                        break;
+                    }
+                    break;
+                }
                 case SDL_QUIT:
                     running = false;
-                break;
+                    break;
                 case SDL_WINDOWEVENT:
                     if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
                         SCREEN_WIDTH = e.window.data1;
                         SCREEN_HEIGHT = e.window.data2;
                         updateViewPort();
                     }
-                break;
+                    break;
             }
         }
 
@@ -122,6 +140,17 @@ Application::~Application() {
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
+}
+// Vector returned has not been floored, thus remember to floor when converting to block positions
+glm::vec2 Application::GetWorldMouse()
+{
+    // Get window local mouse position
+    int window_x, window_y;
+    SDL_GetMouseState(&window_x,&window_y);
+    // change to view port local position
+    const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SIZE;
+    const float y = (((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE;
+    return glm::vec2(x,y) + world::origin;
 }
 
 void Application::KeyDown(const SDL_Keycode key)
@@ -159,20 +188,16 @@ void Application::KeyDown(const SDL_Keycode key)
         case SDLK_s:
             world::origin.y -= 1;
         break;
-        case SDLK_f:
-            world::origin.x = -103;
-        break;
     }
 }
 
 void Application::updateViewPort() const {
-    constexpr int SIZE = world::CHUNK_SIZE * 16 + world::CHUNK_SIZE / 2;
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    const float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * SIZE); // round to help against artifcates
+    const float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * VIEW_SIZE); // round to help against artifcates
 
-    glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -SIZE, SIZE);
-    VIEW_PORT = glm::vec4(-aspect,aspect,-SIZE,SIZE);
+    glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SIZE, VIEW_SIZE);
+    VIEW_PORT = glm::vec4(-aspect,aspect,-VIEW_SIZE,VIEW_SIZE);
 
     shader->sendMatrix("ortho", mat);
 }

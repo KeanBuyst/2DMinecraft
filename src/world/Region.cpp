@@ -141,7 +141,7 @@ Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 			call_miss[old] = 0;
 			stack[old] = reg;
 			old++;
-			if (old == SIZE) old = 0;
+			if (old == WORLD_SIZE) old = 0;
 		}
 	}
 	return reg;
