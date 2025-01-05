@@ -149,7 +149,8 @@ glm::vec2 Application::GetWorldMouse()
     SDL_GetMouseState(&window_x,&window_y);
     // change to view port local position
     const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SIZE;
-    const float y = (((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE;
+    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE) - 2;
+    // IDK why -2 but it fixed the problem
     return glm::vec2(x,y) + world::origin;
 }
 

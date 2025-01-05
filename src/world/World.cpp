@@ -249,23 +249,29 @@ inline glm::ivec2 World::ToChunkSpace(const glm::vec2 pos)
 inline bool World::ChunkToArray(glm::ivec2& chunk)
 {
 	const glm::ivec2 centre = ToChunkSpace(origin);
-	chunk += centre;
-	chunk.x += WORLD_WIDTH / 2;
-	chunk.y += WORLD_HEIGHT / 2 + 1;
+	chunk -= centre;
+	chunk.x += (WORLD_WIDTH - 1) / 2;
+	chunk.y += (WORLD_WIDTH - 1) / 2;
 	return chunk.x >= 0 && chunk.x < WORLD_WIDTH && chunk.y >= 0 && chunk.y < WORLD_HEIGHT;
 }
 inline void World::ArrayToChunk(glm::ivec2& chunk)
 {
 	const glm::ivec2 centre = ToChunkSpace(origin);
-	chunk.x -= WORLD_WIDTH / 2;
-	chunk.y -= WORLD_HEIGHT / 2 - 1;
 	chunk += centre;
+	chunk.x -= (WORLD_WIDTH - 1) / 2;
+	chunk.y -= (WORLD_HEIGHT - 1) / 2;
+	chunk.y += 1;
 }
 // Position to chunk local position and chunk position
 inline void World::GlobalToChunk(glm::ivec2& position,glm::ivec2& chunk)
 {
 	chunk = ToChunkSpace(position);
-	position = glm::abs(position % CHUNK_SIZE);
+	if (const int x = position.x; x < 0)
+		position.x = -(x + 1) % CHUNK_SIZE;
+	else position.x = x % CHUNK_SIZE;
+	if (const int y = position.y; y < 0)
+		position.y = -(y + 1) % CHUNK_SIZE;
+	else position.y = (CHUNK_SIZE - 1) - (y % CHUNK_SIZE);
 }
 // Position in chunk to global position
 inline void World::ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk)
