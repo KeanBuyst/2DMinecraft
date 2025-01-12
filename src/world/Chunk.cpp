@@ -15,7 +15,7 @@ void Chunk::generate()
 	{
 		// reset all values
 		blocks[x] = 0;
-		depth[x] = 0;
+		walls[x] = 0;
 		lightMap[x] = 0;
 
 		// calculate surface
@@ -60,7 +60,7 @@ Block Chunk::getBlock(const glm::ivec2 position) const
 	return {
 		static_cast<MATERIAL>((blocks[position.x] >> (position.y * 8)) & 0xFF),
 		position,
-		static_cast<Layer>(depth[position.x] >> position.y),
+		static_cast<MATERIAL>((walls[position.x] >> (position.y * 8)) & 0xFF),
 		static_cast<uint8_t>((lightMap[position.x] >> (position.y * 4) & 0xF)),
 	};
 }

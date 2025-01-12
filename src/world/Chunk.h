@@ -18,7 +18,7 @@ namespace world
 
 		uint64_t blocks[CHUNK_SIZE] = { 0 };
 		uint32_t lightMap[CHUNK_SIZE] = { 0 }; // (0-15) per block
-		uint8_t depth[CHUNK_SIZE] = { 0 }; // 0 = foreground & 1 = background
+		uint64_t walls[CHUNK_SIZE] = { 0 };
 
 		glm::ivec2 position;
 	private:

@@ -11,7 +11,7 @@ using namespace world;
 struct VertexData {
 	float x, y;      // The base position (x, y)
 	uint64_t blocks; // 64-bit integer representing 8 blocks
-	uint8_t depth;
+	uint64_t walls;
 	uint32_t lightMap;
 };
 
@@ -51,8 +51,8 @@ void World::init()
 	// The row for 64 bit int
 	glVertexAttribLPointer(1, 1, GL_UNSIGNED_INT64_ARB, sizeof(VertexData), reinterpret_cast<void *>(offsetof(VertexData, blocks)));
 	glEnableVertexAttribArray(1);
-	// The depth data
-	glVertexAttribIPointer(2,1,GL_UNSIGNED_BYTE,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, depth)));
+	// The wall data
+	glVertexAttribLPointer(2,1,GL_UNSIGNED_INT64_ARB,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, walls)));
 	glEnableVertexAttribArray(2);
 	// light map
 	glVertexAttribIPointer(3,1,GL_UNSIGNED_INT,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, lightMap)));
@@ -110,7 +110,7 @@ void World::render()
 					pixelCoord.x,
 					pixelCoord.y,
 					blocks,
-					chunk.depth[colomn],
+					chunk.walls[colomn],
 					chunk.lightMap[colomn],
 				};
 
@@ -169,7 +169,7 @@ Block World::getBlock(const glm::vec2 position, const bool force) const
 		return {
 			EMPTY,
 			position,
-			0,0,
+			EMPTY,0,
 		};
 	}
 	else
@@ -192,15 +192,18 @@ inline void World::update_chunks()
 
 	// detected chunk origin change
 	if (current != chunkOrigin){
+		// save all chunks
+		for (auto y = 0; y < WORLD_HEIGHT; ++y)
+			for (auto x = 0; x < WORLD_WIDTH; ++x)
+				handler.save(chunks[x][y]);
+
 		auto direction = current - chunkOrigin;
 		auto quantity = glm::abs(direction);
-
+		// update chunks
 		for (auto y = 0; y < WORLD_HEIGHT; ++y)
 		{
 			for (auto x = 0; x < WORLD_WIDTH; ++x)
 			{
-				// save all chunks
-				handler.save(chunks[x][y]);
 				// check if shifting is applicable
 				if (quantity.x >= WORLD_WIDTH || quantity.y >= WORLD_HEIGHT)
 				{

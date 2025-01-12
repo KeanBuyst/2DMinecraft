@@ -104,7 +104,7 @@ void Application::run() {
                     {
                         case SDL_BUTTON_LEFT:
                         {
-                            world::Block block(world::EMPTY,mouse,0);
+                            world::Block block(world::EMPTY,mouse,world::EMPTY);
                             world.setBlock(block);
                         }
                         break;

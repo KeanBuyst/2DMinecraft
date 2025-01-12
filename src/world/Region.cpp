@@ -24,7 +24,7 @@ Region::Region(const glm::ivec2 position) : position(position)
 	if (file.available())
 	{
 		file.read(flags, SIZE);
-		file.read(depth_buffer, BUFFER_SIZE);
+		file.read(wall_buffer, BUFFER_SIZE);
 		file.read(lightMap, BUFFER_SIZE);
 		file.read(buffer, BUFFER_SIZE);
 
@@ -38,7 +38,7 @@ Region::~Region()
 	DataFile file(name(position) + ".region",std::ios::out);
 
 	file.write(flags, SIZE);
-	file.write(depth_buffer, BUFFER_SIZE);
+	file.write(wall_buffer, BUFFER_SIZE);
 	file.write(lightMap, BUFFER_SIZE);
 	file.write(buffer, BUFFER_SIZE);
 
@@ -54,7 +54,7 @@ void Region::fetch(Chunk &chunk) const
 
 	if (flag & FLAGS::GENERATED)
 	{
-		memcpy(chunk.depth, depth_buffer + index * CHUNK_SIZE, sizeof(uint8_t) * CHUNK_SIZE);
+		memcpy(chunk.walls, wall_buffer + index * CHUNK_SIZE, sizeof(uint64_t) * CHUNK_SIZE);
 		memcpy(chunk.lightMap, lightMap + index * CHUNK_SIZE, sizeof(uint32_t) * CHUNK_SIZE);
 		memcpy(chunk.blocks, buffer + index * CHUNK_SIZE, sizeof(uint64_t) * CHUNK_SIZE);
 	}
@@ -74,8 +74,8 @@ void Region::save(const Chunk& chunk)
 	const int index = GetIndex(chunk);
 	flags[index] = GENERATED;
 
-	memcpy(depth_buffer + index * CHUNK_SIZE,chunk.depth,sizeof(uint8_t) * CHUNK_SIZE);
-	memcpy(lightMap + index * CHUNK_SIZE, chunk.lightMap, sizeof(uint32_t) * CHUNK_SIZE);
+	memcpy(wall_buffer + index * CHUNK_SIZE,chunk.walls,sizeof(uint64_t) * CHUNK_SIZE);
+	memcpy(lightMap + index * CHUNK_SIZE, chunk.lightMap,sizeof(uint32_t) * CHUNK_SIZE);
 	memcpy(buffer + index * CHUNK_SIZE, chunk.blocks, sizeof(uint64_t) * CHUNK_SIZE);
 }
 

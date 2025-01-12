@@ -8,8 +8,6 @@
 
 namespace world 
 {
-	typedef uint8_t Layer;
-
 	enum MATERIAL : unsigned char
 	{
 		EMPTY,
@@ -24,14 +22,16 @@ namespace world
 	class Block
 	{
 	public:
-		Block(MATERIAL type,glm::vec2 position,Layer layer,uint8_t luminance = 0);
+		Block(MATERIAL type,glm::vec2 position,MATERIAL wall,uint8_t luminance = 0);
 
 		const MATERIAL type;
 		const glm::vec2 position;
-		const Layer layer;
 		const uint8_t luminance; // from 0 to 15
 
 		bool isTransparent(); // TODO make this depicted by material type
+		MATERIAL getWall() const;
+	protected:
+		const MATERIAL wall;
 	};
 }
 
