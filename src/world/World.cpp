@@ -178,36 +178,44 @@ Block World::getBlock(const glm::vec2 position, const bool force) const
 	}
 }
 
-inline void World::generate(const int x, const int y)
+inline void World::GetChunk(const int x, const int y)
 {
 	glm::ivec2 pos(x, y);
 	ArrayToChunk(pos);
 	Chunk& chunk = chunks[x][y];
-	handler.save(chunk);
 	chunk.position = pos;
 	handler.fetch(chunk);
 }
 inline void World::update_chunks()
 {
 	glm::ivec2 current = ToChunkSpace(origin);
-	
-	if (current != chunkOrigin)
-	{
+
+	// detected chunk origin change
+	if (current != chunkOrigin){
 		auto direction = current - chunkOrigin;
 		auto quantity = glm::abs(direction);
 
-		for (auto x = 0; x < WORLD_WIDTH; x++)
+		for (auto y = 0; y < WORLD_HEIGHT; ++y)
 		{
-			for (auto y = 0; y < WORLD_HEIGHT; y++)
+			for (auto x = 0; x < WORLD_WIDTH; ++x)
 			{
+				// save all chunks
+				handler.save(chunks[x][y]);
 				// check if shifting is applicable
 				if (quantity.x >= WORLD_WIDTH || quantity.y >= WORLD_HEIGHT)
 				{
-					generate(x,y);
+					// shifting not applicable
+					glm::ivec2 pos(x, y);
+					ArrayToChunk(pos);
+					Chunk& chunk = chunks[x][y];
+					handler.save(chunk);
+					chunk.position = pos;
+					handler.fetch(chunk);
 				}
 				else
 				{
 					int index;
+					// horizontal shifting
 					if (quantity.x != 0) // don't generate if no change accorded
 					{
 						index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
@@ -217,10 +225,12 @@ inline void World::update_chunks()
 						}
 						else
 						{
-							generate(index, y);
+							// replace old chunk
+							GetChunk(index, y);
 							continue;
 						}
 					}
+					// vertical shifting
 					if (quantity.y != 0)
 					{
 						index = direction.y < 0 ? (WORLD_HEIGHT - 1) - y : y;
@@ -230,10 +240,12 @@ inline void World::update_chunks()
 						}
 						else if (quantity.y != 0)
 						{
-							generate(x, index);
+							// replace old chunk
+							GetChunk(x, index);
+							continue;
 						}
 					}
-				};
+				}
 			}
 		}
 		chunkOrigin = current;

@@ -29,7 +29,7 @@ namespace world
 		glm::ivec2 chunkOrigin{};
 
 		inline void update_chunks();
-		inline void generate(int x, int y);
+		inline void GetChunk(int x, int y);
 
 		static inline glm::ivec2 ToChunkSpace(glm::vec2 pos);
 
