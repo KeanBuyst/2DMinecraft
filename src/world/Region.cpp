@@ -150,6 +150,22 @@ Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 void RegionHandler::fetch(Chunk& chunk)
 {
 	GetRegion(chunk.position)->fetch(chunk);
+	// Get surrounding chunks
+	Chunk surroundings[8];
+	int index = 0;
+	for (auto y = chunk.position.y - 1; y <= chunk.position.y + 1; ++y)
+	{
+		for (auto x = chunk.position.x - 1; x <= chunk.position.x + 1; ++x)
+		{
+			glm::ivec2 pos(x,y);
+			if (pos == chunk.position)
+				continue;
+			surroundings[index].position = pos;
+			GetRegion(pos)->fetch(surroundings[index]);
+			index++;
+		}
+	}
+	updateLighting(surroundings,chunk);
 }
 
 void RegionHandler::save(const Chunk& chunk)

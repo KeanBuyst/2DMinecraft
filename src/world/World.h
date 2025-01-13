@@ -21,6 +21,7 @@ namespace world
 
 		[[nodiscard]] Block getBlock(glm::vec2 position, bool force = false) const;
 		void setBlock(Block block, bool force = false);
+
 		Block getSurfaceBlock(glm::vec2 position);
 		// MetaBlock getMetaBlock();
 	private:

@@ -22,13 +22,14 @@ namespace world
 	class Block
 	{
 	public:
-		Block(MATERIAL type,glm::vec2 position,MATERIAL wall,uint8_t luminance = 0);
+		Block(MATERIAL type,glm::vec2 position,MATERIAL wall,int luminance = 0);
 
 		const MATERIAL type;
 		const glm::vec2 position;
-		const uint8_t luminance; // from 0 to 15
+		int luminance; // from 0 to 15
 
-		bool isTransparent(); // TODO make this depicted by material type
+		bool isTransparent() const;
+		bool isEmpty() const;
 		MATERIAL getWall() const;
 	protected:
 		const MATERIAL wall;
