@@ -51,7 +51,7 @@ namespace world
 		Region* GetRegion(glm::ivec2 pos);
 	};
 
-	// surroundings must be an array of 8 chunks directly surrounding the center chunk
+	// surroundings must be an array of 4 chunks directly surrounding the center chunk
 	void updateLighting(const Chunk* surroundings, Chunk& chunk);
 }
 

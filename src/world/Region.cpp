@@ -151,20 +151,40 @@ void RegionHandler::fetch(Chunk& chunk)
 {
 	GetRegion(chunk.position)->fetch(chunk);
 	// Get surrounding chunks
-	Chunk surroundings[8];
-	int index = 0;
-	for (auto y = chunk.position.y - 1; y <= chunk.position.y + 1; ++y)
-	{
-		for (auto x = chunk.position.x - 1; x <= chunk.position.x + 1; ++x)
-		{
-			glm::ivec2 pos(x,y);
-			if (pos == chunk.position)
-				continue;
-			surroundings[index].position = pos;
-			GetRegion(pos)->fetch(surroundings[index]);
-			index++;
-		}
-	}
+	glm::ivec2 top = chunk.position;
+	top.y += 1;
+	glm::ivec2 bottom = chunk.position;
+	bottom.y -= 1;
+	glm::ivec2 left = chunk.position;
+	left.x -= 1;
+	glm::ivec2 right = chunk.position;
+	right.x += 1;
+
+	Chunk surroundings[4];
+
+	surroundings[0].position = top;
+	GetRegion(top)->fetch(surroundings[0]);
+	surroundings[1].position = left;
+	GetRegion(left)->fetch(surroundings[1]);
+	surroundings[2].position = right;
+	GetRegion(right)->fetch(surroundings[2]);
+	surroundings[3].position = bottom;
+	GetRegion(bottom)->fetch(surroundings[3]);
+
+	// int index = 0;
+	// for (auto y = chunk.position.y - 1; y <= chunk.position.y + 1; ++y)
+	// {
+	// 	for (auto x = chunk.position.x - 1; x <= chunk.position.x + 1; ++x)
+	// 	{
+	// 		glm::ivec2 pos(x,y);
+	// 		if (pos == chunk.position)
+	// 			continue;
+	// 		surroundings[index].position = pos;
+	// 		GetRegion(pos)->fetch(surroundings[index]);
+	// 		index++;
+	// 	}
+	// }
+
 	updateLighting(surroundings,chunk);
 }
 
