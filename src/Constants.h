@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm.hpp>
+
 namespace world
 {
     // chunk.h
@@ -11,6 +13,14 @@ namespace world
     constexpr float WORLD_SIZE = 10.0f; // since we want a block position to represent 1. 1/10 = 0.1
     constexpr int WORLD_WIDTH = 3; // min is 3x3
     constexpr int WORLD_HEIGHT = 3;
+
+    extern glm::vec2 origin;
+
+    glm::ivec2 ToChunkSpace(glm::vec2 pos);
+    bool ChunkToArray(glm::ivec2& chunk);
+    void ArrayToChunk(glm::ivec2& chunk);
+    void GlobalToChunk(glm::ivec2& position, glm::ivec2& chunk);
+    void ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk);
 }
 
 namespace gl

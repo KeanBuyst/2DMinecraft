@@ -11,7 +11,7 @@ namespace world
 	{
 	public:
 		// Chunk local choords
-		[[nodiscard]] Block getBlock(glm::ivec2 position) const;
+		[[nodiscard]] Block getBlock(glm::ivec2 pos) const;
 		void setBlock(glm::ivec2 pos, const Block &block);
 
 		void generate();

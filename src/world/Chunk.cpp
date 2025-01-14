@@ -10,12 +10,14 @@ using namespace world;
 // The uint64_t are coloms the array is for rows
 void Chunk::generate()
 {
-	const glm::ivec2 blockPos = position * CHUNK_SIZE;
+	glm::ivec2 blockPos(0,0);
+	ChunkToGlobal(blockPos,position);
 	for (auto x = 0; x < CHUNK_SIZE; x++)
 	{
+		const int index = position.x < 0 ? (CHUNK_SIZE - 1) - x : x;
 		// reset all values
-		blocks[x] = 0;
-		walls[x] = 0;
+		blocks[index] = 0;
+		walls[index] = 0;
 
 		// calculate surface
 		const int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x) * biome->smoothness) * biome->min_max);
@@ -31,7 +33,7 @@ void Chunk::generate()
 
 		for (int y = relative; y <= CHUNK_SIZE - 1; y++)
 		{
-			blocks[x] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * 8);
+			blocks[index] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * 8);
 		}
 	}
 }
@@ -48,12 +50,12 @@ void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 	if (block.luminance != 0) lightMap[pos.x] |= static_cast<uint32_t>(block.luminance) << (pos.y * 4);
 }
 
-Block Chunk::getBlock(const glm::ivec2 position) const
+Block Chunk::getBlock(const glm::ivec2 pos) const
 {
 	return {
-		static_cast<MATERIAL>((blocks[position.x] >> (position.y * 8)) & 0xFFULL),
-		position,
-		static_cast<MATERIAL>((walls[position.x] >> (position.y * 8)) & 0xFFULL),
-		static_cast<int>(lightMap[position.x] >> position.y * 4 & 0xF),
+		static_cast<MATERIAL>((blocks[pos.x] >> (pos.y * 8)) & 0xFFULL),
+		pos,
+		static_cast<MATERIAL>((walls[pos.x] >> (pos.y * 8)) & 0xFFULL),
+		static_cast<int>(lightMap[pos.x] >> pos.y * 4 & 0xF),
 	};
 }

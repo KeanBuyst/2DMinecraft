@@ -9,7 +9,6 @@ namespace world
 	constexpr float PIXEL_SIZE = 16.0f;
 
 	extern RegionHandler handler;
-	extern glm::vec2 origin;
 
 	class World
 	{
@@ -31,12 +30,5 @@ namespace world
 
 		inline void update_chunks();
 		inline void GetChunk(int x, int y);
-
-		static inline glm::ivec2 ToChunkSpace(glm::vec2 pos);
-
-		static inline bool ChunkToArray(glm::ivec2& chunk);
-		static inline void ArrayToChunk(glm::ivec2& chunk);
-		static inline void GlobalToChunk(glm::ivec2& position, glm::ivec2& chunk);
-		static inline void ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk);
 	};
 }
