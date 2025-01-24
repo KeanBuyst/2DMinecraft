@@ -1,4 +1,5 @@
 #include "World.h"
+#include "generation/Generation.h"
 
 #include <iostream>
 
@@ -125,7 +126,7 @@ void World::render()
 	glDrawArrays(GL_POINTS, 0, vertices.size());
 }
 
-void World::setBlock(const Block block,const bool force)
+void World::setBlock(const Block& block)
 {
 	glm::ivec2 c_pos;
 	// floor brings -0.5 to -1 and 0.5 to 0
@@ -133,15 +134,11 @@ void World::setBlock(const Block block,const bool force)
 	GlobalToChunk(pos, c_pos);
 	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
 	{
-		if (force)
-		{
-			Chunk chunk;
-			chunk.position = c_pos;
-			handler.fetch(chunk);
-			chunk.setBlock(pos, block);
-			handler.save(chunk);
-		}
-		std::cerr << "Attempted to alter unloaded block (force is false)\nIgnoring request" << std::endl;
+		Chunk chunk;
+		chunk.position = c_pos;
+		handler.fetch(chunk);
+		chunk.setBlock(pos,block);
+		handler.save(chunk);
 	}
 	else
 	{
@@ -149,31 +146,39 @@ void World::setBlock(const Block block,const bool force)
 	}
 }
 
-Block World::getBlock(const glm::vec2 position, const bool force) const
+Block World::getBlock(const glm::vec2 position) const
 {
 	// position relative to origin due to loaded chunks being around origin
 	glm::ivec2 c_pos;
 	glm::ivec2 pos(floorf(position.x),floorf(position.y));
 	GlobalToChunk(pos, c_pos);
-	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
+	return getChunk(c_pos).getBlock(pos);
+}
+
+Chunk World::getChunk(const glm::ivec2 position) const
+{
+	if(glm::ivec2 a_pos = position; !ChunkToArray(a_pos))
 	{
-		if (force)
-		{
-			Chunk chunk;
-			chunk.position = c_pos;
-			handler.fetch(chunk);
-			return chunk.getBlock(pos);
-		}
-		std::cerr << "Attempted to access unloaded block (force is false)\nZReturning EMPTY block" << std::endl;
-		return {
-			EMPTY,
-			position,
-			EMPTY,0,
-		};
+		Chunk chunk;
+		chunk.position = position;
+		handler.fetch(chunk);
+		return chunk;
 	}
 	else
 	{
-		return chunks[a_pos.x][a_pos.y].getBlock(pos);
+		return chunks[a_pos.x][a_pos.y];
+	}
+}
+
+void World::setChunk(const Chunk& chunk)
+{
+	if(glm::ivec2 a_pos = chunk.position; !ChunkToArray(a_pos))
+	{
+		handler.save(chunk);
+	}
+	else
+	{
+		chunks[a_pos.x][a_pos.y] = chunk;
 	}
 }
 

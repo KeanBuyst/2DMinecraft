@@ -54,14 +54,15 @@ add_executable(2DMC src/main.cpp src/Application.cpp
         src/world/World.cpp src/world/Region.cpp src/world/Chunk.cpp
         src/world/Block.cpp src/world/Biome.cpp src/gl/Texture.cpp
         src/resources/Storage.cpp src/gl/Shader.cpp src/resources/Metadata.cpp
-        src/libs/stb_image.cpp src/Util.cpp src/world/Light.cpp
-        src/Constants.cpp
+        src/libs/stb_image.cpp src/Util.cpp src/world/generation/Light.cpp
+        src/Constants.cpp src/world/generation/Cave.cpp
 
         src/Util.h src/glew.h src/Constants.h src/Application.h
         src/world/World.h src/world/Region.h src/world/Chunk.h
         src/world/Block.h src/world/Biome.h
         src/resources/Storage.h src/resources/Metadata.h
         src/libs/stb_image.h src/gl/Texture.h src/gl/Shader.h
+        src/world/generation/Generation.h
 )
 
 # Link libraries based on the platform

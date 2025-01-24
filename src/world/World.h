@@ -18,10 +18,13 @@ namespace world
 		void init();
 		void render();
 
-		[[nodiscard]] Block getBlock(glm::vec2 position, bool force = false) const;
-		void setBlock(Block block, bool force = false);
+		// all positions inputted are world (global) positions
+		[[nodiscard]] Block getBlock(glm::vec2 position) const;
+		void setBlock(const Block& block);
+		// Chunk local position
+		Chunk getChunk(glm::ivec2 position) const;
+		void setChunk(const Chunk &chunk);
 
-		Block getSurfaceBlock(glm::vec2 position);
 		// MetaBlock getMetaBlock();
 	private:
 		Chunk chunks[WORLD_WIDTH][WORLD_HEIGHT];

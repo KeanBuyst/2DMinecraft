@@ -14,7 +14,7 @@ std::string readFile(std::string filePath);
 */
 GLuint GetShader(std::string path)
 {
-	std::string format = path.substr(path.size() - 5, 5);
+	const std::string format = path.substr(path.size() - 5, 5);
 	GLenum type;
 	if (format == ".vert") type = GL_VERTEX_SHADER;
 	else if (format == ".geom") type = GL_GEOMETRY_SHADER;
@@ -27,7 +27,7 @@ GLuint GetShader(std::string path)
 	}
 
 	// load code
-	std::string data = readFile(path);
+	const std::string data = readFile("../shaders/" + path);
 
 	const GLchar* code = data.c_str();
 

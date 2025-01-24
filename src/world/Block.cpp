@@ -19,3 +19,8 @@ bool Block::isEmpty() const
 {
     return type == EMPTY && wall == EMPTY;
 }
+
+int Block::getLuminance() const
+{
+    return luminance;
+}

@@ -18,6 +18,7 @@ void Chunk::generate()
 		// reset all values
 		blocks[index] = 0;
 		walls[index] = 0;
+		lightMap[index] = 0;
 
 		// calculate surface
 		const int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x) * biome->smoothness) * biome->min_max);
@@ -47,7 +48,11 @@ void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 	// set
 	if (block.type != EMPTY) blocks[pos.x] |= static_cast<uint64_t>(block.type) << (pos.y * 8);
 	if (block.getWall() != EMPTY) walls[pos.x] |= static_cast<uint64_t>(block.getWall()) << (pos.y * 8);
-	if (block.luminance != 0) lightMap[pos.x] |= static_cast<uint32_t>(block.luminance) << (pos.y * 4);
+}
+
+void Chunk::setLight(const glm::ivec2 pos,const int luminance)
+{
+	lightMap[pos.x] |= static_cast<uint32_t>(luminance) << (pos.y * 4);
 }
 
 Block Chunk::getBlock(const glm::ivec2 pos) const

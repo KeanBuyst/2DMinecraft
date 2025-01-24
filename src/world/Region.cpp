@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include "../resources/Storage.h"
+#include "generation/Generation.h"
 
 using namespace world;
 using namespace res;
@@ -147,31 +148,11 @@ Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 	return reg;
 }
 
-void RegionHandler::fetch(Chunk& chunk)
+void RegionHandler::fetch(Chunk& chunk, const bool updateLighting)
 {
 	GetRegion(chunk.position)->fetch(chunk);
-	// Get surrounding chunks
-	glm::ivec2 top = chunk.position;
-	top.y += 1;
-	glm::ivec2 bottom = chunk.position;
-	bottom.y -= 1;
-	glm::ivec2 left = chunk.position;
-	left.x -= 1;
-	glm::ivec2 right = chunk.position;
-	right.x += 1;
 
-	Chunk surroundings[4];
-
-	surroundings[0].position = top;
-	GetRegion(top)->fetch(surroundings[0]);
-	surroundings[1].position = left;
-	GetRegion(left)->fetch(surroundings[1]);
-	surroundings[2].position = right;
-	GetRegion(right)->fetch(surroundings[2]);
-	surroundings[3].position = bottom;
-	GetRegion(bottom)->fetch(surroundings[3]);
-
-	updateLighting(surroundings,chunk);
+	if (updateLighting) Generate::Lighting(chunk);
 }
 
 void RegionHandler::save(const Chunk& chunk)

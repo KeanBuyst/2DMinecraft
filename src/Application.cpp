@@ -7,6 +7,7 @@
 #include "glew.h"
 #include "ext/matrix_clip_space.hpp"
 #include "resources/Storage.h"
+#include "world/generation/Generation.h"
 
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
@@ -109,7 +110,7 @@ void Application::run() {
                         }
                         break;
                         case SDL_BUTTON_RIGHT:
-                            std::cout << "Right Mouse Button Down at (" << mouse.x << "," << mouse.y << ")" << std::endl;
+                            world::Generate::Cave(&world,mouse.x);
                         break;
                     }
                     break;
