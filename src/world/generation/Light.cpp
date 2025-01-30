@@ -59,44 +59,47 @@ void world::Generate::Lighting(Chunk& chunk)
     surroundings[3].position = bottom;
     handler.fetch(surroundings[3],false);
 
-    // sweep all tiles to with default light values and TOP to DOWN attenuation
+    // reset light values
+    for (auto x = 0; x < CHUNK_SIZE; ++x)
+        for (auto y = 0; y < CHUNK_SIZE; ++y)
+            chunk.setLight(glm::ivec2(x,y),0);
+
+    // TOP to DOWN attenuation
     for (auto x = 0; x < CHUNK_SIZE; ++x)
     {
         // reset light column
-        chunk.lightMap[x] = 0;
         int last = DAYLIGHT;
         // compute top light
-        if (surroundings[0].blocks[x] != 0)
+        const Block bottom_b = surroundings[0].getBlock(glm::ivec2(x,0));
+        if (bottom_b.getLuminance() == 0)
         {
-            const Block bottom = surroundings[0].getBlock(glm::ivec2(x,CHUNK_SIZE - 1));
-            if (bottom.getLuminance() == 0)
+            for (auto y = 0; y < CHUNK_SIZE; ++y)
             {
-                for (auto y = 2; y <= CHUNK_SIZE; ++y)
+                Block block = surroundings[0].getBlock(glm::ivec2(x,y));
+                if (block.isEmpty())
+                    break;
+                if (block.isTransparent())
+                    last += TRANSPARENT;
+                else last += SOLID;
+                if (last <= 0)
                 {
-                    Block block = surroundings[0].getBlock(glm::ivec2(x,CHUNK_SIZE - y));
-                    if (block.isEmpty())
-                        break;
-                    if (block.isTransparent())
-                        last += TRANSPARENT;
-                    else last += SOLID;
-                    if (last <= 0)
-                    {
-                        last = 0;
-                        break;
-                    }
+                    last = 0;
+                    break;
                 }
-            } else if (bottom.isEmpty())
-                last = bottom.getLuminance();
-            else if (bottom.isTransparent())
-                last = bottom.getLuminance() + TRANSPARENT;
-            else
-                last = bottom.getLuminance() + SOLID;
-        }
+            }
+        } else if (bottom_b.isEmpty())
+            last = bottom_b.getLuminance();
+        else if (bottom_b.isTransparent())
+            last = bottom_b.getLuminance() + TRANSPARENT;
+        else
+            last = bottom_b.getLuminance() + SOLID;
         // TOP to DOWN attenuation
-        for (auto y = 0; y < CHUNK_SIZE; ++y)
+        if (last != 0)
         {
-
-            attenuate(chunk,last,x,y);
+            for (auto y = CHUNK_SIZE - 1; y >= 0; --y)
+            {
+                attenuate(chunk,last,x,y);
+            }
         }
     }
     // BOTTOM to TOP
@@ -104,34 +107,31 @@ void world::Generate::Lighting(Chunk& chunk)
     {
         int last = DAYLIGHT;
         // compute top light
-        if (surroundings[3].blocks[x] != 0)
+        const Block top_b = surroundings[3].getBlock(glm::ivec2(x,CHUNK_SIZE - 1));
+        if (top_b.getLuminance() == 0)
         {
-            const Block top = surroundings[3].getBlock(glm::ivec2(x,0));
-            if (top.getLuminance() == 0)
+            for (auto y = CHUNK_SIZE - 1; y >= 0; --y)
             {
-                for (auto y = 1; y < CHUNK_SIZE; ++y)
+                Block block = surroundings[3].getBlock(glm::ivec2(x,y));
+                if (block.isEmpty())
+                    break;
+                if (block.isTransparent())
+                    last += TRANSPARENT;
+                else last += SOLID;
+                if (last <= 0)
                 {
-                    Block block = surroundings[3].getBlock(glm::ivec2(x,y));
-                    if (block.isEmpty())
-                        break;
-                    if (block.isTransparent())
-                        last += TRANSPARENT;
-                    else last += SOLID;
-                    if (last <= 0)
-                    {
-                        last = 0;
-                        break;
-                    }
+                    last = 0;
+                    break;
                 }
-            } else if (top.isEmpty())
-                last = top.getLuminance();
-            else if (top.isTransparent())
-                last = top.getLuminance() + TRANSPARENT;
-            else
-                last = top.getLuminance() + SOLID;
-        }
+            }
+        } else if (top_b.isEmpty())
+            last = top_b.getLuminance();
+        else if (top_b.isTransparent())
+            last = top_b.getLuminance() + TRANSPARENT;
+        else
+            last = top_b.getLuminance() + SOLID;
         // TOP to DOWN attenuation
-        for (auto y = CHUNK_SIZE - 1; y >= 0; --y)
+        for (auto y = 0; y < CHUNK_SIZE; ++y)
         {
             attenuate(chunk,last,x,y);
         }
@@ -144,9 +144,9 @@ void world::Generate::Lighting(Chunk& chunk)
         const Block side = surroundings[1].getBlock(glm::ivec2(CHUNK_SIZE - 1,y));
         if (side.getLuminance() == 0)
         {
-            for (auto x = 2; x <= CHUNK_SIZE; ++x)
+            for (auto x = CHUNK_SIZE - 1; x >= 0; --x)
             {
-                Block block = surroundings[1].getBlock(glm::ivec2(CHUNK_SIZE - x,y));
+                Block block = surroundings[1].getBlock(glm::ivec2(x,y));
                 if (block.isEmpty())
                     break;
                 if (block.isTransparent())
@@ -178,7 +178,7 @@ void world::Generate::Lighting(Chunk& chunk)
         const Block side = surroundings[2].getBlock(glm::ivec2(0,y));
         if (side.getLuminance() == 0)
         {
-            for (auto x = 1; x < CHUNK_SIZE; ++x)
+            for (auto x = 0; x < CHUNK_SIZE; ++x)
             {
                 Block block = surroundings[2].getBlock(glm::ivec2(x,y));
                 if (block.isEmpty())

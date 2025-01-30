@@ -11,19 +11,17 @@ namespace world
 	{
 	public:
 		// Chunk local choords
-		[[nodiscard]] Block getBlock(glm::ivec2 pos) const;
+		[[nodiscard]] Block getBlock(glm::ivec2 pos);
 		void setBlock(glm::ivec2 pos, const Block &block);
 		void setLight(glm::ivec2 pos,int luminance);
 
 		void generate();
 
-		uint64_t blocks[CHUNK_SIZE] = { 0 };
-		uint32_t lightMap[CHUNK_SIZE] = { 0 }; // (0-15) per block
-		uint64_t walls[CHUNK_SIZE] = { 0 };
+		uint32_t blocks[CHUNK_SIZE*CHUNK_SIZE] = { 0 };
 
 		glm::ivec2 position;
 	private:
-		// std::unordered_map<glm::uvec2, Metadata> blockData;
+		inline uint32_t& GetData(int y, int x);
 	};
 }
 

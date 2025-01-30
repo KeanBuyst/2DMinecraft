@@ -14,6 +14,13 @@ int SCREEN_HEIGHT = 720;
 
 glm::vec4 VIEW_PORT;
 
+void GLAPIENTRY MessageCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,
+    const GLchar* message,const void* userParam)
+{
+    std::cerr << "GL CALLBACK: " << (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "") << " type = "<< type
+    << ", severity = " << severity << ", message = " << message << std::endl;
+}
+
 Application::Application() {
     // initialize SDL
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
@@ -21,11 +28,6 @@ Application::Application() {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         exit(-1);
     }
-    // set to use OpenGL core. Latest stuff
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     // create window
     window = SDL_CreateWindow("2DMinecraft",
@@ -55,16 +57,22 @@ Application::Application() {
         exit(-1);
     }
 
+    std::cout << "Initialized libraries" << std::endl;
+
+    // error messages
+    glEnable(GL_DEBUG_OUTPUT);
+    glDebugMessageCallback(MessageCallback,nullptr);
+
     // init data path
     std::filesystem::create_directories(res::basePath);
 
-    world.init();
-
     shader = std::make_unique<ShaderProgram>();
-    shader->bind(GetShader("test.vert"));
-    shader->bind(GetShader("test.geom"));
-    shader->bind(GetShader("test.frag"));
+    shader->bind(GetShader("terrain.vert"));
+    shader->bind(GetShader("terrain.geom"));
+    shader->bind(GetShader("terrain.frag"));
     shader->build();
+
+    world.init();
 
     // vsync
     SDL_GL_SetSwapInterval(1);
@@ -77,7 +85,7 @@ Application& Application::GetInstance() {
 
 void Application::run() {
     // Create texture altas
-    const res::Texture texture("2DMC.png");
+    const res::Texture texture("../assets/tiles.png");
 
     shader->use();
     updateViewPort();
@@ -150,8 +158,7 @@ glm::vec2 Application::GetWorldMouse()
     SDL_GetMouseState(&window_x,&window_y);
     // change to view port local position
     const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SIZE;
-    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE) - 2;
-    // IDK why -2 but it fixed the problem
+    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE);
     return glm::vec2(x,y) + world::origin;
 }
 

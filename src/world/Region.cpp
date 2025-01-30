@@ -11,7 +11,7 @@ using namespace world;
 using namespace res;
 
 constexpr int SIZE = REGION_SIZE * REGION_SIZE;
-constexpr int BUFFER_SIZE = SIZE * CHUNK_SIZE;
+constexpr int BUFFER_SIZE = SIZE * CHUNK_SIZE * CHUNK_SIZE;
 constexpr uint8_t attenuation = 10;
 
 std::string name(const glm::ivec2& position)
@@ -25,9 +25,7 @@ Region::Region(const glm::ivec2 position) : position(position)
 	if (file.available())
 	{
 		file.read(flags, SIZE);
-		file.read(wall_buffer, BUFFER_SIZE);
-		file.read(lightMap, BUFFER_SIZE);
-		file.read(buffer, BUFFER_SIZE);
+		file.read(buffer,BUFFER_SIZE);
 
 		std::cout << "Loading region at " << position.x << "," << position.y << std::endl;
 	}
@@ -39,8 +37,6 @@ Region::~Region()
 	DataFile file(name(position) + ".region",std::ios::out);
 
 	file.write(flags, SIZE);
-	file.write(wall_buffer, BUFFER_SIZE);
-	file.write(lightMap, BUFFER_SIZE);
 	file.write(buffer, BUFFER_SIZE);
 
 	std::cout << "Unloading region at " << position.x << "," << position.y << std::endl;
@@ -55,9 +51,7 @@ void Region::fetch(Chunk &chunk) const
 
 	if (flag & FLAGS::GENERATED)
 	{
-		memcpy(chunk.walls, wall_buffer + index * CHUNK_SIZE, sizeof(uint64_t) * CHUNK_SIZE);
-		memcpy(chunk.lightMap, lightMap + index * CHUNK_SIZE, sizeof(uint32_t) * CHUNK_SIZE);
-		memcpy(chunk.blocks, buffer + index * CHUNK_SIZE, sizeof(uint64_t) * CHUNK_SIZE);
+		memcpy(chunk.blocks, buffer + index * CHUNK_SIZE*CHUNK_SIZE, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 	}
 	else 
 	{
@@ -74,10 +68,7 @@ void Region::save(const Chunk& chunk)
 {
 	const int index = GetIndex(chunk);
 	flags[index] = GENERATED;
-
-	memcpy(wall_buffer + index * CHUNK_SIZE,chunk.walls,sizeof(uint64_t) * CHUNK_SIZE);
-	memcpy(lightMap + index * CHUNK_SIZE, chunk.lightMap,sizeof(uint32_t) * CHUNK_SIZE);
-	memcpy(buffer + index * CHUNK_SIZE, chunk.blocks, sizeof(uint64_t) * CHUNK_SIZE);
+	memcpy(buffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 }
 
 inline int world::Region::GetIndex(const Chunk& chunk) {

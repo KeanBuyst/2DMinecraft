@@ -6,15 +6,15 @@
 #include <glm.hpp>
 #include "Texture.h"
 
-GLuint GetShader(std::string path);
+GLuint GetShader(const std::string& path);
 
 class ShaderProgram
 {
 public:
 	ShaderProgram();
 	~ShaderProgram();
-	void bind(GLuint shader);
-	void use();
+	void bind(GLuint shader) const;
+	void use() const;
 	void build();
 
 	void sendMatrix(const GLchar* name, glm::mat4& matrix);

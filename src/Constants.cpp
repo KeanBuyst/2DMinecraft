@@ -24,18 +24,17 @@ void world::ArrayToChunk(glm::ivec2& chunk)
     chunk += centre;
     chunk.x -= (WORLD_WIDTH - 1) / 2;
     chunk.y -= (WORLD_HEIGHT - 1) / 2;
-    chunk.y += 1;
 }
 // Position to chunk local position and chunk position
 void world::GlobalToChunk(glm::ivec2& position,glm::ivec2& chunk)
 {
     chunk = ToChunkSpace(position);
     if (const int x = position.x; x < 0)
-        position.x = (CHUNK_SIZE - 1) + ((x + 1) % CHUNK_SIZE);
+        position.x = (CHUNK_SIZE - 1) + (x + 1) % CHUNK_SIZE;
     else position.x = x % CHUNK_SIZE;
     if (const int y = position.y; y < 0)
-        position.y = -(y + 1) % CHUNK_SIZE;
-    else position.y = (CHUNK_SIZE - 1) - (y % CHUNK_SIZE);
+        position.y = (CHUNK_SIZE - 1) + (y + 1) % CHUNK_SIZE;
+    else position.y = y % CHUNK_SIZE;
 }
 // Position in chunk to global position
 void world::ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk)
@@ -44,12 +43,11 @@ void world::ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk)
     {
         chunk.x++;
         position.x -= CHUNK_SIZE;
-        //position.x = -(position.x + 1);
     }
     if (chunk.y < 0)
     {
         chunk.y++;
-        position.y = -(position.y + CHUNK_SIZE);
+        position.y -= CHUNK_SIZE;
     }
     position += chunk * CHUNK_SIZE;
 }

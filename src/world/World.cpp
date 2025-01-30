@@ -9,14 +9,13 @@
 
 using namespace world;
 
-struct VertexData {
-	float x, y;      // The base position (x, y)
-	uint64_t blocks; // 64-bit integer representing 8 blocks
-	uint64_t walls;
-	uint32_t lightMap;
-};
-
 RegionHandler world::handler = RegionHandler();
+
+struct BlockData
+{
+	float x,y;
+	uint32_t data;
+};
 
 void World::init()
 {
@@ -46,17 +45,11 @@ void World::init()
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	// Position attribute (x,y)
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(VertexData), nullptr);
+	glVertexAttribPointer(0, 2,GL_FLOAT, GL_FALSE, sizeof(BlockData), nullptr);
 	glEnableVertexAttribArray(0);
-	// The row for 64 bit int
-	glVertexAttribLPointer(1, 1, GL_UNSIGNED_INT64_ARB, sizeof(VertexData), reinterpret_cast<void *>(offsetof(VertexData, blocks)));
+	// data input
+	glVertexAttribIPointer(1, 1,GL_UNSIGNED_INT,sizeof(BlockData), reinterpret_cast<void *>(offsetof(BlockData,data)));
 	glEnableVertexAttribArray(1);
-	// The wall data
-	glVertexAttribLPointer(2,1,GL_UNSIGNED_INT64_ARB,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, walls)));
-	glEnableVertexAttribArray(2);
-	// light map
-	glVertexAttribIPointer(3,1,GL_UNSIGNED_INT,sizeof(VertexData),reinterpret_cast<void *>(offsetof(VertexData, lightMap)));
-	glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
@@ -79,49 +72,48 @@ World::~World()
 void World::render()
 {
 	// compile chunks
-	constexpr int size = WORLD_WIDTH * WORLD_HEIGHT * CHUNK_SIZE;
-	std::vector<VertexData> vertices(size);
+	constexpr int size = WORLD_WIDTH * WORLD_HEIGHT * CHUNK_SIZE * CHUNK_SIZE;
+	std::vector<BlockData> vertices;
+	vertices.reserve(size);
 	// load chunks for new position (if new position)
 	update_chunks();
 	
-	for (auto y = 0; y < WORLD_HEIGHT; y++)
+	for (auto chunk_y = 0; chunk_y < WORLD_HEIGHT; chunk_y++)
 	{
-		for (auto x = 0; x < WORLD_WIDTH; x++)
+		for (auto chunk_x = 0; chunk_x < WORLD_WIDTH; chunk_x++)
 		{
-			Chunk& chunk = chunks[x][y];
-			for (auto colomn = 0; colomn < CHUNK_SIZE; colomn++)
+			Chunk& chunk = chunks[chunk_x][chunk_y];
+			for (auto x = 0; x < CHUNK_SIZE; ++x)
 			{
-				uint64_t blocks = chunk.blocks[colomn];
-				if (blocks == 0) continue;
-				glm::ivec2 pos(colomn, 0);
-				ChunkToGlobal(pos, chunk.position);
-				glm::vec2 pixelCoord(pos);
-				pixelCoord -= origin;
-				pixelCoord *= PIXEL_SIZE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
-
-				// optimizations
-				if (pixelCoord.x + PIXEL_SIZE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
-					pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w)
+				for (auto y = 0; y < CHUNK_SIZE; ++y)
 				{
-					continue;
+					Block block = chunk.getBlock(glm::ivec2(x,y));
+					if (block.isEmpty()) continue;
+					glm::vec2 pixelCoord = block.position;
+					pixelCoord -= origin;
+					pixelCoord *= PIXEL_SIZE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
+
+					// optimizations
+					if (pixelCoord.x + PIXEL_SIZE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
+						pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w)
+					{
+						continue;
+					}
+
+					vertices.push_back({
+						pixelCoord.x,
+						pixelCoord.y,
+						block.getRaw()
+					});
 				}
-
-				VertexData data = {
-					pixelCoord.x,
-					pixelCoord.y,
-					blocks,
-					chunk.walls[colomn],
-					chunk.lightMap[colomn],
-				};
-
-				vertices.push_back(data);
 			}
 		}
 	}
-	glBindVertexArray(VAO);
 
+	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(VertexData), vertices.data(), GL_STATIC_DRAW);
+
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(BlockData), vertices.data(), GL_STATIC_DRAW);
 
 	glDrawArrays(GL_POINTS, 0, vertices.size());
 }

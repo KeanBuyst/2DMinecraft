@@ -12,55 +12,57 @@ void Chunk::generate()
 {
 	glm::ivec2 blockPos(0,0);
 	ChunkToGlobal(blockPos,position);
-	for (auto x = 0; x < CHUNK_SIZE; x++)
+	for (auto x = 0; x < CHUNK_SIZE; ++x)
 	{
-		const int index = position.x < 0 ? (CHUNK_SIZE - 1) - x : x;
-		// reset all values
-		blocks[index] = 0;
-		walls[index] = 0;
-		lightMap[index] = 0;
+		// prevent mirroring in x dimension
+		const int x_fix = position.x < 0 ? (CHUNK_SIZE - 1) - x : x;
 
 		// calculate surface
-		const int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x) * biome->smoothness) * biome->min_max);
+		const int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x_fix) * biome->smoothness) * biome->min_max);
 
-		// calculate relative surface
-		int relative = blockPos.y - surface;
-		if (relative >= CHUNK_SIZE) continue; // surface below chunk
-		if (relative < 0)
+		for (auto y = 0; y < CHUNK_SIZE; ++y)
 		{
-			// surface above chunk
-			relative = 0;
-		}
+			// prevent mirroring in y dimension
+			const int y_fix = position.y < 0 ? (CHUNK_SIZE - 1) - y : y;
 
-		for (int y = relative; y <= CHUNK_SIZE - 1; y++)
-		{
-			blocks[index] |= static_cast<uint64_t>(biome->getMaterial(surface + y - blockPos.y)) << (y * 8);
+			// calculate relative surface
+			const int relative = surface - (blockPos.y + y_fix);
+
+			uint32_t& data = GetData(y_fix,x_fix);
+
+			if (relative >= 0)
+			{
+				data = static_cast<uint32_t>(biome->getMaterial(relative));
+			}
+			else data = 0;
 		}
 	}
 }
 
 void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
-	// clear
-	blocks[pos.x] &= ~(0xFFULL << (pos.y * 8));
-	walls[pos.x] &= ~(0xFFULL << (pos.y * 8));
-	lightMap[pos.x] &= ~(0xFU << (pos.y * 4));
-	// set
-	if (block.type != EMPTY) blocks[pos.x] |= static_cast<uint64_t>(block.type) << (pos.y * 8);
-	if (block.getWall() != EMPTY) walls[pos.x] |= static_cast<uint64_t>(block.getWall()) << (pos.y * 8);
+	GetData(pos.y,pos.x) = block.getRaw();
 }
 
 void Chunk::setLight(const glm::ivec2 pos,const int luminance)
 {
-	lightMap[pos.x] |= static_cast<uint32_t>(luminance) << (pos.y * 4);
+	uint32_t& data = GetData(pos.y,pos.x);
+	data &= 0xFFF0FFFFu;
+	data |= luminance << 16;
 }
 
-Block Chunk::getBlock(const glm::ivec2 pos) const
+Block Chunk::getBlock(const glm::ivec2 pos)
 {
-	return {
-		static_cast<MATERIAL>((blocks[pos.x] >> (pos.y * 8)) & 0xFFULL),
-		pos,
-		static_cast<MATERIAL>((walls[pos.x] >> (pos.y * 8)) & 0xFFULL),
-		static_cast<int>(lightMap[pos.x] >> pos.y * 4 & 0xF),
-	};
+	glm::ivec2 blockPos = pos;
+	ChunkToGlobal(blockPos,position);
+	return {blockPos,GetData(pos.y,pos.x)};
+}
+
+uint32_t& Chunk::GetData(const int y, const int x)
+{
+	// make x indicate the rows to improve memory efficiency during generation due to
+	// x being the first iteration in generation.
+	if (y < 0 || y >= CHUNK_SIZE || x < 0 || x >= CHUNK_SIZE)
+		throw std::out_of_range("Chunk::GetData(y,x) is out of chunk bounds");
+	return blocks[x * CHUNK_SIZE + y];
 }
