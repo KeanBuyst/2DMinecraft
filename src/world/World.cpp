@@ -1,11 +1,11 @@
 #include "World.h"
-#include "generation/Generation.h"
 
 #include <iostream>
 
 #include "../Util.h"
 #include "vector"
 #include "../Application.h"
+#include "generation/Generation.h"
 
 using namespace world;
 
@@ -21,7 +21,7 @@ void World::init()
 {
 	// set up chunks for loading/generation
 	Util::seed(WORLD_SEED);
-	world::biome = new Biome(0.2f,5);
+	world::biome = new Forest();
 	chunkOrigin = ToChunkSpace(origin);
 
 	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
@@ -33,6 +33,10 @@ void World::init()
 			Chunk& chunk = chunks[wx][wy];
 			chunk.position = pos;
 			handler.fetch(chunk);
+			if (!(chunk.flag & POST_GENERATED))
+			{
+				post_generation(chunk);
+			}
 		}
 	}
 
@@ -124,6 +128,7 @@ void World::setBlock(const Block& block)
 	// floor brings -0.5 to -1 and 0.5 to 0
 	glm::ivec2 pos(floorf(block.position.x),floorf(block.position.y));
 	GlobalToChunk(pos, c_pos);
+	// Checks if chunk is part of currently loaded chunks
 	if(glm::ivec2 a_pos = c_pos; !ChunkToArray(a_pos))
 	{
 		Chunk chunk;
@@ -182,19 +187,51 @@ inline void World::GetChunk(const int x, const int y)
 	chunk.position = pos;
 	handler.fetch(chunk);
 }
+
+void World::post_generation(Chunk& chunk)
+{
+	for (int x = 0; x < CHUNK_SIZE; ++x)
+	{
+		glm::ivec2 pos(x,0);
+		// generated plants will be direction dependent and seed dependent
+		const int random = rand() % 100 + 1;
+		if (random <= 60)
+		{
+			ChunkToGlobal(pos,chunk.position);
+			pos.y = biome->getSurface(pos.x) + 1;
+			Block block(EMPTY,pos,biome->getPlant());
+			glm::ivec2 truePos;
+			GlobalToChunk(pos,truePos);
+			if (chunk.position == truePos)
+				chunk.setBlock(pos,block);
+		}
+	}
+
+	Generate::Lighting(chunk);
+
+	chunk.flag |= POST_GENERATED;
+}
+
 inline void World::update_chunks()
 {
 	glm::ivec2 current = ToChunkSpace(origin);
 
 	// detected chunk origin change
 	if (current != chunkOrigin){
-		// save all chunks
-		for (auto y = 0; y < WORLD_HEIGHT; ++y)
-			for (auto x = 0; x < WORLD_WIDTH; ++x)
-				handler.save(chunks[x][y]);
-
 		auto direction = current - chunkOrigin;
 		auto quantity = glm::abs(direction);
+		// save all chunks & post generation
+		for (auto y = 0; y < WORLD_HEIGHT; ++y)
+			for (auto x = 0; x < WORLD_WIDTH; ++x)
+			{
+				// do post generation
+				if (!(chunks[x][y].flag & POST_GENERATED))
+				{
+					post_generation(chunks[x][y]);
+				}
+				// save all chunks
+				handler.save(chunks[x][y]);
+			}
 		// update chunks
 		for (auto y = 0; y < WORLD_HEIGHT; ++y)
 		{
@@ -220,7 +257,8 @@ inline void World::update_chunks()
 						index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
 						if (x <= quantity.x)
 						{
-							chunks[index][y] = chunks[index + direction.x][y];
+							const Chunk& chunk = chunks[index + direction.x][y];
+							chunks[index][y] = chunk;
 						}
 						else
 						{

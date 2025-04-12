@@ -18,6 +18,7 @@ namespace world
 		void generate();
 
 		uint32_t blocks[CHUNK_SIZE*CHUNK_SIZE] = { 0 };
+		uint8_t flag;
 
 		glm::ivec2 position;
 	private:

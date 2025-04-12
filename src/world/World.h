@@ -33,5 +33,7 @@ namespace world
 
 		inline void update_chunks();
 		inline void GetChunk(int x, int y);
+
+		void post_generation(Chunk& chunk);
 	};
 }

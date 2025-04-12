@@ -8,7 +8,8 @@ namespace world
 
 	enum FLAGS : uint8_t
 	{
-		GENERATED = 0b1
+		GENERATED = 0b1,
+		POST_GENERATED = 0b10
 	};
 
 	class Region
@@ -19,7 +20,7 @@ namespace world
 		explicit Region(glm::ivec2 position);
 		~Region();
 
-		void fetch(Chunk& chunk) const;
+		void fetch(Chunk& chunk);
 		bool contains(glm::ivec2 chunk) const;
 
 		void save(const Chunk& chunk);
@@ -37,7 +38,7 @@ namespace world
 	public:
 		~RegionHandler();
 
-		void fetch(Chunk& chunk,bool updateLighting = true);
+		void fetch(Chunk& chunk);
 		void save(const Chunk &chunk);
 	private:
 		// max 4 regions for times of intersection between 4 different regions

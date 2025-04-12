@@ -42,12 +42,12 @@ Region::~Region()
 	std::cout << "Unloading region at " << position.x << "," << position.y << std::endl;
 }
 
-void Region::fetch(Chunk &chunk) const
+void Region::fetch(Chunk &chunk)
 {
 	// local position in region
 	
 	const int index = GetIndex(chunk);
-	const uint8_t flag = flags[index];
+	uint8_t& flag = flags[index];
 
 	if (flag & FLAGS::GENERATED)
 	{
@@ -56,7 +56,12 @@ void Region::fetch(Chunk &chunk) const
 	else 
 	{
 		chunk.generate();
+		// but generated data into buffer
+		memcpy(buffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
+		flag = GENERATED;
 	}
+
+	chunk.flag = flag;
 }
 
 bool Region::contains(const glm::ivec2 chunk) const
@@ -67,7 +72,7 @@ bool Region::contains(const glm::ivec2 chunk) const
 void Region::save(const Chunk& chunk)
 {
 	const int index = GetIndex(chunk);
-	flags[index] = GENERATED;
+	flags[index] = chunk.flag;
 	memcpy(buffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 }
 
@@ -139,11 +144,9 @@ Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 	return reg;
 }
 
-void RegionHandler::fetch(Chunk& chunk, const bool updateLighting)
+void RegionHandler::fetch(Chunk& chunk)
 {
 	GetRegion(chunk.position)->fetch(chunk);
-
-	if (updateLighting) Generate::Lighting(chunk);
 }
 
 void RegionHandler::save(const Chunk& chunk)

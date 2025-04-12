@@ -8,7 +8,7 @@ constexpr int TRANSPARENT = -1;
 
 int world::DAYLIGHT = 15; // TODO make this one change with the time of day
 
-void attenuate(world::Chunk& chunk,int& last,int x,int y)
+void attenuate(world::Chunk& chunk,int& last, const int x, const int y)
 {
     const glm::ivec2 pos(x,y);
     const world::Block block = chunk.getBlock(pos);
@@ -51,13 +51,13 @@ void world::Generate::Lighting(Chunk& chunk)
 
     Chunk surroundings[4];
     surroundings[0].position = top;
-    handler.fetch(surroundings[0],false);
+    handler.fetch(surroundings[0]);
     surroundings[1].position = left;
-    handler.fetch(surroundings[1],false);
+    handler.fetch(surroundings[1]);
     surroundings[2].position = right;
-    handler.fetch(surroundings[2],false);
+    handler.fetch(surroundings[2]);
     surroundings[3].position = bottom;
-    handler.fetch(surroundings[3],false);
+    handler.fetch(surroundings[3]);
 
     // reset light values
     for (auto x = 0; x < CHUNK_SIZE; ++x)

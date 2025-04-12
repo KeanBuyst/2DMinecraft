@@ -1,12 +1,14 @@
 #include "Constants.h"
 
+#include <iostream>
+
 glm::vec2 world::origin = glm::vec2(CHUNK_SIZE / 2.0f,CHUNK_SIZE / 2.0f);
 
 glm::ivec2 world::ToChunkSpace(const glm::vec2 pos)
 {
     // fix division problem. E.g. -1 / 32 = 0 && 1 / 32 = 0
-    const glm::vec2 fix = glm::floor(pos / static_cast<float>(CHUNK_SIZE));
-    return glm::ivec2(fix);
+    const glm::ivec2 fix = glm::floor(pos / static_cast<float>(CHUNK_SIZE));
+    return fix;
 }
 
 // Bool determins if its a successful choord in the chunk or its not within the loaded chunks
@@ -15,7 +17,8 @@ bool world::ChunkToArray(glm::ivec2& chunk)
     const glm::ivec2 centre = ToChunkSpace(origin);
     chunk -= centre;
     chunk.x += (WORLD_WIDTH - 1) / 2;
-    chunk.y += (WORLD_WIDTH - 1) / 2;
+    // The -1 adjustment for the y component is necessary due to array's y-axis being inverted relative to the world's y-axis.
+    chunk.y += (WORLD_WIDTH - 1) / 2 - 1;
     return chunk.x >= 0 && chunk.x < WORLD_WIDTH && chunk.y >= 0 && chunk.y < WORLD_HEIGHT;
 }
 void world::ArrayToChunk(glm::ivec2& chunk)

@@ -11,7 +11,7 @@ namespace world
     constexpr int STACK_SIZE = 4;
     // world.h
     constexpr float WORLD_SIZE = 10.0f; // since we want a block position to represent 1. 1/10 = 0.1
-    constexpr int WORLD_WIDTH = 3; // min is 3x3
+    constexpr int WORLD_WIDTH = 5; // min is 3x3
     constexpr int WORLD_HEIGHT = 3;
 
     extern glm::vec2 origin;

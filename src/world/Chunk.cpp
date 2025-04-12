@@ -18,7 +18,7 @@ void Chunk::generate()
 		const int x_fix = position.x < 0 ? (CHUNK_SIZE - 1) - x : x;
 
 		// calculate surface
-		const int surface = static_cast<int>(Util::noise(static_cast<float>(blockPos.x + x_fix) * biome->smoothness) * biome->min_max);
+		const int surface = biome->getSurface(static_cast<float>(blockPos.x + x_fix));
 
 		for (auto y = 0; y < CHUNK_SIZE; ++y)
 		{

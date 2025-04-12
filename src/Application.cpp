@@ -62,6 +62,9 @@ Application::Application() {
     // error messages
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(MessageCallback,nullptr);
+    // enable Alpha blending (allows textures with empty pixels to be transparent)
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // init data path
     std::filesystem::create_directories(res::basePath);
@@ -118,7 +121,6 @@ void Application::run() {
                         }
                         break;
                         case SDL_BUTTON_RIGHT:
-                            world::Generate::Cave(&world,mouse.x);
                         break;
                     }
                     break;
