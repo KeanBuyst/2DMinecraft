@@ -15,10 +15,11 @@ namespace world
     constexpr int WORLD_HEIGHT = 3;
 
     extern glm::vec2 origin;
+    extern glm::ivec2 chunk_origin;
 
     glm::ivec2 ToChunkSpace(glm::vec2 pos);
-    bool ChunkToArray(glm::ivec2& chunk);
-    void ArrayToChunk(glm::ivec2& chunk);
+    bool ChunkToArray(glm::ivec2& chunk,glm::ivec2 origin = chunk_origin);
+    void ArrayToChunk(glm::ivec2& chunk,glm::ivec2 origin = chunk_origin);
     void GlobalToChunk(glm::ivec2& position, glm::ivec2& chunk);
     void ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk);
 }

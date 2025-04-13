@@ -3,6 +3,7 @@
 #include <iostream>
 
 glm::vec2 world::origin = glm::vec2(CHUNK_SIZE / 2.0f,CHUNK_SIZE / 2.0f);
+glm::ivec2 world::chunk_origin = ToChunkSpace(world::origin);
 
 glm::ivec2 world::ToChunkSpace(const glm::vec2 pos)
 {
@@ -12,19 +13,17 @@ glm::ivec2 world::ToChunkSpace(const glm::vec2 pos)
 }
 
 // Bool determins if its a successful choord in the chunk or its not within the loaded chunks
-bool world::ChunkToArray(glm::ivec2& chunk)
+bool world::ChunkToArray(glm::ivec2& chunk, const glm::ivec2 origin)
 {
-    const glm::ivec2 centre = ToChunkSpace(origin);
-    chunk -= centre;
+    chunk -= origin;
     chunk.x += (WORLD_WIDTH - 1) / 2;
     // The -1 adjustment for the y component is necessary due to array's y-axis being inverted relative to the world's y-axis.
     chunk.y += (WORLD_WIDTH - 1) / 2 - 1;
     return chunk.x >= 0 && chunk.x < WORLD_WIDTH && chunk.y >= 0 && chunk.y < WORLD_HEIGHT;
 }
-void world::ArrayToChunk(glm::ivec2& chunk)
+void world::ArrayToChunk(glm::ivec2& chunk, const glm::ivec2 origin)
 {
-    const glm::ivec2 centre = ToChunkSpace(origin);
-    chunk += centre;
+    chunk += origin;
     chunk.x -= (WORLD_WIDTH - 1) / 2;
     chunk.y -= (WORLD_HEIGHT - 1) / 2;
 }

@@ -39,6 +39,11 @@ void Chunk::generate()
 	}
 }
 
+bool Chunk::contains(const glm::vec2& globalPos) const
+{
+	return ToChunkSpace(globalPos) == position;
+}
+
 void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
 	GetData(pos.y,pos.x) = block.getRaw();

@@ -22,7 +22,6 @@ void World::init()
 	// set up chunks for loading/generation
 	Util::seed(WORLD_SEED);
 	world::biome = new Forest();
-	chunkOrigin = ToChunkSpace(origin);
 
 	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
 	{
@@ -179,10 +178,10 @@ void World::setChunk(const Chunk& chunk)
 	}
 }
 
-inline void World::GetChunk(const int x, const int y)
+inline void World::GetChunk(const int x, const int y, const glm::ivec2 current)
 {
 	glm::ivec2 pos(x, y);
-	ArrayToChunk(pos);
+	ArrayToChunk(pos,current);
 	Chunk& chunk = chunks[x][y];
 	chunk.position = pos;
 	handler.fetch(chunk);
@@ -193,17 +192,18 @@ void World::post_generation(Chunk& chunk)
 	for (int x = 0; x < CHUNK_SIZE; ++x)
 	{
 		glm::ivec2 pos(x,0);
-		// generated plants will be direction dependent and seed dependent
-		const int random = rand() % 100 + 1;
-		if (random <= 60)
+		ChunkToGlobal(pos,chunk.position);
+		pos.y = biome->getSurface(pos.x) + 1;
+		if (chunk.contains(pos))
 		{
-			ChunkToGlobal(pos,chunk.position);
-			pos.y = biome->getSurface(pos.x) + 1;
-			Block block(EMPTY,pos,biome->getPlant());
-			glm::ivec2 truePos;
-			GlobalToChunk(pos,truePos);
-			if (chunk.position == truePos)
-				chunk.setBlock(pos,block);
+			// generated plants will be direction dependent and seed dependent
+			const int random = rand() % 100 + 1;
+			if (true)
+			{
+				Block block(EMPTY,pos,biome->getPlant());
+				//chunk.setBlock(pos,block);
+				setBlock(block);
+			}
 		}
 	}
 
@@ -217,8 +217,8 @@ inline void World::update_chunks()
 	glm::ivec2 current = ToChunkSpace(origin);
 
 	// detected chunk origin change
-	if (current != chunkOrigin){
-		auto direction = current - chunkOrigin;
+	if (current != chunk_origin){
+		auto direction = current - chunk_origin;
 		auto quantity = glm::abs(direction);
 		// save all chunks & post generation
 		for (auto y = 0; y < WORLD_HEIGHT; ++y)
@@ -242,7 +242,7 @@ inline void World::update_chunks()
 				{
 					// shifting not applicable
 					glm::ivec2 pos(x, y);
-					ArrayToChunk(pos);
+					ArrayToChunk(pos,current);
 					Chunk& chunk = chunks[x][y];
 					handler.save(chunk);
 					chunk.position = pos;
@@ -263,7 +263,7 @@ inline void World::update_chunks()
 						else
 						{
 							// replace old chunk
-							GetChunk(index, y);
+							GetChunk(index, y,current);
 							continue;
 						}
 					}
@@ -278,13 +278,13 @@ inline void World::update_chunks()
 						else if (quantity.y != 0)
 						{
 							// replace old chunk
-							GetChunk(x, index);
+							GetChunk(x, index,current);
 							continue;
 						}
 					}
 				}
 			}
 		}
-		chunkOrigin = current;
+		chunk_origin = current;
 	}
 }

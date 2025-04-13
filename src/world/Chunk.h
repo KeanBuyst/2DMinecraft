@@ -17,6 +17,8 @@ namespace world
 
 		void generate();
 
+		[[nodiscard]] bool contains(const glm::vec2& globalPos) const;
+
 		uint32_t blocks[CHUNK_SIZE*CHUNK_SIZE] = { 0 };
 		uint8_t flag;
 

@@ -29,10 +29,9 @@ namespace world
 	private:
 		Chunk chunks[WORLD_WIDTH][WORLD_HEIGHT];
 		GLuint VBO{}, VAO{};
-		glm::ivec2 chunkOrigin{};
 
 		inline void update_chunks();
-		inline void GetChunk(int x, int y);
+		inline void GetChunk(int x, int y,glm::ivec2 current);
 
 		void post_generation(Chunk& chunk);
 	};
