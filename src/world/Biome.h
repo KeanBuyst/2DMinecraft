@@ -4,16 +4,24 @@
 
 namespace world
 {
+	extern const Block OAK_TREE[];
+
+	enum class Probability : short
+	{
+		TREE = 40,
+		PLANT = 60,
+		NONE = 50,
+	};
+
 	class Biome
 	{
 	public:
 		virtual ~Biome() = default;
 
 		virtual MATERIAL getMaterial(int depth);
-		virtual MATERIAL getPlant();
 
+		virtual Block getPlant();
 		virtual std::vector<Block> getTree() = 0;
-
 		virtual float getNoiseScale() = 0;
 		virtual float getAmplifier() = 0;
 		virtual int getSurface(float x);

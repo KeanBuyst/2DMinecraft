@@ -13,8 +13,14 @@ Block::Block(const glm::vec2 position,const uint32_t data) : position(position),
 
 bool Block::isTransparent() const
 {
-    // TODO add exceptions (e.g. if type is GLASS)
-    return getType() == 0 && getWall() != 0;
+    switch (getType())
+    {
+    case OAK_LEAVES:
+    case EMPTY:
+        // Unnecessary call -> return getWall() != EMPTY;
+        return true;
+    }
+    return false;
 }
 
 MATERIAL Block::getType() const
@@ -35,6 +41,16 @@ bool Block::isEmpty() const
 int Block::getLuminance() const
 {
     return static_cast<int>((data >> 16) & 0xFFu);
+}
+
+void Block::setWall(const MATERIAL wall)
+{
+    data = data & 0xFFFF00FF | wall << 8;
+}
+
+void Block::setType(const MATERIAL type)
+{
+    data = data & 0xFFFFFF00 | type;
 }
 
 uint32_t Block::getRaw() const

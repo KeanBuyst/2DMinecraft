@@ -22,7 +22,7 @@ void World::init()
 	// set up chunks for loading/generation
 	Util::seed(WORLD_SEED);
 	world::biome = new Forest();
-
+	// setup of initial area
 	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
 	{
 		for (auto wy = 0; wy < WORLD_HEIGHT; wy++)
@@ -32,6 +32,14 @@ void World::init()
 			Chunk& chunk = chunks[wx][wy];
 			chunk.position = pos;
 			handler.fetch(chunk);
+		}
+	}
+	// post generation
+	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
+	{
+		for (auto wy = 0; wy < WORLD_HEIGHT; wy++)
+		{
+			Chunk& chunk = chunks[wx][wy];
 			if (!(chunk.flag & POST_GENERATED))
 			{
 				post_generation(chunk);
@@ -139,6 +147,8 @@ void World::setBlock(const Block& block)
 	else
 	{
 		chunks[a_pos.x][a_pos.y].setBlock(pos,block);
+		// since block is in current view update lighting
+		Generate::Lighting(chunks[a_pos.x][a_pos.y]);
 	}
 }
 
@@ -189,6 +199,12 @@ inline void World::GetChunk(const int x, const int y, const glm::ivec2 current)
 
 void World::post_generation(Chunk& chunk)
 {
+	static Util::EnumProbabilityGroup<Probability,3> probability({
+		Probability::PLANT,
+		Probability::TREE,
+		Probability::NONE,
+	});
+
 	for (int x = 0; x < CHUNK_SIZE; ++x)
 	{
 		glm::ivec2 pos(x,0);
@@ -197,12 +213,40 @@ void World::post_generation(Chunk& chunk)
 		if (chunk.contains(pos))
 		{
 			// generated plants will be direction dependent and seed dependent
-			const int random = rand() % 100 + 1;
-			if (true)
+			switch (probability.get())
 			{
-				Block block(EMPTY,pos,biome->getPlant());
-				//chunk.setBlock(pos,block);
-				setBlock(block);
+			case Probability::TREE:
+				// prevent trees from spawning next to each other
+				if (pos.x % 2 == 0) break;
+				// loop through tree structure and apply offsets
+				for (Block& block : biome->getTree())
+				{
+					block.position += pos;
+					Block replaced = getBlock(block.position);
+					if (replaced.isEmpty())
+					{
+						setBlock(block);
+					}
+					else if (replaced.isTransparent() && replaced.getWall() == EMPTY)
+					{
+						const MATERIAL wall = block.getWall();
+						if (wall != EMPTY)
+						{
+							replaced.setWall(wall);
+							setBlock(replaced);
+						}
+					}
+				}
+				break;
+			case Probability::PLANT:
+				{
+					Block plant = biome->getPlant();
+					plant.position += pos;
+					setBlock(plant);
+				}
+				break;
+			case Probability::NONE:
+				break;
 			}
 		}
 	}

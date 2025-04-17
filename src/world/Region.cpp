@@ -34,6 +34,11 @@ Region::Region(const glm::ivec2 position) : position(position)
 
 Region::~Region()
 {
+	/*
+	 Error accorded here when setting block (block outside loaded chunks)
+	 and loading region at same time. At least I believe this was the cause. Accorded during
+	 logic error of setting plant. Important notice for potential similar future errors.
+	 */
 	DataFile file(name(position) + ".region",std::ios::out);
 
 	file.write(flags, SIZE);

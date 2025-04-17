@@ -10,6 +10,7 @@ Link: https://github.com/SRombauts/SimplexNoise/blob/master/src/SimplexNoise.cpp
 Modified to use pesudo-random instead of constant table
 */
 
+unsigned int Util::seed_value = static_cast<unsigned int>(time(nullptr));
 uint8_t perm[256];
 
 inline int32_t fastfloor(const float fp) {
@@ -36,8 +37,8 @@ static float grad(int32_t hash, float x, float y) {
     return ((h & 1) ? -u : u) + ((h & 2) ? -2.0f * v : 2.0f * v); // and compute the dot product with (x,y).
 }
 
-
 void Util::seed(const unsigned int seed) {
+    seed_value = seed;
     srand(seed);
     for (auto i = 0; i < 256; i++) {
         perm[i] = static_cast<uint8_t>(rand() % 256);
@@ -45,7 +46,7 @@ void Util::seed(const unsigned int seed) {
 }
 
 void Util::seed() {
-    Util::seed(static_cast<unsigned int>(time(nullptr)));
+    Util::seed(seed_value);
 }
 
 // range [-1,1]

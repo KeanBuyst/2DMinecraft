@@ -1,7 +1,7 @@
 #version 460 core
 
 layout(points) in;    // expect one input point (base position)
-layout(triangle_strip, max_vertices = 8) out;  // generate 1 or 2 quad (8 vertices)
+layout(triangle_strip, max_vertices = 12) out;  // generate 1 or 2 quad (8 vertices)
 
 in vec2 _position[];
 in uint _block[];
@@ -31,6 +31,23 @@ void main() {
         _position[0] + blockSize             // Top-right
     );
 
+    if (_wall[0] != 0){
+        vec2 quadWallTexCoords[4] = vec2[4](
+        wallTexPos + vec2(0.0, texSize.y),  // Bottom-left
+        wallTexPos + vec2(texSize.x, texSize.y), // Bottom-right
+        wallTexPos,                         // Top-left
+        wallTexPos + vec2(texSize.x, 0.0)   // Top-right
+        );
+        // Emit the vertices for the block quad
+        for (int v = 0; v < 4; v++) {
+            texCoords = quadWallTexCoords[v];
+            gl_Position = vec4(quadVertices[v], -1.0, 1.0) * ortho;  // Set the final position
+            EmitVertex();
+        }
+
+        EndPrimitive();  // End the current quad
+    }
+
     if (_block[0] != 0){
         vec2 quadBlockTexCoords[4] = vec2[4](
             blockTexPos + vec2(0.0, texSize.y),  // Bottom-left
@@ -42,23 +59,6 @@ void main() {
         for (int v = 0; v < 4; v++) {
             texCoords = quadBlockTexCoords[v];
             gl_Position = vec4(quadVertices[v], 0.0, 1.0) * ortho;  // Set the final position
-            EmitVertex();
-        }
-
-        EndPrimitive();  // End the current quad
-    }
-
-    if (_wall[0] != 0){
-        vec2 quadWallTexCoords[4] = vec2[4](
-            wallTexPos + vec2(0.0, texSize.y),  // Bottom-left
-            wallTexPos + vec2(texSize.x, texSize.y), // Bottom-right
-            wallTexPos,                         // Top-left
-            wallTexPos + vec2(texSize.x, 0.0)   // Top-right
-        );
-        // Emit the vertices for the block quad
-        for (int v = 0; v < 4; v++) {
-            texCoords = quadWallTexCoords[v];
-            gl_Position = vec4(quadVertices[v], -1.0, 1.0) * ortho;  // Set the final position
             EmitVertex();
         }
 

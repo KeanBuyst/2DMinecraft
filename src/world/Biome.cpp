@@ -1,14 +1,11 @@
 #include "Biome.h"
 #include "../Util.h"
 
+#include <algorithm>
+
 using namespace world;
 
 Biome* world::biome = nullptr;
-
-MATERIAL Biome::getPlant()
-{
-	return GRASS;
-}
 
 int Biome::getSurface(const float x)
 {
@@ -22,9 +19,38 @@ MATERIAL Biome::getMaterial(const int depth)
 	return DIRT;
 }
 
+Block Biome::getPlant()
+{
+	return {EMPTY,{0,0},GRASS};
+}
+
+// OAK TREE CONSTANT PORTION
+const Block world::OAK_TREE[] = {
+	{OAK_LEAVES,{0,4},EMPTY},
+	{OAK_LEAVES,{-1,3},EMPTY},{OAK_LEAVES,{0,3},EMPTY},{OAK_LEAVES,{1,3},EMPTY},
+	{OAK_LEAVES,{-1,2},EMPTY},{OAK_LEAVES,{0,2},OAK_LOG},{OAK_LEAVES,{1,2},EMPTY},
+	{OAK_LEAVES,{-1,1},EMPTY},{OAK_LEAVES,{0,1},OAK_LOG},{OAK_LEAVES,{1,1},EMPTY},
+	{EMPTY,{0,0},OAK_LOG},
+};
+
 std::vector<Block> Forest::getTree()
 {
-	std::vector<Block> tree;
+	std::vector<Block> tree(std::begin(OAK_TREE), std::end(OAK_TREE));
+
+	const int height = rand() % 3 + 1;
+
+	std::transform(tree.begin(), tree.end(), tree.begin(),
+		[height](Block& block) {
+			block.position.y += height;
+			return block;
+		});
+
+	tree.reserve(tree.size() + height + 1);
+
+	for (int i = 0; i <= height; ++i) {
+		tree.emplace_back(Block {OAK_LOG, {0, i}, EMPTY});
+	}
+
 	return tree;
 }
 

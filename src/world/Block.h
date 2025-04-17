@@ -25,13 +25,16 @@ namespace world
 		Block(MATERIAL type,glm::vec2 position,MATERIAL wall);
 		Block(glm::vec2 position,uint32_t data);
 
-		const glm::vec2 position;
+		glm::vec2 position;
 
 		[[nodiscard]] bool isTransparent() const;
 		[[nodiscard]] bool isEmpty() const;
 		[[nodiscard]] MATERIAL getType() const;
 		[[nodiscard]] MATERIAL getWall() const;
 		[[nodiscard]] int getLuminance() const;
+
+		void setWall(MATERIAL wall);
+		void setType(MATERIAL type);
 
 		[[nodiscard]] uint32_t getRaw() const;
 	protected:
