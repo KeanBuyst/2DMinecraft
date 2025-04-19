@@ -6,6 +6,7 @@
 namespace Util 
 {
 	extern unsigned int seed_value;
+	extern std::mt19937 rng;
 	void seed(unsigned int seed);
 	void seed();
 	
@@ -22,8 +23,11 @@ namespace Util
 		float weight;
 
 		ProbabilitySet(T item, const float weight) : item(item), weight(weight) {
-			if(weight >= 0.0f && weight <= 100.0f)
-				throw std::invalid_argument("Weight must be between 0 and 100");
+			if(weight < 0.0f)
+			{
+				const std::string message = std::string("Weight(") + std::to_string(weight) + std::string(") cannot be negative");
+				throw std::invalid_argument(message);
+			}
 		}
 	};
 
@@ -44,7 +48,7 @@ namespace Util
 		T get()
 		{
 			static_assert(size > 0, "Cannot have an empty probability group");
-			return items[dist(seed_value)].item;
+			return items[dist(rng)].item;
 		}
 	private:
 		std::array<ProbabilitySet<T>,size> items;
@@ -69,13 +73,12 @@ namespace Util
 
 		Enum get() {
 			static_assert(size > 0, "Cannot have an empty probability group");
-			return values[dist(gen)];
+			return values[dist(rng)];
 		}
 
 	private:
 		std::array<Enum, size> values;
 		std::discrete_distribution<size_t> dist;
-		std::mt19937 gen{std::random_device{}()};
 	};
 }
 

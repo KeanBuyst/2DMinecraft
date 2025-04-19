@@ -199,7 +199,7 @@ inline void World::GetChunk(const int x, const int y, const glm::ivec2 current)
 
 void World::post_generation(Chunk& chunk)
 {
-	static Util::EnumProbabilityGroup<Probability,3> probability({
+	static Util::EnumProbabilityGroup<Probability,3> surface({
 		Probability::PLANT,
 		Probability::TREE,
 		Probability::NONE,
@@ -213,7 +213,7 @@ void World::post_generation(Chunk& chunk)
 		if (chunk.contains(pos))
 		{
 			// generated plants will be direction dependent and seed dependent
-			switch (probability.get())
+			switch (surface.get())
 			{
 			case Probability::TREE:
 				// prevent trees from spawning next to each other

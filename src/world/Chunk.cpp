@@ -2,6 +2,7 @@
 
 #include "../Util.h"
 #include "../resources/Storage.h"
+#include "generation/Generation.h"
 
 #include <iostream>
 
@@ -32,7 +33,10 @@ void Chunk::generate()
 
 			if (relative >= 0)
 			{
-				data = static_cast<uint32_t>(biome->getMaterial(relative));
+				MATERIAL ore;
+				if (Generate::OreGeneration(glm::vec2(blockPos.x + x_fix,blockPos.y + y_fix),relative,ore))
+					data = static_cast<uint32_t>(ore);
+				else data = static_cast<uint32_t>(biome->getMaterial(relative));
 			}
 			else data = 0;
 		}

@@ -16,7 +16,15 @@ namespace world
 		OAK_LOG,
 		STONE,
 		GRASS,
-		OAK_LEAVES
+		OAK_LEAVES,
+		IRON_ORE,
+		COAL_ORE,
+		DIAMOND_ORE,
+		GOLD_ORE,
+		COPPER_ORE,
+		LAPIS_ORE,
+		EMERALD_ORE,
+		REDSTONE_ORE
 	};
 	// Contains a snapshot of chunk info at a position at the time the getBlock function was called
 	class Block

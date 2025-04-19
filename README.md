@@ -15,7 +15,6 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Inventory and items
 * Physics elements (e.g. Gravity)
 * Tile and entity collision
-* Ore & tree generation
 * Metadata Tiles
 
 ## Build
