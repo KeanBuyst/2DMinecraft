@@ -4,7 +4,7 @@
 
 namespace world::Generate
 {
-    void Lighting(Chunk& chunk);
+    void Lighting(World* world,glm::ivec2 chunk_pos);
 
     bool OreGeneration(glm::vec2 position,int depth, MATERIAL &ore);
 }

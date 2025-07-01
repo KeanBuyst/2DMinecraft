@@ -30,7 +30,7 @@ Application::Application() {
     }
 
     // create window
-    window = SDL_CreateWindow("2DMinecraft",
+    window = SDL_CreateWindow("2DMinecraft - 0",
         SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window)
@@ -104,51 +104,12 @@ void Application::run() {
     glClearColor(0.529f,0.8078f,0.9215686f,1);
 
     // creating loop
-    SDL_Event e;
     bool running = true;
     while (running)
     {
-        while (SDL_PollEvent(&e))
-        {
-            switch (e.type) {
-                case SDL_KEYDOWN:
-                    KeyDown(e.key.keysym.sym);
-                    break;
-                case SDL_MOUSEBUTTONDOWN:
-                {
-                    const glm::vec2 mouse = GetWorldMouse();
-                    switch (e.button.button)
-                    {
-                        case SDL_BUTTON_LEFT:
-                        {
-                            world::Block block(world::EMPTY,mouse,world::EMPTY);
-                            world.setBlock(block);
-                        }
-                        break;
-                        case SDL_BUTTON_RIGHT:
-                        break;
-                    }
-                    break;
-                }
-                case SDL_QUIT:
-                    running = false;
-                    break;
-                case SDL_WINDOWEVENT:
-                    if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
-                        SCREEN_WIDTH = e.window.data1;
-                        SCREEN_HEIGHT = e.window.data2;
-                        updateViewPort();
-                    }
-                    break;
-            }
-        }
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        // draw
-
-        world.render();
-
-        SDL_GL_SwapWindow(window);
+        events(running);
+        update();
+        render();
     }
 }
 
@@ -169,12 +130,93 @@ glm::vec2 Application::GetWorldMouse()
     return glm::vec2(x,y) + world::origin;
 }
 
+void Application::events(bool& running)
+{
+    SDL_Event e;
+    while (SDL_PollEvent(&e))
+    {
+        switch (e.type) {
+            case SDL_KEYDOWN:
+                KeyDown(e.key.keysym.sym);
+                break;
+            case SDL_MOUSEBUTTONDOWN:
+            {
+                const glm::vec2 mouse = GetWorldMouse();
+                    const glm::vec2 chunk = world::ToChunkSpace(mouse);
+                switch (e.button.button)
+                {
+                    case SDL_BUTTON_LEFT:
+                        {
+                            //world::Block block(world::EMPTY,mouse,world::EMPTY);
+                            //world.setBlock(block);
+                            world::Generate::Lighting(&world,chunk);
+                        }
+                        break;
+                    case SDL_BUTTON_RIGHT:
+                        world.setBlock({world::EMPTY, mouse, world::EMPTY});
+                        break;
+                    case SDL_BUTTON_MIDDLE:
+                        {
+                            world::Block block = world.getBlock(mouse);
+                            std::cout << "\n-------------------------\n"
+                                      << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
+                                      << "\nType: " << std::to_string(block.getType())
+                                      << "\nWall: " << std::to_string(block.getWall())
+                                      << "\nLight Level: " << std::to_string(block.getLuminance())
+                                      << "\n-------------------------\n"
+                                      << std::endl;
+                        }
+                        break;
+
+                }
+                break;
+            }
+            case SDL_QUIT:
+                running = false;
+                break;
+            case SDL_WINDOWEVENT:
+                if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    SCREEN_WIDTH = e.window.data1;
+                    SCREEN_HEIGHT = e.window.data2;
+                    updateViewPort();
+                }
+                break;
+        }
+    }
+}
+
+void Application::update()
+{
+    const float delta_time = static_cast<float>(SDL_GetTicks() - last_frame_time) / 1000.0f;
+    last_frame_time = SDL_GetTicks();
+
+    const float current_frame_rate = 1.0f / delta_time;
+    if (frame_rate == -1.0f) frame_rate = current_frame_rate;
+    else frame_rate = (frame_rate + current_frame_rate) / 2;
+
+    if (static_cast<int>(last_frame_time) % 30 == 1)
+    {
+        const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
+        SDL_SetWindowTitle(window,title.c_str());
+    }
+}
+
+void Application::render()
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // draw
+
+    world.render();
+
+    SDL_GL_SwapWindow(window);
+}
+
 void Application::KeyDown(const SDL_Keycode key)
 {
     switch (key)
     {
-        case SDLK_F11:
-            fullscreen = !fullscreen;
+    case SDLK_F11:
+        fullscreen = !fullscreen;
         if (fullscreen)
         {
             SDL_DisplayMode displayMode;
@@ -192,17 +234,17 @@ void Application::KeyDown(const SDL_Keycode key)
         }
         updateViewPort();
         break;
-        case SDLK_a:
-            world::origin.x -= 1;
+    case SDLK_a:
+        world::origin.x -= 1;
         break;
-        case SDLK_d:
-            world::origin.x += 1;
+    case SDLK_d:
+        world::origin.x += 1;
         break;
-        case SDLK_w:
-            world::origin.y += 1;
+    case SDLK_w:
+        world::origin.y += 1;
         break;
-        case SDLK_s:
-            world::origin.y -= 1;
+    case SDLK_s:
+        world::origin.y -= 1;
         break;
     }
 }

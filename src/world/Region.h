@@ -4,7 +4,7 @@
 
 namespace world 
 {
-	extern int DAYLIGHT;
+	extern short DAYLIGHT;
 
 	enum FLAGS : uint8_t
 	{
@@ -42,7 +42,6 @@ namespace world
 		void save(const Chunk &chunk);
 	private:
 		// max 4 regions for times of intersection between 4 different regions
-		uint8_t call_miss[STACK_SIZE] = { 0 };
 		uint8_t size = 0;
 		uint32_t old = 0;
 		Region* stack[STACK_SIZE] = { nullptr };

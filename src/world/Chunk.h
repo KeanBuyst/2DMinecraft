@@ -12,8 +12,9 @@ namespace world
 	public:
 		// Chunk local choords
 		[[nodiscard]] Block getBlock(glm::ivec2 pos);
+		[[nodiscard]] int getLightLevel(glm::ivec2 pos);
 		void setBlock(glm::ivec2 pos, const Block &block);
-		void setLight(glm::ivec2 pos,int luminance);
+		void setLightLevel(glm::ivec2 pos,int luminance);
 
 		void generate();
 

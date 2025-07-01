@@ -48,7 +48,7 @@ std::vector<Block> Forest::getTree()
 	tree.reserve(tree.size() + height + 1);
 
 	for (int i = 0; i <= height; ++i) {
-		tree.emplace_back(Block {OAK_LOG, {0, i}, EMPTY});
+		tree.emplace_back(Block {EMPTY, {0, i}, OAK_LOG});
 	}
 
 	return tree;

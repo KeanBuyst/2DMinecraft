@@ -50,10 +50,17 @@ bool Chunk::contains(const glm::vec2& globalPos) const
 
 void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
-	GetData(pos.y,pos.x) = block.getRaw();
+	uint32_t& data = GetData(pos.y,pos.x);
+	// override light value
+	const uint32_t luminance = data & 0x000F0000u;
+
+	data = block.getRaw();
+
+	data &= 0xFFF0FFFFu;
+	data |= luminance;
 }
 
-void Chunk::setLight(const glm::ivec2 pos,const int luminance)
+void Chunk::setLightLevel(const glm::ivec2 pos,const int luminance)
 {
 	uint32_t& data = GetData(pos.y,pos.x);
 	data &= 0xFFF0FFFFu;
@@ -67,11 +74,19 @@ Block Chunk::getBlock(const glm::ivec2 pos)
 	return {blockPos,GetData(pos.y,pos.x)};
 }
 
+int Chunk::getLightLevel(const glm::ivec2 pos)
+{
+	const uint32_t& data = GetData(pos.y,pos.x);
+	return static_cast<int>((data & 0x000F0000u) >> 16);
+}
+
 uint32_t& Chunk::GetData(const int y, const int x)
 {
 	// make x indicate the rows to improve memory efficiency during generation due to
 	// x being the first iteration in generation.
 	if (y < 0 || y >= CHUNK_SIZE || x < 0 || x >= CHUNK_SIZE)
-		throw std::out_of_range("Chunk::GetData(y,x) is out of chunk bounds");
+		throw std::out_of_range("Chunk::GetData(y: " +
+			std::to_string(y) + ",x: " +
+			std::to_string(x) + ") is out of chunk bounds");
 	return blocks[x * CHUNK_SIZE + y];
 }

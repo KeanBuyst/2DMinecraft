@@ -3,6 +3,8 @@
 #include "Region.h"
 #include "../glew.h"
 
+#include <memory>
+
 namespace world 
 {
 	constexpr int WORLD_SEED = 4563456;
@@ -22,8 +24,10 @@ namespace world
 		[[nodiscard]] Block getBlock(glm::vec2 position) const;
 		void setBlock(const Block& block);
 		// Chunk local position
-		Chunk getChunk(glm::ivec2 position) const;
+		[[nodiscard]] Chunk getChunk(glm::ivec2 position) const;
 		void setChunk(const Chunk &chunk);
+		// Works asynchronously
+		void setLightMap(glm::ivec2 chunk_pos,std::unique_ptr<short[]> lightMap);
 
 		// MetaBlock getMetaBlock();
 	private:

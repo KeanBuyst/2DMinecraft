@@ -148,7 +148,7 @@ void World::setBlock(const Block& block)
 	{
 		chunks[a_pos.x][a_pos.y].setBlock(pos,block);
 		// since block is in current view update lighting
-		Generate::Lighting(chunks[a_pos.x][a_pos.y]);
+		// Generate::Lighting(this,a_pos);
 	}
 }
 
@@ -185,6 +185,36 @@ void World::setChunk(const Chunk& chunk)
 	else
 	{
 		chunks[a_pos.x][a_pos.y] = chunk;
+	}
+}
+
+void World::setLightMap(const glm::ivec2 chunk_pos,std::unique_ptr<short[]> lightMap)
+{
+	if(glm::ivec2 a_pos = chunk_pos; !ChunkToArray(a_pos))
+	{
+		Chunk chunk;
+		chunk.position = chunk_pos;
+		handler.fetch(chunk);
+		for (auto x = 0; x < CHUNK_SIZE; ++x)
+		{
+			for (auto y = 0; y < CHUNK_SIZE; ++y)
+			{
+				const glm::ivec2 pos = {x,y};
+				chunk.setLightLevel(pos,lightMap[x * CHUNK_SIZE + y]);
+			}
+		}
+		handler.save(chunk);
+	}
+	else
+	{
+		for (auto x = 0; x < CHUNK_SIZE; ++x)
+		{
+			for (auto y = 0; y < CHUNK_SIZE; ++y)
+			{
+				const glm::ivec2 pos = {x,y};
+				chunks[a_pos.x][a_pos.y].setLightLevel(pos,lightMap[x * CHUNK_SIZE + y]);
+			}
+		}
 	}
 }
 
@@ -251,7 +281,7 @@ void World::post_generation(Chunk& chunk)
 		}
 	}
 
-	Generate::Lighting(chunk);
+	Generate::Lighting(this,chunk.position);
 
 	chunk.flag |= POST_GENERATED;
 }

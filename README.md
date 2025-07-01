@@ -2,15 +2,15 @@
 Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 
 ### Current feature's
-* 2D chunks (thus infinit x and y generation)
+* 2D chunks (thus "infinite" x and y generation)
 * Perlin Noise chunk generation
 * Efficient GPU rendering using byte grouping
 * Region based chunk storage
 * 2D Perlin Noise cave generation
 * Background and foreground tiles
+* Lighting
 
 ### Planned feature's
-* Lighting
 * Entites rendering
 * Inventory and items
 * Physics elements (e.g. Gravity)

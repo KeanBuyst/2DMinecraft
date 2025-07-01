@@ -94,57 +94,27 @@ RegionHandler::~RegionHandler()
 
 Region* RegionHandler::GetRegion(const glm::ivec2 pos)
 {
-	//to sort array to remove open spaces
-	Region* reg = nullptr;
-
 	for (auto i = 0; i < size; i++)
 	{
 		Region*& region = stack[i];
-		uint8_t& miss = call_miss[i];
 		if (region->contains(pos))
 		{
-			miss = 0;
-			reg = region;
-		}
-		else
-		{
-			miss++;
-			if (miss > 32) {
-				delete region;
-				region = nullptr;
-				size--;
-
-				for (auto s = i; s < size; s++)
-				{
-					Region*& next = stack[s+1];
-					if (next == nullptr) break;
-					stack[s] = next;
-					next = nullptr;
-				}
-
-				if (region != nullptr) i--;
-			}
+			return region;
 		}
 	}
-	if (reg == nullptr)
+	auto* reg = new Region(ToRegionSpace(pos));
+	if (size < STACK_SIZE)
 	{
-		// load new region
-		reg = new Region(ToRegionSpace(pos));
-		if (size < STACK_SIZE)
-		{
-			stack[size] = reg;
-			call_miss[size] = 0;
-			size++;
-		}
-		else
-		{
-			// no more spaces left in stack. Replace first and oldest element
-			delete stack[old];
-			call_miss[old] = 0;
-			stack[old] = reg;
-			old++;
-			if (old == WORLD_SIZE) old = 0;
-		}
+		stack[size] = reg;
+		size++;
+	}
+	else
+	{
+		// no more spaces left in stack. Replace first and oldest element
+		delete stack[old];
+		stack[old] = reg;
+		old++;
+		if (old == STACK_SIZE) old = 0;
 	}
 	return reg;
 }

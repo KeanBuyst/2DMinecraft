@@ -5,7 +5,7 @@
 namespace world
 {
     // chunk.h
-    constexpr int CHUNK_SIZE = 8;
+    constexpr int CHUNK_SIZE = 16;
     // region.h
     constexpr int REGION_SIZE = 32;
     constexpr int STACK_SIZE = 4;

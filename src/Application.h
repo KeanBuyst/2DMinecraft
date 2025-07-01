@@ -24,6 +24,10 @@ public:
 private:
   Application();
 
+  void events(bool& running);
+  void update();
+  void render();
+
   void KeyDown(SDL_Keycode key);
   void updateViewPort() const;
 
@@ -32,4 +36,6 @@ private:
   SDL_Window* window;
   std::unique_ptr<ShaderProgram> shader;
   SDL_GLContext context;
+  Uint32 last_frame_time;
+  float frame_rate = -1.0f;
 };

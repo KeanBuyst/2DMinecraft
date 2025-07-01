@@ -16,8 +16,6 @@ bool Block::isTransparent() const
     switch (getType())
     {
     case OAK_LEAVES:
-    case EMPTY:
-        // Unnecessary call -> return getWall() != EMPTY;
         return true;
     }
     return false;
