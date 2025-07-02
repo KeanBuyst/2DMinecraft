@@ -34,7 +34,8 @@ private:
   world::World world;
   bool fullscreen = false;
   SDL_Window* window;
-  std::unique_ptr<ShaderProgram> shader;
+  std::unique_ptr<gl::ShaderProgram> terrain_shader;
+  std::unique_ptr<gl::ShaderProgram> entity_shader;
   SDL_GLContext context;
   Uint32 last_frame_time;
   float frame_rate = -1.0f;

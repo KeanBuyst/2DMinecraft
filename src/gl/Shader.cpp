@@ -3,6 +3,9 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include "../glew.h"
+
+using namespace gl;
 
 std::string readFile(const std::string& filePath);
 
@@ -12,7 +15,7 @@ std::string readFile(const std::string& filePath);
 * .frag - a fragment shader
 * .comp - a compute shader
 */
-GLuint GetShader(const std::string& path)
+GLuint gl::GetShader(const std::string& path)
 {
 	const std::string format = path.substr(path.size() - 5, 5);
 	GLenum type;

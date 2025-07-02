@@ -26,7 +26,7 @@ namespace world
 		void save(const Chunk& chunk);
 	private:
 		uint8_t flags[REGION_SIZE * REGION_SIZE] = { 0 };
-		uint64_t buffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE * CHUNK_SIZE] = { 0 };
+		uint32_t buffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE * CHUNK_SIZE] = { 0 };
 
 		static inline int GetIndex(const Chunk& chunk);
 	};

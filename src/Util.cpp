@@ -160,3 +160,14 @@ float Util::noise(float x, float y) {
     // The result is scaled to return values in the interval [-1,1].
     return 45.23065f * (n0 + n1 + n2);
 }
+
+glm::vec2 Util::rotate(const glm::vec2& point, const float angle)
+{
+    const float cosTheta = cosf(angle);
+    const float sinTheta = sinf(angle);
+
+    return glm::vec2(
+        point.x * cosTheta - point.y * sinTheta,
+        point.x * sinTheta + point.y * cosTheta
+    );
+}

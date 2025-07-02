@@ -1,31 +1,32 @@
 #pragma once
 
-#include "../glew.h"
 #include <string>
 #include <unordered_map>
 #include <glm.hpp>
-#include "Texture.h"
 
-GLuint GetShader(const std::string& path);
-
-class ShaderProgram
+namespace gl
 {
-public:
-	ShaderProgram();
-	~ShaderProgram();
-	void bind(GLuint shader) const;
-	void use() const;
-	void build();
+    uint32_t GetShader(const std::string& path);
 
-	void sendMatrix(const GLchar* name, glm::mat4& matrix);
-	void useTexture(const GLchar* name,unsigned int slot);
-	void sendVector2(const GLchar* name, glm::vec2& vector);
+    class ShaderProgram
+    {
+    public:
+        ShaderProgram();
+        ~ShaderProgram();
+        void bind(uint32_t shader) const;
+        void use() const;
+        void build();
 
-	GLuint ID;
-private:
-	bool built = false;
-	std::unordered_map<const GLchar*,GLint> cache;
+        void sendMatrix(const char* name, glm::mat4& matrix);
+        void useTexture(const char* name,unsigned int slot);
+        void sendVector2(const char* name, glm::vec2& vector);
 
-	GLint locator(const GLchar* name);
-};
+        uint32_t ID;
+    private:
+        bool built = false;
+        std::unordered_map<const char*,int> cache;
+
+        int locator(const char* name);
+    };
+}
 

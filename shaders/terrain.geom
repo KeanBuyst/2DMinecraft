@@ -33,10 +33,10 @@ void main() {
 
     if (_wall[0] != 0){
         vec2 quadWallTexCoords[4] = vec2[4](
-        wallTexPos + vec2(0.0, texSize.y),  // Bottom-left
-        wallTexPos + vec2(texSize.x, texSize.y), // Bottom-right
-        wallTexPos,                         // Top-left
-        wallTexPos + vec2(texSize.x, 0.0)   // Top-right
+            wallTexPos + vec2(0.0, texSize.y),  // Bottom-left
+            wallTexPos + vec2(texSize.x, texSize.y), // Bottom-right
+            wallTexPos,                         // Top-left
+            wallTexPos + vec2(texSize.x, 0.0)   // Top-right
         );
         // Emit the vertices for the block quad
         for (int v = 0; v < 4; v++) {

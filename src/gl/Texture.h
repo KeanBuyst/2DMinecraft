@@ -1,8 +1,9 @@
 #pragma once
+#include <cstdint>
 
-#include "../glew.h"
+#include <glm.hpp>
 
-namespace res
+namespace gl
 {
 	class Texture 
 	{
@@ -14,7 +15,16 @@ namespace res
 
 		void unbind();
 
-		GLuint ID;
+		uint32_t ID;
+		int width, height;
+	};
+
+	class AtlasTexture : public Texture
+	{
+	public:
+		explicit AtlasTexture(const char* path) : Texture(path) {};
+		// format: x,y,width,height
+		glm::vec4 getTexel(glm::vec4 pixel_rect) const;
 	};
 }
 

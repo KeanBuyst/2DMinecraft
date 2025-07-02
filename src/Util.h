@@ -1,7 +1,9 @@
 #pragma once
 #include <array>
+#include <cassert>
 #include <random>
 #include <stdexcept>
+#include <glm.hpp>
 
 namespace Util 
 {
@@ -16,6 +18,8 @@ namespace Util
 	*/
 	float noise(float x);
 	float noise(float x,float y);
+
+	glm::vec2 rotate(const glm::vec2& point, float angle);
 
 	template<typename T>
 	struct ProbabilitySet {
@@ -79,6 +83,95 @@ namespace Util
 	private:
 		std::array<Enum, size> values;
 		std::discrete_distribution<size_t> dist;
+	};
+
+	template<typename T, uint16_t max_size>
+	struct Buffer
+	{
+		int size = 0;
+
+		Buffer()
+		{
+			for (auto i = 0; i < max_size; ++i)
+			{
+				data[i] = nullptr;
+				space[i] = 0;
+			}
+		}
+
+		~Buffer()
+		{
+			clean();
+		}
+
+		void clean()
+		{
+			for (auto i = 0; i < max_size; ++i)
+			{
+				if (data[i] != nullptr)
+				{
+					delete data[i];
+					data[i] = nullptr;
+				}
+			}
+		}
+
+		T* get(uint16_t id)
+		{
+			return data[id];
+		}
+
+		bool next(T*& element)
+		{
+			if (index == size)
+			{
+				index = 0;
+				return false;
+			}
+			while (data[index] == nullptr)
+			{
+				index++;
+				if (index == size)
+				{
+					index = 0;
+					return false;
+				}
+			}
+			element = data[index];
+			index++;
+			return true;
+		}
+
+		void destroy(uint16_t id)
+		{
+			delete data[id];
+			data[id] = nullptr;
+			space[space_size] = id;
+			space_size++;
+		}
+		// returns ID
+		uint16_t add(T* element)
+		{
+			uint16_t id;
+			if (space_size == 0)
+			{
+				assert(size != max_size);
+				data[size] = element;
+				id = size;
+				size++;
+			} else
+			{
+				space_size--;
+				id = space[space_size];
+				data[id] = element;
+			}
+			return id;
+		}
+	private:
+		T* data[max_size];
+		uint16_t space[max_size];
+		int space_size = 0;
+		int index = 0;
 	};
 }
 

@@ -1,13 +1,14 @@
 #include "Texture.h"
 #include "../libs/stb_image.h"
 #include <iostream>
+#include "../glew.h"
 
-using namespace res;
+using namespace gl;
 
 Texture::Texture(const char* path)
 {
-	int width, height, m_BPP;
-
+	int m_BPP;
+	
 	void* pixels = stbi_load(path, &width, &height, &m_BPP, 4);
 
 	if (!pixels)
@@ -40,7 +41,7 @@ Texture::~Texture()
 	glDeleteTextures(1, &ID);
 }
 
-void Texture::bind(unsigned int slot) const {
+void Texture::bind(const unsigned int slot) const {
 	glActiveTexture(GL_TEXTURE0 + slot);
 	glBindTexture(GL_TEXTURE_2D,ID);
 }
@@ -48,4 +49,13 @@ void Texture::bind(unsigned int slot) const {
 void Texture::unbind()
 {
 	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+glm::vec4 AtlasTexture::getTexel(const glm::vec4 pixel_rect) const
+{
+	const float x = pixel_rect.x / static_cast<float>(width);
+	const float y = pixel_rect.y / static_cast<float>(height);
+	const float w = pixel_rect.z / static_cast<float>(width);
+	const float h = pixel_rect.w / static_cast<float>(height);
+	return {x,y,w,h};
 }

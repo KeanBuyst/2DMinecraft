@@ -8,6 +8,8 @@
 #include "ext/matrix_clip_space.hpp"
 #include "resources/Storage.h"
 #include "world/generation/Generation.h"
+#include "gl/Texture.h"
+#include "world/entities/EntityHandler.h"
 
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
@@ -74,13 +76,20 @@ Application::Application() {
     // init data path
     std::filesystem::create_directories(res::basePath);
 
-    shader = std::make_unique<ShaderProgram>();
-    shader->bind(GetShader("terrain.vert"));
-    shader->bind(GetShader("terrain.geom"));
-    shader->bind(GetShader("terrain.frag"));
-    shader->build();
+    terrain_shader = std::make_unique<gl::ShaderProgram>();
+    terrain_shader->bind(gl::GetShader("terrain.vert"));
+    terrain_shader->bind(gl::GetShader("terrain.geom"));
+    terrain_shader->bind(gl::GetShader("terrain.frag"));
+    terrain_shader->build();
 
     world.init();
+
+    entity_shader = std::make_unique<gl::ShaderProgram>();
+    entity_shader->bind(gl::GetShader("entity.vert"));
+    entity_shader->bind(gl::GetShader("entity.frag"));
+    entity_shader->build();
+
+    EntityHandler::Init();
 
     // vsync
     SDL_GL_SetSwapInterval(1);
@@ -93,13 +102,20 @@ Application& Application::GetInstance() {
 
 void Application::run() {
     // Create texture altas
-    const res::Texture texture("../assets/tiles.png");
+    const gl::Texture tileAtlas("../assets/tiles.png");
+    const gl::AtlasTexture entityAtlas("../assets/entities.png");
+    tileAtlas.bind(0);
+    entityAtlas.bind(1);
 
-    shader->use();
-    updateViewPort();
-
-    texture.bind(0);
-    shader->useTexture("atlas",0);
+    // Create dummy entity
+    world::Entity* entity = new world::Entity({0,0},world::PLAYER,4);
+    world::Component** components = new world::Component*[4];
+    components[0] = new world::SpriteComponent({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
+    components[1] = new world::SpriteComponent({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f);
+    components[2] = new world::SpriteComponent({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f);
+    components[3] = new world::SpriteComponent({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    entity->addComponents(components);
+    EntityHandler::Add(entity);
 
     glClearColor(0.529f,0.8078f,0.9215686f,1);
 
@@ -114,6 +130,7 @@ void Application::run() {
 }
 
 Application::~Application() {
+    EntityHandler::Destroy();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -182,6 +199,7 @@ void Application::events(bool& running)
                 }
                 break;
         }
+        EntityHandler::Event(&e);
     }
 }
 
@@ -199,14 +217,31 @@ void Application::update()
         const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
         SDL_SetWindowTitle(window,title.c_str());
     }
+
+    EntityHandler::Update(delta_time);
 }
 
 void Application::render()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // draw
+    // Tile shader to draw world
+     terrain_shader->use();
 
-    world.render();
+     updateViewPort();
+     terrain_shader->useTexture("atlas",0);
+
+     world.render();
+    // end tile drawing
+
+    // Entity drawing
+    entity_shader->use();
+
+    updateViewPort();
+    entity_shader->useTexture("atlas",1);
+
+    EntityHandler::Render();
+    // end entity drawing
 
     SDL_GL_SwapWindow(window);
 }
@@ -257,5 +292,5 @@ void Application::updateViewPort() const {
     glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SIZE, VIEW_SIZE,-2.0f,2.0f);
     VIEW_PORT = glm::vec4(-aspect,aspect,-VIEW_SIZE,VIEW_SIZE);
 
-    shader->sendMatrix("ortho", mat);
+    terrain_shader->sendMatrix("ortho", mat);
 }
