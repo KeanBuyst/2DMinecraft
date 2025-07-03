@@ -124,7 +124,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
 {
     // end case
     if (lightLevel == 0) return;
-    // optimization
+
     if (map->lightMap[pos.x][pos.y] < lightLevel)
     {
         // set light level
@@ -137,7 +137,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
         {
             glm::ivec2 dir(-1,1);
             glm::ivec2 next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -146,7 +146,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {0,-1};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -155,7 +155,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {1,1};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -164,7 +164,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {-1,0};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -173,7 +173,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {1,0};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -182,7 +182,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {-1,-1};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -191,7 +191,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {0,1};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -200,7 +200,7 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
                 );
             dir = {1,-1};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel) spread(
                 map,
                 next,
                 level(lightLevel + map->interferenceMap[next.x][next.y]),
@@ -212,20 +212,23 @@ void spread(LightMap* map,glm::ivec2 pos, short lightLevel, const SpreadType typ
     case LINEAR:
         {
             glm::ivec2 next = pos + direction;
-            if (!LightMap::bounds(next)) return;
-            spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,direction);
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel)
+                spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,direction);
         }
         break;
     case DIAGONAL:
         {
             glm::ivec2 next = pos + direction;
-            if (LightMap::bounds(next)) spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),DIAGONAL,direction);
+            if (LightMap::bounds(next)  && map->interferenceMap[next.x][next.y] < lightLevel)
+                spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),DIAGONAL,direction);
             glm::ivec2 dir = {direction.x,0};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,dir);
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel)
+                spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,dir);
             dir = {0,direction.y};
             next = pos + dir;
-            if (LightMap::bounds(next)) spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,dir);
+            if (LightMap::bounds(next) && map->interferenceMap[next.x][next.y] < lightLevel)
+                spread(map,next, level(lightLevel + map->interferenceMap[next.x][next.y]),LINEAR,dir);
         }
         break;
     }
