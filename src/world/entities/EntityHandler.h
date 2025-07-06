@@ -5,7 +5,7 @@
 
 namespace EntityHandler
 {
-    extern Util::Buffer<world::Entity,1024> buffer;
+    extern Util::Buffer<world::Entity,128> buffer;
 
     void Init();
     void Destroy();

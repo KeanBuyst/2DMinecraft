@@ -2,9 +2,22 @@
 
 std::vector<world::EntityRenderData> world::entity_render_batch;
 
+float world::GetMaxHealth(EntityType type)
+{
+    switch (type)
+    {
+    case PLAYER:
+        return 100.0f;
+    default:
+        return -1.0f;
+    }
+}
+
 world::Entity::Entity(const glm::vec2 position,const EntityType type, const int numOfComponents) :
     Transform(position),type(type), numOfComponents(numOfComponents)
 {
+    max_health = GetMaxHealth(type);
+    health = max_health;
     components = new Component*[numOfComponents];
 }
 
@@ -29,10 +42,13 @@ void world::Entity::event(SDL_Event* event) const
 
 void world::Entity::update(const float& delta_time)
 {
+    velocity += acceleration * delta_time;
     for (auto i = 0; i < numOfComponents; ++i)
     {
         components[i]->update(delta_time);
     }
+    // removes jitter
+    position += glm::floor(velocity * 100.0f * delta_time) / 100.0f;
 }
 
 void world::Entity::render()
@@ -41,16 +57,6 @@ void world::Entity::render()
     {
         components[i]->render();
     }
-}
-
-world::Component* world::Entity::getComponent(const ComponentType compType) const
-{
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        if (components[i]->type == compType)
-            return components[i];
-    }
-    return nullptr;
 }
 
 void world::Entity::addComponents(Component** comps, int size)

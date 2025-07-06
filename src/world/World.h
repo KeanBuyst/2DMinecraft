@@ -8,7 +8,6 @@
 namespace world 
 {
 	constexpr int WORLD_SEED = 4563456;
-	constexpr float PIXEL_SIZE = 16.0f;
 
 	extern RegionHandler handler;
 

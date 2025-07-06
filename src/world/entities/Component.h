@@ -2,6 +2,7 @@
 
 #include <SDL_events.h>
 
+#include "../World.h"
 #include "../../gl/Texture.h"
 #include "../../math/Transform.h"
 
@@ -10,6 +11,8 @@ namespace world
     enum ComponentType : uint8_t
     {
         SPRITE,
+        RIGID_BODY,
+        HITBOX,
     };
 
     struct Component : Transform
@@ -19,22 +22,55 @@ namespace world
 
         Component(glm::vec2 position,ComponentType type);
 
-        virtual ~Component() {};
+        virtual ~Component() = default;
 
-        virtual void event(SDL_Event* event) = 0;
-        virtual void update(const float& delta_time) = 0;
-        virtual void render() = 0;
+        virtual void event(SDL_Event* event){}
+        virtual void update(const float& delta_time){}
+        virtual void render(){}
     };
 
-    struct SpriteComponent : Component
+    struct Sprite : Component
     {
-        glm::vec4 texel;
+        glm::vec4 texel{};
         float width,height;
 
-        SpriteComponent(glm::vec4 position,glm::vec4 textRect,float scale);
+        Sprite(glm::vec4 position,glm::vec4 textRect,float scale);
 
-        void event(SDL_Event* event) override;
+        void render() override;
+    };
+
+    struct HitBox : Component
+    {
+        glm::vec4 offsets;
+        const World* world;
+
+        glm::vec2 target;
+
+        bool top;
+        bool bottom;
+        bool left;
+        bool right;
+        bool collidedWithEntity;
+
+        bool debug;
+
+        HitBox(const World* world,glm::vec4 offsets);
+
         void update(const float& delta_time) override;
         void render() override;
+        [[nodiscard]] bool inBounds(const glm::vec2& point) const;
+    };
+
+    struct RigidBody : Component
+    {
+        static constexpr float gravity = 48.0f;
+        static constexpr float drag = 0.8f;
+        static constexpr float friction = 0.46f;
+
+        const HitBox* hitbox;
+
+        explicit RigidBody(const HitBox* hitbox);
+
+        void update(const float& delta_time) override;
     };
 }

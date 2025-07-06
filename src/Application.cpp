@@ -107,15 +107,20 @@ void Application::run() {
     tileAtlas.bind(0);
     entityAtlas.bind(1);
 
-    // Create dummy entity
-    world::Entity* entity = new world::Entity({0,0},world::PLAYER,4);
-    world::Component** components = new world::Component*[4];
-    components[0] = new world::SpriteComponent({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
-    components[1] = new world::SpriteComponent({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f);
-    components[2] = new world::SpriteComponent({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f);
-    components[3] = new world::SpriteComponent({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    entity->addComponents(components);
-    EntityHandler::Add(entity);
+    // Create player entity
+    player = new world::Entity({0,10},world::PLAYER,6);
+    player_hitbox = new world::HitBox(&world,{-2.5f,14,2.5f,-18});
+    auto** components = new world::Component*[]
+    {
+        new world::Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f),
+        new world::Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f),
+        new world::Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f),
+        new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f),
+        new world::RigidBody(player_hitbox),
+        player_hitbox
+    };
+    player->addComponents(components);
+    EntityHandler::Add(player);
 
     glClearColor(0.529f,0.8078f,0.9215686f,1);
 
@@ -142,8 +147,8 @@ glm::vec2 Application::GetWorldMouse()
     int window_x, window_y;
     SDL_GetMouseState(&window_x,&window_y);
     // change to view port local position
-    const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SIZE;
-    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SIZE);
+    const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SCALE;
+    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SCALE);
     return glm::vec2(x,y) + world::origin;
 }
 
@@ -155,6 +160,9 @@ void Application::events(bool& running)
         switch (e.type) {
             case SDL_KEYDOWN:
                 KeyDown(e.key.keysym.sym);
+                break;
+            case SDL_KEYUP:
+                KeyUp(e.key.keysym.sym);
                 break;
             case SDL_MOUSEBUTTONDOWN:
             {
@@ -219,6 +227,7 @@ void Application::update()
     }
 
     EntityHandler::Update(delta_time);
+    world::origin = player->position;
 }
 
 void Application::render()
@@ -226,12 +235,12 @@ void Application::render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // draw
     // Tile shader to draw world
-     terrain_shader->use();
+    terrain_shader->use();
 
-     updateViewPort();
-     terrain_shader->useTexture("atlas",0);
+    updateViewPort();
+    terrain_shader->useTexture("atlas",0);
 
-     world.render();
+    world.render();
     // end tile drawing
 
     // Entity drawing
@@ -270,16 +279,29 @@ void Application::KeyDown(const SDL_Keycode key)
         updateViewPort();
         break;
     case SDLK_a:
-        world::origin.x -= 1;
+        player->acceleration.x = -10;
         break;
     case SDLK_d:
-        world::origin.x += 1;
+        player->acceleration.x = 10;
         break;
     case SDLK_w:
-        world::origin.y += 1;
+        {
+            if (player_hitbox->bottom) player->acceleration.y = 800;
+        }
         break;
-    case SDLK_s:
-        world::origin.y -= 1;
+    }
+}
+
+void Application::KeyUp(SDL_Keycode key)
+{
+    switch (key)
+    {
+    case SDLK_a:
+    case SDLK_d:
+        player->acceleration.x = 0;
+        break;
+    case SDLK_w:
+        player->acceleration.y = 0;
         break;
     }
 }

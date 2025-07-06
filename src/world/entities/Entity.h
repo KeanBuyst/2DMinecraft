@@ -23,13 +23,16 @@ namespace world
     // Render Batch
     extern std::vector<EntityRenderData> entity_render_batch;
 
+    float GetMaxHealth(EntityType type);
+
     struct Entity : Transform
     {
         EntityType type;
         Component** components;
         uint16_t id;
         int numOfComponents;
-        float health = 1;
+        float max_health;
+        float health;
 
         Entity(glm::vec2 position,EntityType type,int numOfComponents);
         ~Entity();
@@ -38,7 +41,17 @@ namespace world
         void update(const float& delta_time);
         void render();
 
-        [[nodiscard]] Component* getComponent(ComponentType compType) const;
+        template<typename T>
+        [[nodiscard]] std::vector<T*> getComponents(const ComponentType compType) const
+        {
+            std::vector<T*> list;
+            for (auto i = 0; i < numOfComponents; ++i)
+            {
+                if (components[i]->type == compType)
+                    list.push_back(static_cast<T*>(components[i]));
+            }
+            return list;
+        }
 
         void addComponents(Component** comps,int size = -1);
     };

@@ -4,7 +4,7 @@
 
 using namespace world;
 
-Util::Buffer<Entity,1024> EntityHandler::buffer;
+Util::Buffer<Entity,128> EntityHandler::buffer;
 
 GLuint VAO;
 GLuint VBO;

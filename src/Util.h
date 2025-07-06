@@ -21,6 +21,10 @@ namespace Util
 
 	glm::vec2 rotate(const glm::vec2& point, float angle);
 
+	void decreaseMagnitude(glm::vec2& vector,float scaler);
+
+	void drawDebugLines(const glm::vec2* points, int size);
+
 	template<typename T>
 	struct ProbabilitySet {
 		T item;

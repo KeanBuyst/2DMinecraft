@@ -7,5 +7,7 @@ struct Transform
     Transform(const glm::vec2 position,const float rotation) : position(position), rotation(rotation) {}
 
     glm::vec2 position;
+    glm::vec2 velocity;
+    glm::vec2 acceleration;
     float rotation;
 };

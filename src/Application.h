@@ -5,6 +5,7 @@
 
 #include "gl/Shader.h"
 #include "world/World.h"
+#include "world/entities/Entity.h"
 
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
@@ -29,6 +30,7 @@ private:
   void render();
 
   void KeyDown(SDL_Keycode key);
+  void KeyUp(SDL_Keycode key);
   void updateViewPort() const;
 
   world::World world;
@@ -39,4 +41,7 @@ private:
   SDL_GLContext context;
   Uint32 last_frame_time;
   float frame_rate = -1.0f;
+
+  world::Entity* player;
+  world::HitBox* player_hitbox;
 };

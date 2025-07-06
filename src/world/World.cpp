@@ -102,11 +102,11 @@ void World::render()
 					if (block.isEmpty()) continue;
 					glm::vec2 pixelCoord = block.position;
 					pixelCoord -= origin;
-					pixelCoord *= PIXEL_SIZE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
+					pixelCoord *= PIXEL_SCALE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
 
 					// optimizations
-					if (pixelCoord.x + PIXEL_SIZE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
-						pixelCoord.y + CHUNK_SIZE*PIXEL_SIZE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SIZE > VIEW_PORT.w)
+					if (pixelCoord.x + PIXEL_SCALE < VIEW_PORT.x || pixelCoord.x > VIEW_PORT.y ||
+						pixelCoord.y + CHUNK_SIZE*PIXEL_SCALE < VIEW_PORT.z || pixelCoord.y - CHUNK_SIZE*PIXEL_SCALE > VIEW_PORT.w)
 					{
 						continue;
 					}

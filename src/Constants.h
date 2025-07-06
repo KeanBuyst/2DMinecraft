@@ -13,6 +13,7 @@ namespace world
     constexpr float WORLD_SIZE = 10.0f; // since we want a block position to represent 1. 1/10 = 0.1
     constexpr int WORLD_WIDTH = 5; // min is 3x3
     constexpr int WORLD_HEIGHT = 3;
+    constexpr float PIXEL_SCALE = 16.0f;
 
     extern glm::vec2 origin;
     extern glm::ivec2 chunk_origin;

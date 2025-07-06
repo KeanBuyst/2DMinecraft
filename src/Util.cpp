@@ -3,6 +3,10 @@
 #include <random>
 #include <ctime>
 
+#include "Application.h"
+#include "glew.h"
+#include "gl/Shader.h"
+
 /*
 Author: S�bastien Rombauts
 Link: https://github.com/SRombauts/SimplexNoise/blob/master/src/SimplexNoise.cpp
@@ -170,4 +174,39 @@ glm::vec2 Util::rotate(const glm::vec2& point, const float angle)
         point.x * cosTheta - point.y * sinTheta,
         point.x * sinTheta + point.y * cosTheta
     );
+}
+
+void Util::decreaseMagnitude(glm::vec2& vector, const float scaler)
+{
+    if (vector.x < 0)
+    {
+        vector.x += scaler;
+        if (vector.x > 0)
+            vector.x = 0;
+    } else
+    {
+        vector.x -= scaler;
+        if (vector.x < 0)
+            vector.x = 0;
+    }
+    if (vector.y < 0)
+    {
+        vector.y += scaler;
+        if (vector.y > 0)
+            vector.y = 0;
+    } else
+    {
+        vector.y -= scaler;
+        if (vector.y < 0)
+            vector.y = 0;
+    }
+}
+
+void Util::drawDebugLines(const glm::vec2* points, int size)
+{
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < size; ++i) {
+        glVertex2f((points[i].x - world::origin.x) * world::PIXEL_SCALE, (points[i].y - world::origin.y) * world::PIXEL_SCALE);
+    }
+    glEnd();
 }
