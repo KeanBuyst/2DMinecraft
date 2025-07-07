@@ -22,6 +22,10 @@ public:
 
   static glm::vec2 GetWorldMouse();
 
+  static bool isKeyDown(SDL_Scancode key);
+  static bool isKeyPressed(SDL_Scancode key);
+  static bool isKeyUp(SDL_Scancode key);
+
 private:
   Application();
 
@@ -29,12 +33,16 @@ private:
   void update();
   void render();
 
-  void KeyDown(SDL_Keycode key);
-  void KeyUp(SDL_Keycode key);
   void updateViewPort() const;
+
+  void computePlayer();
+
+  static Uint8 prev_keystate[SDL_NUM_SCANCODES];
+  static const Uint8* curr_keystate;
 
   world::World world;
   bool fullscreen = false;
+  bool keypressed = false;
   SDL_Window* window;
   std::unique_ptr<gl::ShaderProgram> terrain_shader;
   std::unique_ptr<gl::ShaderProgram> entity_shader;
@@ -44,4 +52,5 @@ private:
 
   world::Entity* player;
   world::HitBox* player_hitbox;
+  world::RigidBody* player_rigid_body;
 };

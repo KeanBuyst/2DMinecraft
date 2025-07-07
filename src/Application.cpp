@@ -14,6 +14,9 @@
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
 
+const Uint8* Application::curr_keystate = nullptr;
+Uint8 Application::prev_keystate[SDL_NUM_SCANCODES] = {};
+
 glm::vec4 VIEW_PORT;
 
 void GLAPIENTRY MessageCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,
@@ -73,6 +76,9 @@ Application::Application() {
     glDisable(GL_ALPHA_TEST);
     glDepthFunc(GL_LESS);
 
+    // Init key state
+    curr_keystate = SDL_GetKeyboardState(nullptr);
+
     // init data path
     std::filesystem::create_directories(res::basePath);
 
@@ -109,14 +115,15 @@ void Application::run() {
 
     // Create player entity
     player = new world::Entity({0,10},world::PLAYER,6);
-    player_hitbox = new world::HitBox(&world,{-2.5f,14,2.5f,-18});
+    player_hitbox = new world::HitBox(&world,{-2.5f,10,2.5f,-18});
+    player_rigid_body = new world::RigidBody(player_hitbox);
     auto** components = new world::Component*[]
     {
         new world::Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f),
         new world::Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f),
         new world::Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f),
         new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f),
-        new world::RigidBody(player_hitbox),
+        player_rigid_body,
         player_hitbox
     };
     player->addComponents(components);
@@ -128,10 +135,29 @@ void Application::run() {
     bool running = true;
     while (running)
     {
+        // update key state
+        memcpy(prev_keystate, curr_keystate, SDL_NUM_SCANCODES);
+        curr_keystate = SDL_GetKeyboardState(nullptr);
+
         events(running);
         update();
         render();
     }
+}
+
+bool Application::isKeyDown(const SDL_Scancode key)
+{
+    return curr_keystate[key];
+}
+
+bool Application::isKeyPressed(const SDL_Scancode key)
+{
+    return !prev_keystate[key] && curr_keystate[key];
+}
+
+bool Application::isKeyUp(const SDL_Scancode key)
+{
+    return prev_keystate[key] && !curr_keystate[key];
 }
 
 Application::~Application() {
@@ -158,12 +184,6 @@ void Application::events(bool& running)
     while (SDL_PollEvent(&e))
     {
         switch (e.type) {
-            case SDL_KEYDOWN:
-                KeyDown(e.key.keysym.sym);
-                break;
-            case SDL_KEYUP:
-                KeyUp(e.key.keysym.sym);
-                break;
             case SDL_MOUSEBUTTONDOWN:
             {
                 const glm::vec2 mouse = GetWorldMouse();
@@ -225,7 +245,7 @@ void Application::update()
         const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
         SDL_SetWindowTitle(window,title.c_str());
     }
-
+    computePlayer();
     EntityHandler::Update(delta_time);
     world::origin = player->position;
 }
@@ -255,11 +275,12 @@ void Application::render()
     SDL_GL_SwapWindow(window);
 }
 
-void Application::KeyDown(const SDL_Keycode key)
+void Application::computePlayer()
 {
-    switch (key)
+    constexpr float SPEED = 8.0f;
+
+    if (isKeyPressed(SDL_SCANCODE_F11))
     {
-    case SDLK_F11:
         fullscreen = !fullscreen;
         if (fullscreen)
         {
@@ -277,32 +298,30 @@ void Application::KeyDown(const SDL_Keycode key)
             SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
         }
         updateViewPort();
-        break;
-    case SDLK_a:
-        player->acceleration.x = -10;
-        break;
-    case SDLK_d:
-        player->acceleration.x = 10;
-        break;
-    case SDLK_w:
-        {
-            if (player_hitbox->bottom) player->acceleration.y = 800;
-        }
-        break;
     }
-}
-
-void Application::KeyUp(SDL_Keycode key)
-{
-    switch (key)
+    if (isKeyDown(SDL_SCANCODE_A))
     {
-    case SDLK_a:
-    case SDLK_d:
+        if (player->acceleration.x == 0) player->velocity.x = -SPEED / 2.0f;
+
+        player->acceleration.x = -SPEED;
+        player_rigid_body->moving = true;
+    }
+    if (isKeyDown(SDL_SCANCODE_D))
+    {
+        // creates more instantaneous movement
+        if (player->acceleration.x == 0) player->velocity.x = SPEED / 2.0f;
+
+        player->acceleration.x = SPEED;
+        player_rigid_body->moving = true;
+    }
+    if (isKeyPressed(SDL_SCANCODE_W) && player_hitbox->bottom)
+    {
+        player->velocity.y = 20.0f;
+    }
+    if (isKeyUp(SDL_SCANCODE_A) || isKeyUp(SDL_SCANCODE_D))
+    {
         player->acceleration.x = 0;
-        break;
-    case SDLK_w:
-        player->acceleration.y = 0;
-        break;
+        player_rigid_body->moving = false;
     }
 }
 

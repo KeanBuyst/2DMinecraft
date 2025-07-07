@@ -8,14 +8,17 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Region based chunk storage
 * 2D Perlin Noise cave generation
 * Background and foreground tiles
+* Entities rendering
+* Tile Collision
+* Physics elements (e.g. Gravity)
 * Lighting
 
 ### Planned feature's
-* Entites rendering
 * Inventory and items
-* Physics elements (e.g. Gravity)
-* Tile and entity collision
+* Entity Collision
 * Metadata Tiles
+* Entity Lighting
+* Entity Animation
 
 ## Build
 CMake build system

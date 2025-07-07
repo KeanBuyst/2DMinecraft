@@ -64,10 +64,12 @@ namespace world
     struct RigidBody : Component
     {
         static constexpr float gravity = 48.0f;
-        static constexpr float drag = 0.8f;
-        static constexpr float friction = 0.46f;
+        static constexpr float drag = 2.4f;
+        static constexpr float friction = 10.6f;
 
         const HitBox* hitbox;
+
+        bool moving;
 
         explicit RigidBody(const HitBox* hitbox);
 

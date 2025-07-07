@@ -76,41 +76,38 @@ void world::HitBox::update(const float& delta_time)
     left = false;
     right = false;
 
-    const float mid_x = (offsets.x - offsets.z) / 2.0f;
-    const float mid_y = (offsets.w - offsets.y) / 2.0f;
-
     const glm::vec2 pos = parent->position + parent->velocity * delta_time;
 
-    const glm::vec2 top_p(pos.x + mid_x, pos.y + offsets.y); // Top
-    const glm::vec2 bottom_p(pos.x + mid_x, pos.y + offsets.w); // Bottom
-    const glm::vec2 left_p(pos.x + offsets.x, pos.y + mid_y); // Left
-    const glm::vec2 right_p(pos.x + offsets.z, pos.y + mid_y); // Left
+    const glm::vec2 top_p(pos.x, pos.y + offsets.y); // Top
+    const glm::vec2 bottom_p(pos.x, pos.y + offsets.w); // Bottom
+    const glm::vec2 left_p(pos.x + offsets.x, pos.y - 0.5f); // Left
+    const glm::vec2 right_p(pos.x + offsets.z, pos.y - 0.5f); // Right
 
     // Tile/Block Collision
     // for point 1
     const Block b1 = world->getBlock(top_p);
     if (b1.getType() != EMPTY)
     {
-        target.y = parent->position.y - floorf(top_p.y);
+        target.y = b1.position.y - top_p.y;
         top = true;
     }
     const Block b2 = world->getBlock(right_p);
     if (b2.getType() != EMPTY)
     {
         // using pos instead of right_p prevents kick back from colliding with walls
-        target.x = parent->position.x - floorf(right_p.x);
+        target.x = b2.position.x - right_p.x;
         right = true;
     }
     const Block b3 = world->getBlock(left_p);
     if (b3.getType() != EMPTY)
     {
-        target.x = parent->position.x - (floorf(left_p.x) - 0.2f);
+        target.x = (b3.position.x + 1.0f) - left_p.x;
         left = true;
     }
     const Block b4 = world->getBlock(bottom_p);
     if (b4.getType() != EMPTY)
     {
-        target.y = parent->position.y - (floorf(bottom_p.y) + 1.0f);
+        target.y = (b4.position.y + 1.0f) - bottom_p.y;
         bottom = true;
     }
 
@@ -127,12 +124,16 @@ bool world::HitBox::inBounds(const glm::vec2& point) const
     return point.x >= left && point.x <= right && point.y >= bottom && point.y <= top;
 }
 
-world::RigidBody::RigidBody(const HitBox* hitbox) : Component({0,0},RIGID_BODY), hitbox(hitbox)
+world::RigidBody::RigidBody(const HitBox* hitbox) : Component({0,0},RIGID_BODY), hitbox(hitbox), moving(false)
 {}
 
 void world::RigidBody::update(const float& delta_time)
 {
-    Util::decreaseMagnitude(parent->velocity,drag * delta_time);
+    if (!moving) Util::decreaseMagnitude(parent->velocity,(hitbox->bottom ? friction : drag) * delta_time);
+    if (hitbox->bottom && hitbox->top && hitbox->left && hitbox->right)
+    {
+        parent->velocity = {0,0};
+    }
     if (hitbox->bottom)
     {
         if (parent->velocity.y < 0.0f) parent->velocity.y = hitbox->target.y;
@@ -146,10 +147,26 @@ void world::RigidBody::update(const float& delta_time)
     }
     if (hitbox->right)
     {
-        if (parent->velocity.x > 0.0f) parent->velocity.x = hitbox->target.x;
+        if (parent->velocity.x > 0.0f)
+        {
+            parent->position.x += hitbox->target.x;
+            parent->velocity.x = 0;
+        }
+        if (parent->acceleration.x > 0.0f)
+        {
+            parent->acceleration.x = 0;
+        }
     }
     if (hitbox->left)
     {
-        if (parent->velocity.x < 0.0f) parent->velocity.x = hitbox->target.x;
+        if (parent->velocity.x < 0.0f)
+        {
+            parent->position.x += hitbox->target.x;
+            parent->velocity.x = 0;
+        }
+        if (parent->acceleration.x < 0.0f)
+        {
+            parent->acceleration.x = 0;
+        }
     }
 }

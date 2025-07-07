@@ -48,7 +48,7 @@ void world::Entity::update(const float& delta_time)
         components[i]->update(delta_time);
     }
     // removes jitter
-    position += glm::floor(velocity * 100.0f * delta_time) / 100.0f;
+    position += glm::floor(velocity * 1000.0f * delta_time) / 1000.0f;
 }
 
 void world::Entity::render()
