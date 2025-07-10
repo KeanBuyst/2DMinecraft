@@ -25,7 +25,7 @@ namespace world
 
     float GetMaxHealth(EntityType type);
 
-    struct Entity : Transform
+    struct Entity : VectorTransform
     {
         EntityType type;
         Component** components;

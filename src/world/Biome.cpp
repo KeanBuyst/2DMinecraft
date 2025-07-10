@@ -37,7 +37,7 @@ std::vector<Block> Forest::getTree()
 {
 	std::vector<Block> tree(std::begin(OAK_TREE), std::end(OAK_TREE));
 
-	const int height = rand() % 3 + 1;
+	const int height = rand() % 3 + 2;
 
 	std::transform(tree.begin(), tree.end(), tree.begin(),
 		[height](Block& block) {

@@ -2,34 +2,42 @@
 
 #include "Entity.h"
 #include "EntityHandler.h"
+#include "../../Application.h"
 #include "../../Constants.h"
 #include "../../Util.h"
 
 void world::Sprite::render()
 {
-    const float p1x = ((parent->position.x + position.x - width / 2) - origin.x) * PIXEL_SCALE;
-    const float p1y = ((parent->position.y + position.y - height / 2) - origin.y) * PIXEL_SCALE;
-    const float p2x = p1x + width * PIXEL_SCALE;
-    const float p2y = p1y + height * PIXEL_SCALE;
+    const glm::vec2 base = parent->position - origin;
 
-    float rot = parent->rotation + rotation;
+    const float p1x = position.x - width / 2 - pivot_point.x;
+    const float p1y = position.y - height / 2 - pivot_point.y;
+    const float p2x = p1x + width;
+    const float p2y = p1y + height;
 
-    glm::vec2 bottomLeft = Util::rotate({p1x, p1y}, rot);
-    glm::vec2 topRight = Util::rotate({p2x, p2y}, rot);
-    glm::vec2 topLeft = Util::rotate({p1x, p2y}, rot);
-    glm::vec2 bottomRight = Util::rotate({p2x, p1y}, rot);
+    const float rot = parent->rotation + rotation;
 
-    // Insert two triangles (6 vertices) with proper texture coordinates
+    const glm::vec2 bottomLeft = (base + pivot_point + Util::rotate({p1x, p1y}, rot)) * PIXEL_SCALE;
+    const glm::vec2 topRight = (base + pivot_point + Util::rotate({p2x, p2y}, rot)) * PIXEL_SCALE;
+    const glm::vec2 topLeft = (base + pivot_point + Util::rotate({p1x, p2y}, rot)) * PIXEL_SCALE;
+    const glm::vec2 bottomRight = (base + pivot_point + Util::rotate({p2x, p1y}, rot)) * PIXEL_SCALE;
+
+    const glm::vec2 texBottomLeft = {flipped ? texel.z : texel.x, texel.w};
+    const glm::vec2 texBottomRight = {flipped ? texel.x : texel.z, texel.w};
+    const glm::vec2 texTopRight = {flipped ? texel.x : texel.z, texel.y};
+    const glm::vec2 texTopLeft = {flipped ? texel.z : texel.x, texel.y};
+
+    // Insert two triangles (6 vertices)
     entity_render_batch.insert(entity_render_batch.end(), {
         // First triangle
-        {bottomLeft,  {texel.x, texel.w}},  // Bottom-left corner
-        {bottomRight, {texel.z, texel.w}}, // Bottom-right corner
-        {topRight,    {texel.z, texel.y}}, // Top-right corner
+        {bottomLeft,  texBottomLeft},
+        {bottomRight, texBottomRight},
+        {topRight,    texTopRight},
 
         // Second triangle
-        {topRight,    {texel.z, texel.y}}, // Top-right corner
-        {topLeft,     {texel.x, texel.y}}, // Top-left corner
-        {bottomLeft,  {texel.x, texel.w}}   // Bottom-left corner
+        {topRight,    texTopRight},
+        {topLeft,     texTopLeft},
+        {bottomLeft,  texBottomLeft}
     });
 }
 
@@ -37,7 +45,7 @@ world::Component::Component(const glm::vec2 position,const ComponentType type) :
 {}
 
 world::Sprite::Sprite(const glm::vec4 dimensions,glm::vec4 textRect,const float scale)
-    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE)
+    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE), flipped(false)
 {
     width = (dimensions.z / PIXEL_SCALE) * scale;
     height = (dimensions.w / PIXEL_SCALE) * scale;
@@ -46,6 +54,18 @@ world::Sprite::Sprite(const glm::vec4 dimensions,glm::vec4 textRect,const float 
     textRect.w += textRect.y;
 
     texel = textRect;
+}
+
+void world::Sprite::update(const float& delta_time)
+{
+    if (parent->velocity.x < 0)
+    {
+        flipped = true;
+    }
+    else if (parent->velocity.x != 0)
+    {
+        flipped = false;
+    }
 }
 
 world::HitBox::HitBox(const World* world, const glm::vec4 offsets)
@@ -169,4 +189,88 @@ void world::RigidBody::update(const float& delta_time)
             parent->acceleration.x = 0;
         }
     }
+    // check speed limit
+    Util::clamp(parent->velocity,max_speed);
+}
+
+world::Animation::Animation() : Component({0,0},ANIMATION), current_frame(0), accumulator(0.0f)
+{}
+
+void world::Animation::update(const float& delta_time)
+{
+    // 20 fps
+    static constexpr float interval = 1.0f / 20.0f;
+
+    accumulator += delta_time;
+
+    if (accumulator >= interval)
+    {
+        nextFrame(++current_frame);
+        accumulator -= interval;
+    }
+}
+
+world::LegAnimation::LegAnimation(Sprite* l1, Sprite* l2) : l1(l1), l2(l2)
+{
+    const glm::vec2 pivot(0, -0.4f);
+    l1->pivot_point = pivot;
+    l2->pivot_point = pivot;
+    rot_dir = -1;
+}
+
+void world::LegAnimation::nextFrame(int& current_frame)
+{
+    float ratio = abs(parent->velocity.x) / RigidBody::max_speed;
+    float angle_ratio = ratio * 3.0f;
+    float speed_ratio = ratio / 4.0f;
+    float velocity = rot_dir * speed_ratio;
+
+    if (velocity == 0.0f)
+    {
+        l1->rotation = 0.0f;
+        l2->rotation = 0.0f;
+    } else
+    {
+        l1->rotation += velocity;
+        l2->rotation -= velocity;
+    }
+    float angle = MAX_ANGLE * angle_ratio;
+    if (l1->rotation > angle)
+    {
+        rot_dir = -1;
+        l1->rotation = angle;
+        l2->rotation = -angle;
+    } else if (l1->rotation < -angle)
+    {
+        rot_dir = 1;
+        l1->rotation = -angle;
+        l2->rotation = angle;
+    }
+}
+
+world::PlayerHeadAnimation::PlayerHeadAnimation(Sprite* head) : head(head)
+{
+    head->pivot_point = {0,head->position.y};
+}
+
+void world::PlayerHeadAnimation::nextFrame(int& current_frame)
+{
+    const glm::vec2 mousePos = Application::GetWorldMouse();
+    float rotation = atan2f(mousePos.y - (head->parent->position.y + head->position.y),
+        mousePos.x - (head->parent->position.x + head->position.x));
+
+    static constexpr float MAX_ANGLE = Util::DegToRad(40.0f);
+    static constexpr float MID_ANGLE = Util::DegToRad(90.0f);
+
+    if (rotation > MID_ANGLE) rotation = M_PI - rotation;
+    if (rotation < -MID_ANGLE) rotation = -static_cast<float>(M_PI) - rotation;
+
+    if (head->flipped)
+    {
+        rotation = -rotation;
+    }
+
+    Util::clamp(rotation,MAX_ANGLE);
+
+    head->rotation = rotation;
 }

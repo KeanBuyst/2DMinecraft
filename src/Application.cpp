@@ -114,22 +114,28 @@ void Application::run() {
     entityAtlas.bind(1);
 
     // Create player entity
-    player = new world::Entity({0,10},world::PLAYER,6);
+    player = new world::Entity({0,25},world::PLAYER,9);
     player_hitbox = new world::HitBox(&world,{-2.5f,10,2.5f,-18});
     player_rigid_body = new world::RigidBody(player_hitbox);
+    auto* leg_1 = new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* leg_2 = new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* head = new world::Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
     auto** components = new world::Component*[]
     {
-        new world::Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f),
-        new world::Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f),
-        new world::Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f),
-        new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f),
+        head, // HEAD
+        new world::Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
+        new world::Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
+        leg_1,
+        leg_2,
         player_rigid_body,
-        player_hitbox
+        player_hitbox,
+        new world::LegAnimation(leg_1,leg_2),
+        new world::PlayerHeadAnimation(head)
     };
     player->addComponents(components);
     EntityHandler::Add(player);
 
-    glClearColor(0.529f,0.8078f,0.9215686f,1);
+    glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
 
     // creating loop
     bool running = true;

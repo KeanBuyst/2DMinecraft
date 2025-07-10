@@ -178,27 +178,22 @@ glm::vec2 Util::rotate(const glm::vec2& point, const float angle)
 
 void Util::decreaseMagnitude(glm::vec2& vector, const float scaler)
 {
-    if (vector.x < 0)
+    decreaseMagnitude(vector.x,scaler);
+    decreaseMagnitude(vector.y,scaler);
+}
+
+void Util::decreaseMagnitude(float& vector, const float scaler)
+{
+    if (vector < 0)
     {
-        vector.x += scaler;
-        if (vector.x > 0)
-            vector.x = 0;
+        vector += scaler;
+        if (vector > 0)
+            vector = 0;
     } else
     {
-        vector.x -= scaler;
-        if (vector.x < 0)
-            vector.x = 0;
-    }
-    if (vector.y < 0)
-    {
-        vector.y += scaler;
-        if (vector.y > 0)
-            vector.y = 0;
-    } else
-    {
-        vector.y -= scaler;
-        if (vector.y < 0)
-            vector.y = 0;
+        vector -= scaler;
+        if (vector < 0)
+            vector = 0;
     }
 }
 

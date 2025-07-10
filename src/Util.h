@@ -22,8 +22,29 @@ namespace Util
 	glm::vec2 rotate(const glm::vec2& point, float angle);
 
 	void decreaseMagnitude(glm::vec2& vector,float scaler);
+	void decreaseMagnitude(float& vector,float scaler);
 
 	void drawDebugLines(const glm::vec2* points, int size);
+
+	template<typename T>
+	constexpr T DegToRad(T degrees) {
+			return degrees * static_cast<T>(M_PI / 180.0);
+	}
+
+	template<typename T>
+	void clamp(glm::vec<2,T>& vector, T max)
+	{
+		if (vector.x > max) vector.x = max;
+		if (vector.x < -max) vector.x = -max;
+		if (vector.y > max) vector.y = max;
+		if (vector.y < -max) vector.y = -max;
+	}
+	template<typename T>
+	void clamp(T& vector, T max)
+	{
+		if (vector > max) vector = max;
+		if (vector < -max) vector = -max;
+	}
 
 	template<typename T>
 	struct ProbabilitySet {

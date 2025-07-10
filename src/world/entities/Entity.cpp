@@ -14,7 +14,7 @@ float world::GetMaxHealth(EntityType type)
 }
 
 world::Entity::Entity(const glm::vec2 position,const EntityType type, const int numOfComponents) :
-    Transform(position),type(type), numOfComponents(numOfComponents)
+    VectorTransform(position),type(type), numOfComponents(numOfComponents)
 {
     max_health = GetMaxHealth(type);
     health = max_health;
