@@ -22,7 +22,7 @@ MATERIAL Biome::getMaterial(const int depth)
 MATERIAL Biome::getCaveMaterial(const int depth)
 {
 	if (depth > 4) return STONE_WALL;
-	return DIRT_WALL;
+	return EMPTY;
 }
 
 Block Biome::getPlant()

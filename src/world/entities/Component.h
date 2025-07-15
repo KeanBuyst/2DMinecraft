@@ -4,11 +4,13 @@
 
 #include "../World.h"
 #include "../../Util.h"
-#include "../../gl/Texture.h"
 #include "../../math/Transform.h"
 
 namespace world
 {
+    // forward declaration
+    struct Entity;
+
     enum ComponentType : uint8_t
     {
         SPRITE,
@@ -20,7 +22,7 @@ namespace world
     struct Component : Transform
     {
         ComponentType type;
-        VectorTransform* parent = nullptr;
+        Entity* entity = nullptr;
 
         Component(glm::vec2 position,ComponentType type);
 
@@ -35,10 +37,13 @@ namespace world
     {
         glm::vec4 texel{};
         float width,height;
+        float lightLevel;
+
+        const World* world;
 
         bool flipped;
 
-        Sprite(glm::vec4 position,glm::vec4 textRect,float scale);
+        Sprite(const World* world,glm::vec4 dimensions,glm::vec4 textRect,float scale);
 
         void render() override;
         void update(const float& delta_time) override;
@@ -49,7 +54,7 @@ namespace world
         glm::vec4 offsets;
         const World* world;
 
-        glm::vec2 target;
+        glm::vec2 offset;
 
         bool top;
         bool bottom;

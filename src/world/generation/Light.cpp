@@ -3,24 +3,10 @@
 #include <thread>
 #include <iostream>
 
-constexpr int SOLID = -3;
-constexpr int WALL = -1;
-
 short world::DAYLIGHT = 15; // TODO make this one change with the time of day
 
 class LightMap
 {
-private:
-    static short GetInterference(const world::Block& block)
-    {
-        if (block.isTransparent())
-            return WALL;
-        if (block.getType() != world::EMPTY)
-            return SOLID;
-        if (block.getWall() != world::EMPTY)
-             return WALL;
-        return world::DAYLIGHT;
-    }
 public:
     // source chunks and neighboring chunks
     static constexpr int SIZE = world::CHUNK_SIZE * 3;
@@ -47,7 +33,7 @@ public:
 
                 {
                     short& interference = interferenceMap[x][y];
-                    short iBlock = GetInterference(block);
+                    short iBlock = block.getInterference();
                     if (interference > 0) interference = interference < iBlock ? iBlock : interference;
                     else interference = iBlock;
                 }

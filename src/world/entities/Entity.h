@@ -18,6 +18,7 @@ namespace world
     {
         glm::vec2 vertex;
         glm::vec2 texel;
+        float lightLevel;
     };
 
     // Render Batch
@@ -33,6 +34,7 @@ namespace world
         int numOfComponents;
         float max_health;
         float health;
+        float lightLevel;
 
         Entity(glm::vec2 position,EntityType type,int numOfComponents);
         ~Entity();

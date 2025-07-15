@@ -28,6 +28,11 @@ void EntityHandler::Init()
         reinterpret_cast<void*>(offsetof(EntityRenderData, texel)));
     glEnableVertexAttribArray(1);
 
+    // Light Level attribute
+    glVertexAttribPointer(2,1,GL_FLOAT,GL_FALSE, sizeof(EntityRenderData),
+        reinterpret_cast<void*>(offsetof(EntityRenderData, lightLevel)));
+    glEnableVertexAttribArray(2);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }

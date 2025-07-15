@@ -66,7 +66,7 @@ void world::Entity::addComponents(Component** comps, int size)
     if (size == -1) size = numOfComponents;
     for (auto i = 0; i < size; ++i)
     {
-        comps[i]->parent = this;
+        comps[i]->entity = this;
     }
     components = comps;
 }

@@ -1,51 +1,82 @@
 #include "Component.h"
 
 #include "Entity.h"
-#include "EntityHandler.h"
 #include "../../Application.h"
 #include "../../Constants.h"
 #include "../../Util.h"
 
 void world::Sprite::render()
 {
-    const glm::vec2 base = parent->position - origin;
-
     const float p1x = position.x - width / 2 - pivot_point.x;
     const float p1y = position.y - height / 2 - pivot_point.y;
     const float p2x = p1x + width;
     const float p2y = p1y + height;
 
-    const float rot = parent->rotation + rotation;
+    const float rot = entity->rotation + rotation;
 
-    const glm::vec2 bottomLeft = (base + pivot_point + Util::rotate({p1x, p1y}, rot)) * PIXEL_SCALE;
-    const glm::vec2 topRight = (base + pivot_point + Util::rotate({p2x, p2y}, rot)) * PIXEL_SCALE;
-    const glm::vec2 topLeft = (base + pivot_point + Util::rotate({p1x, p2y}, rot)) * PIXEL_SCALE;
-    const glm::vec2 bottomRight = (base + pivot_point + Util::rotate({p2x, p1y}, rot)) * PIXEL_SCALE;
+    glm::vec2 bottomLeft = entity->position + pivot_point + Util::rotate({p1x, p1y}, rot);
+    glm::vec2 topRight = entity->position + pivot_point + Util::rotate({p2x, p2y}, rot);
+    glm::vec2 topLeft = entity->position + pivot_point + Util::rotate({p1x, p2y}, rot);
+    glm::vec2 bottomRight = entity->position + pivot_point + Util::rotate({p2x, p1y}, rot);
+
+    // light calculation
+    float
+    light_BL, light_TL,
+    light_TR, light_BR;
+
+    const glm::vec2 b_BL = glm::floor(bottomLeft);
+    const glm::vec2 b_TR = glm::floor(topRight);
+    const glm::vec2 b_TL = glm::floor(topLeft);
+    const glm::vec2 b_BR = glm::floor(bottomRight);
+
+    // bottom left
+    light_BL = static_cast<float>(world->getBlock(b_BL).getLightLevel());
+
+    // top right
+    if (b_TR == b_BL) light_TR = light_BL;
+    else light_TR = static_cast<float>(world->getBlock(b_TR).getLightLevel());
+
+    // top left
+    if (b_TL == b_TR) light_TL = light_TR;
+    else if (b_TL == b_BL) light_TL = light_BL;
+    else light_TL = static_cast<float>(world->getBlock(b_TL).getLightLevel());
+
+    // bottom right
+    if (b_BR == b_BL) light_BR = light_BL;
+    else if (b_BR == b_TR) light_BR = light_TR;
+    else if (b_BR == b_TL) light_BR = light_TL;
+    else light_BR = static_cast<float>(world->getBlock(b_BR).getLightLevel());
+
 
     const glm::vec2 texBottomLeft = {flipped ? texel.z : texel.x, texel.w};
     const glm::vec2 texBottomRight = {flipped ? texel.x : texel.z, texel.w};
     const glm::vec2 texTopRight = {flipped ? texel.x : texel.z, texel.y};
     const glm::vec2 texTopLeft = {flipped ? texel.z : texel.x, texel.y};
 
+    bottomLeft = (bottomLeft - origin) * PIXEL_SCALE;
+    topRight = (topRight - origin) * PIXEL_SCALE;
+    topLeft = (topLeft - origin) * PIXEL_SCALE;
+    bottomRight = (bottomRight - origin) * PIXEL_SCALE;
+
     // Insert two triangles (6 vertices)
     entity_render_batch.insert(entity_render_batch.end(), {
         // First triangle
-        {bottomLeft,  texBottomLeft},
-        {bottomRight, texBottomRight},
-        {topRight,    texTopRight},
+        {bottomLeft,  texBottomLeft,    light_BL},
+        {bottomRight, texBottomRight,   light_BR},
+        {topRight,    texTopRight,      light_TR},
 
         // Second triangle
-        {topRight,    texTopRight},
-        {topLeft,     texTopLeft},
-        {bottomLeft,  texBottomLeft}
+        {topRight,    texTopRight,      light_TR},
+        {topLeft,     texTopLeft,       light_TL},
+        {bottomLeft,  texBottomLeft,    light_BL}
     });
 }
 
 world::Component::Component(const glm::vec2 position,const ComponentType type) : Transform(position), type(type)
 {}
 
-world::Sprite::Sprite(const glm::vec4 dimensions,glm::vec4 textRect,const float scale)
-    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE), flipped(false)
+world::Sprite::Sprite(const World* world,const glm::vec4 dimensions,glm::vec4 textRect,const float scale)
+    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE), world(world), flipped(false)
 {
     width = (dimensions.z / PIXEL_SCALE) * scale;
     height = (dimensions.w / PIXEL_SCALE) * scale;
@@ -58,11 +89,11 @@ world::Sprite::Sprite(const glm::vec4 dimensions,glm::vec4 textRect,const float 
 
 void world::Sprite::update(const float& delta_time)
 {
-    if (parent->velocity.x < 0)
+    if (entity->velocity.x < 0)
     {
         flipped = true;
     }
-    else if (parent->velocity.x != 0)
+    else if (entity->velocity.x != 0)
     {
         flipped = false;
     }
@@ -77,10 +108,10 @@ void world::HitBox::render()
 {
     if (debug)
     {
-        const glm::vec2 p1(parent->position.x + offsets.x, parent->position.y + offsets.y); // Top Left
-        const glm::vec2 p2(parent->position.x + offsets.z, parent->position.y + offsets.y); // Top Right
-        const glm::vec2 p3(parent->position.x + offsets.x, parent->position.y + offsets.w); // Bottom Left
-        const glm::vec2 p4(parent->position.x + offsets.z, parent->position.y + offsets.w); // Bottom Right
+        const glm::vec2 p1(entity->position.x + offsets.x, entity->position.y + offsets.y); // Top Left
+        const glm::vec2 p2(entity->position.x + offsets.z, entity->position.y + offsets.y); // Top Right
+        const glm::vec2 p3(entity->position.x + offsets.x, entity->position.y + offsets.w); // Bottom Left
+        const glm::vec2 p4(entity->position.x + offsets.z, entity->position.y + offsets.w); // Bottom Right
 
         const glm::vec2 points[] = {p1,p3,p4,p2};
 
@@ -96,7 +127,7 @@ void world::HitBox::update(const float& delta_time)
     left = false;
     right = false;
 
-    const glm::vec2 pos = parent->position + parent->velocity * delta_time;
+    const glm::vec2 pos = entity->position + entity->velocity * delta_time;
 
     const glm::vec2 top_p(pos.x, pos.y + offsets.y); // Top
     const glm::vec2 bottom_p(pos.x, pos.y + offsets.w); // Bottom
@@ -106,28 +137,28 @@ void world::HitBox::update(const float& delta_time)
     // Tile/Block Collision
     // for point 1
     const Block b1 = world->getBlock(top_p);
-    if (b1.getType() != EMPTY)
+    if (b1.isCollidable())
     {
-        target.y = b1.position.y - top_p.y;
+        offset.y = b1.position.y - top_p.y;
         top = true;
     }
     const Block b2 = world->getBlock(right_p);
-    if (b2.getType() != EMPTY)
+    if (b2.isCollidable())
     {
         // using pos instead of right_p prevents kick back from colliding with walls
-        target.x = b2.position.x - right_p.x;
+        offset.x = b2.position.x - right_p.x;
         right = true;
     }
     const Block b3 = world->getBlock(left_p);
-    if (b3.getType() != EMPTY)
+    if (b3.isCollidable())
     {
-        target.x = (b3.position.x + 1.0f) - left_p.x;
+        offset.x = (b3.position.x + 1.0f) - left_p.x;
         left = true;
     }
     const Block b4 = world->getBlock(bottom_p);
-    if (b4.getType() != EMPTY)
+    if (b4.isCollidable())
     {
-        target.y = (b4.position.y + 1.0f) - bottom_p.y;
+        offset.y = (b4.position.y + 1.0f) - bottom_p.y;
         bottom = true;
     }
 
@@ -136,10 +167,10 @@ void world::HitBox::update(const float& delta_time)
 
 bool world::HitBox::inBounds(const glm::vec2& point) const
 {
-    const float top = parent->position.y + offsets.y;
-    const float bottom = parent->position.y + offsets.w;
-    const float left = parent->position.x + offsets.x;
-    const float right = parent->position.x + offsets.z;
+    const float top = entity->position.y + offsets.y;
+    const float bottom = entity->position.y + offsets.w;
+    const float left = entity->position.x + offsets.x;
+    const float right = entity->position.x + offsets.z;
 
     return point.x >= left && point.x <= right && point.y >= bottom && point.y <= top;
 }
@@ -149,48 +180,48 @@ world::RigidBody::RigidBody(const HitBox* hitbox) : Component({0,0},RIGID_BODY),
 
 void world::RigidBody::update(const float& delta_time)
 {
-    if (!moving) Util::decreaseMagnitude(parent->velocity,(hitbox->bottom ? friction : drag) * delta_time);
+    if (!moving) Util::decreaseMagnitude(entity->velocity,(hitbox->bottom ? friction : drag) * delta_time);
     if (hitbox->bottom && hitbox->top && hitbox->left && hitbox->right)
     {
-        parent->velocity = {0,0};
+        entity->velocity = {0,0};
     }
     if (hitbox->bottom)
     {
-        if (parent->velocity.y < 0.0f) parent->velocity.y = hitbox->target.y;
+        if (entity->velocity.y < 0.0f) entity->velocity.y = hitbox->offset.y;
     } else
     {
-        parent->acceleration.y = -gravity;
+        entity->acceleration.y = -gravity;
     }
     if (hitbox->top)
     {
-        if (parent->velocity.y > 0.0f) parent->velocity.y = hitbox->target.y;
+        if (entity->velocity.y > 0.0f) entity->velocity.y = hitbox->offset.y;
     }
     if (hitbox->right)
     {
-        if (parent->velocity.x > 0.0f)
+        if (entity->velocity.x > 0.0f)
         {
-            parent->position.x += hitbox->target.x;
-            parent->velocity.x = 0;
+            entity->position.x += hitbox->offset.x;
+            entity->velocity.x = 0;
         }
-        if (parent->acceleration.x > 0.0f)
+        if (entity->acceleration.x > 0.0f)
         {
-            parent->acceleration.x = 0;
+            entity->acceleration.x = 0;
         }
     }
     if (hitbox->left)
     {
-        if (parent->velocity.x < 0.0f)
+        if (entity->velocity.x < 0.0f)
         {
-            parent->position.x += hitbox->target.x;
-            parent->velocity.x = 0;
+            entity->position.x += hitbox->offset.x;
+            entity->velocity.x = 0;
         }
-        if (parent->acceleration.x < 0.0f)
+        if (entity->acceleration.x < 0.0f)
         {
-            parent->acceleration.x = 0;
+            entity->acceleration.x = 0;
         }
     }
     // check speed limit
-    Util::clamp(parent->velocity,max_speed);
+    Util::clamp(entity->velocity,max_speed);
 }
 
 world::Animation::Animation() : Component({0,0},ANIMATION), current_frame(0), accumulator(0.0f)
@@ -220,7 +251,7 @@ world::LegAnimation::LegAnimation(Sprite* l1, Sprite* l2) : l1(l1), l2(l2)
 
 void world::LegAnimation::nextFrame(int& current_frame)
 {
-    float ratio = abs(parent->velocity.x) / RigidBody::max_speed;
+    float ratio = abs(entity->velocity.x) / RigidBody::max_speed;
     float angle_ratio = ratio * 3.0f;
     float speed_ratio = ratio / 4.0f;
     float velocity = rot_dir * speed_ratio;
@@ -256,8 +287,8 @@ world::PlayerHeadAnimation::PlayerHeadAnimation(Sprite* head) : head(head)
 void world::PlayerHeadAnimation::nextFrame(int& current_frame)
 {
     const glm::vec2 mousePos = Application::GetWorldMouse();
-    float rotation = atan2f(mousePos.y - (head->parent->position.y + head->position.y),
-        mousePos.x - (head->parent->position.x + head->position.x));
+    float rotation = atan2f(mousePos.y - (head->entity->position.y + head->position.y),
+        mousePos.x - (head->entity->position.x + head->position.x));
 
     static constexpr float MAX_ANGLE = Util::DegToRad(40.0f);
     static constexpr float MID_ANGLE = Util::DegToRad(90.0f);

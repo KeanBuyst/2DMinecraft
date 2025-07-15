@@ -25,7 +25,7 @@ namespace world
 		LAPIS_ORE,
 		EMERALD_ORE,
 		REDSTONE_ORE,
-		DIRT_WALL,
+		TORCH,
 		STONE_WALL
 	};
 	// Contains a snapshot of chunk info at a position at the time the getBlock function was called
@@ -38,10 +38,13 @@ namespace world
 		glm::vec2 position;
 
 		[[nodiscard]] bool isTransparent() const;
+		[[nodiscard]] bool isCollidable() const;
 		[[nodiscard]] bool isEmpty() const;
 		[[nodiscard]] MATERIAL getType() const;
 		[[nodiscard]] MATERIAL getWall() const;
-		[[nodiscard]] int getLuminance() const;
+		[[nodiscard]] int getLightLevel() const;
+
+		[[nodiscard]] short getInterference() const;
 
 		void setWall(MATERIAL wall);
 		void setType(MATERIAL type);

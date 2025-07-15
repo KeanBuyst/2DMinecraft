@@ -117,14 +117,14 @@ void Application::run() {
     player = new world::Entity({0,10},world::PLAYER,9);
     player_hitbox = new world::HitBox(&world,{-2.5f,10,2.5f,-18});
     player_rigid_body = new world::RigidBody(player_hitbox);
-    auto* leg_1 = new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* leg_2 = new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* head = new world::Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
+    auto* leg_1 = new world::Sprite(&world,{0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* leg_2 = new world::Sprite(&world,{0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* head = new world::Sprite(&world,{0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
     auto** components = new world::Component*[]
     {
         head, // HEAD
-        new world::Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
-        new world::Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
+        new world::Sprite(&world,{0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
+        new world::Sprite(&world,{0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
         leg_1,
         leg_2,
         player_rigid_body,
@@ -204,7 +204,7 @@ void Application::events(bool& running)
                         }
                         break;
                     case SDL_BUTTON_RIGHT:
-                        world.setBlock({world::EMPTY, mouse, world::EMPTY});
+                        world.setBlock({world::TORCH, mouse, world::STONE_WALL});
                         break;
                     case SDL_BUTTON_MIDDLE:
                         {
@@ -213,7 +213,7 @@ void Application::events(bool& running)
                                       << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
                                       << "\nType: " << std::to_string(block.getType())
                                       << "\nWall: " << std::to_string(block.getWall())
-                                      << "\nLight Level: " << std::to_string(block.getLuminance())
+                                      << "\nLight Level: " << std::to_string(block.getLightLevel())
                                       << "\n-------------------------\n"
                                       << std::endl;
                         }
