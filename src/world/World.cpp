@@ -20,7 +20,7 @@ struct BlockData
 void World::init()
 {
 	// set up chunks for loading/generation
-	Util::seed(WORLD_SEED);
+	Util::InitNoise();
 	world::biome = new Forest();
 	// setup of initial area
 	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
@@ -282,6 +282,7 @@ void World::post_generation(Chunk& chunk)
 	}
 
 	Generate::Lighting(this,chunk.position);
+	Generate::BlockBorder(this,chunk.position);
 
 	chunk.flag |= POST_GENERATED;
 }

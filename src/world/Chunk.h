@@ -15,6 +15,7 @@ namespace world
 		[[nodiscard]] int getLightLevel(glm::ivec2 pos);
 		void setBlock(glm::ivec2 pos, const Block &block);
 		void setLightLevel(glm::ivec2 pos,int luminance);
+		void setBlockBorder(glm::ivec2 pos, uint32_t faces);
 
 		void generate();
 

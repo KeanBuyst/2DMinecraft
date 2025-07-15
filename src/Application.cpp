@@ -114,7 +114,7 @@ void Application::run() {
     entityAtlas.bind(1);
 
     // Create player entity
-    player = new world::Entity({0,25},world::PLAYER,9);
+    player = new world::Entity({0,10},world::PLAYER,9);
     player_hitbox = new world::HitBox(&world,{-2.5f,10,2.5f,-18});
     player_rigid_body = new world::RigidBody(player_hitbox);
     auto* leg_1 = new world::Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
@@ -253,6 +253,7 @@ void Application::update()
     }
     computePlayer();
     EntityHandler::Update(delta_time);
+
     world::origin = player->position;
 }
 

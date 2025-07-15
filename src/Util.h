@@ -9,15 +9,28 @@ namespace Util
 {
 	extern unsigned int seed_value;
 	extern std::mt19937 rng;
-	void seed(unsigned int seed);
-	void seed();
-	
-	/*
-	* Seed function must be called first
-	* @return value between [-1,1]
-	*/
-	float noise(float x);
-	float noise(float x,float y);
+
+	struct PerlinNoise
+	{
+		uint8_t perm[256];
+		/*
+		* Seed function must be called first
+		* @return value between [-1,1]
+		*/
+		float noise(float x);
+		float noise(float x,float y);
+
+	private:
+		static float grad(int32_t hash, float x, float y);
+		float grad(int32_t hash, float x);
+		inline uint8_t hash(int32_t i);
+		inline int32_t fastfloor(float fp);
+	};
+
+	extern PerlinNoise terrain_noise;
+	extern PerlinNoise cave_noise;
+
+	void InitNoise();
 
 	glm::vec2 rotate(const glm::vec2& point, float angle);
 

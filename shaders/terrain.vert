@@ -7,10 +7,12 @@ out vec2 _position;
 out uint _block;
 out uint _wall;
 out uint _light;
+out uint _border;
 
 void main() {
 	_position = position;
 	_block = data & 0xFFu;
 	_wall = (data >> 8) & 0xFFu;
 	_light = (data >> 16) & 0xFu;
+	_border = (data >> 20) & 0xFu;
 }

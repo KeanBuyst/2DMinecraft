@@ -7,11 +7,14 @@ in vec2 _position[];
 in uint _block[];
 in uint _wall[];
 in uint _light[];
+in uint _border[];
 
 uniform mat4 ortho;
 
 out vec2 texCoords; // Texture coordinates for the fragment shader
-out float lumeninance;
+out vec2 position;
+flat out float lumeninance;
+flat out uint border;
 
 void main() {
     vec2 blockSize = vec2(16,16);
@@ -20,8 +23,10 @@ void main() {
     if (_block[0] == 0 && _wall[0] == 0) return;
     lumeninance = float(_light[0]) / 15.0;
 
-    vec2 blockTexPos = vec2(float((_block[0] % 16) - 1) / 16.0,float(_block[0] / 16) / 16.0);
-    vec2 wallTexPos = vec2(float((_wall[0] % 16) - 1) / 16.0,float(_wall[0] / 16) / 16.0);
+    border = _border[0];
+
+    vec2 blockTexPos = vec2(float((_block[0] - 1) % 16) / 16.0,float((_block[0] - 1) / 16) / 16.0);
+    vec2 wallTexPos = vec2(float((_wall[0] - 1) % 16) / 16.0,float((_wall[0] - 1) / 16) / 16.0);
 
     // Generate the quad for this block (2 triangles = 4 vertices)
     vec2 quadVertices[4] = vec2[4](
@@ -29,6 +34,13 @@ void main() {
         _position[0] + vec2(blockSize.x, 0), // Bottom-right
         _position[0] + vec2(0, blockSize.y), // Top-left
         _position[0] + blockSize             // Top-right
+    );
+
+    vec2 positions[4] = vec2[4](
+        vec2(0.0,0.0),
+        vec2(1.0,0.0),
+        vec2(0.0,1.0),
+        vec2(1.0,1.0)
     );
 
     if (_wall[0] != 0){
@@ -58,6 +70,7 @@ void main() {
         // Emit the vertices for the block quad
         for (int v = 0; v < 4; v++) {
             texCoords = quadBlockTexCoords[v];
+            position = positions[v];
             gl_Position = vec4(quadVertices[v], 0.0, 1.0) * ortho;  // Set the final position
             EmitVertex();
         }

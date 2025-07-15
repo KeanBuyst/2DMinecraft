@@ -24,7 +24,9 @@ namespace world
 		COPPER_ORE,
 		LAPIS_ORE,
 		EMERALD_ORE,
-		REDSTONE_ORE
+		REDSTONE_ORE,
+		DIRT_WALL,
+		STONE_WALL
 	};
 	// Contains a snapshot of chunk info at a position at the time the getBlock function was called
 	class Block

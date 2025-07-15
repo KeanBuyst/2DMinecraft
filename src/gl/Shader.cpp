@@ -128,6 +128,11 @@ void ShaderProgram::sendVector2(const GLchar* name, glm::vec2& vector)
 	glUniform2fv(locator(name), 1, &vector[0]);
 }
 
+void ShaderProgram::sendValue(const char* name, float value)
+{
+	glUniform1f(locator(name),value);
+}
+
 GLint ShaderProgram::locator(const GLchar* name)
 {
 	try

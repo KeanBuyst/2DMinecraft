@@ -9,7 +9,7 @@ Biome* world::biome = nullptr;
 
 int Biome::getSurface(const float x)
 {
-	return static_cast<int>(Util::noise(static_cast<float>(x) * getNoiseScale()) * getAmplifier());
+	return static_cast<int>(Util::terrain_noise.noise(static_cast<float>(x) * getNoiseScale()) * getAmplifier());
 }
 
 MATERIAL Biome::getMaterial(const int depth)
@@ -17,6 +17,12 @@ MATERIAL Biome::getMaterial(const int depth)
 	if (depth == 0) return GRASS_BLOCK;
 	if (depth > 4) return STONE;
 	return DIRT;
+}
+
+MATERIAL Biome::getCaveMaterial(const int depth)
+{
+	if (depth > 4) return STONE_WALL;
+	return DIRT_WALL;
 }
 
 Block Biome::getPlant()

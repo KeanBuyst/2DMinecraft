@@ -13,9 +13,12 @@ Block::Block(const glm::vec2 position,const uint32_t data) : position(position),
 
 bool Block::isTransparent() const
 {
-    switch (getType())
+    MATERIAL main_type = getType();
+    if (main_type == EMPTY) main_type = getWall();
+    switch (main_type)
     {
     case OAK_LEAVES:
+    case GRASS:
         return true;
     }
     return false;

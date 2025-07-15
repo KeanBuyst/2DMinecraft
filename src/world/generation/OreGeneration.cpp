@@ -3,7 +3,7 @@
 
 inline bool shouldSpawn(const glm::vec2 position, const float clump_size, const glm::vec2 offset)
 {
-    return Util::noise((position.x + offset.x) / clump_size,(position.y + offset.y) / clump_size) >= 0.8f;
+    return Util::terrain_noise.noise((position.x + offset.x) / clump_size,(position.y + offset.y) / clump_size) >= 0.8f;
 }
 
 bool world::Generate::OreGeneration(const glm::vec2 position, const int depth,MATERIAL &ore)

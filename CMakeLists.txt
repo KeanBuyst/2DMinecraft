@@ -89,6 +89,9 @@ add_executable(2DMC
         src/world/entities/Component.h
         src/world/entities/Entity.cpp
         src/world/entities/Component.cpp
+        src/Noise.cpp
+        src/world/generation/CaveGeneration.cpp
+        src/world/generation/BlockBorder.cpp
 )
 
 # Link libraries based on the platform

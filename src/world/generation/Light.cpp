@@ -3,8 +3,7 @@
 #include <thread>
 #include <iostream>
 
-// these number get interpreted as negative except for 0 which is interpreted as daylight
-constexpr int SOLID = -2;
+constexpr int SOLID = -3;
 constexpr int WALL = -1;
 
 short world::DAYLIGHT = 15; // TODO make this one change with the time of day

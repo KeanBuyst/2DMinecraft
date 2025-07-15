@@ -25,7 +25,7 @@ namespace world
 		// Chunk local position
 		[[nodiscard]] Chunk getChunk(glm::ivec2 position) const;
 		void setChunk(const Chunk &chunk);
-		// Works asynchronously
+
 		void setLightMap(glm::ivec2 chunk_pos,std::unique_ptr<short[]> lightMap);
 
 		// MetaBlock getMetaBlock();

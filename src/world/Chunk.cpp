@@ -33,10 +33,17 @@ void Chunk::generate()
 
 			if (relative >= 0)
 			{
-				MATERIAL ore;
-				if (Generate::OreGeneration(glm::vec2(blockPos.x + x_fix,blockPos.y + y_fix),relative,ore))
-					data = static_cast<uint32_t>(ore);
-				else data = static_cast<uint32_t>(biome->getMaterial(relative));
+				glm::vec2 pos(blockPos.x + x_fix,blockPos.y + y_fix);
+				if (Generate::CaveGeneration(pos,relative))
+				{
+					data = biome->getCaveMaterial(relative) << 8;
+				} else
+				{
+					MATERIAL ore;
+					if (Generate::OreGeneration(pos,relative,ore))
+						data = static_cast<uint32_t>(ore);
+					else data = biome->getMaterial(relative);
+				}
 			}
 			else data = 0;
 		}
@@ -51,13 +58,8 @@ bool Chunk::contains(const glm::vec2& globalPos) const
 void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
 	uint32_t& data = GetData(pos.y,pos.x);
-	// override light value
-	const uint32_t luminance = data & 0x000F0000u;
 
-	data = block.getRaw();
-
-	data &= 0xFFF0FFFFu;
-	data |= luminance;
+	data = (data & 0xFFFF0000u) | (block.getRaw() & 0xFFFFu);
 }
 
 void Chunk::setLightLevel(const glm::ivec2 pos,const int luminance)
@@ -65,6 +67,13 @@ void Chunk::setLightLevel(const glm::ivec2 pos,const int luminance)
 	uint32_t& data = GetData(pos.y,pos.x);
 	data &= 0xFFF0FFFFu;
 	data |= luminance << 16;
+}
+
+void Chunk::setBlockBorder(const glm::ivec2 pos, const uint32_t faces)
+{
+	uint32_t& data = GetData(pos.y,pos.x);
+	data &= 0xFF0FFFFFu;
+	data |= faces << 20;
 }
 
 Block Chunk::getBlock(const glm::ivec2 pos)

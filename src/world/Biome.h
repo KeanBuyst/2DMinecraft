@@ -19,6 +19,7 @@ namespace world
 		virtual ~Biome() = default;
 
 		virtual MATERIAL getMaterial(int depth);
+		virtual MATERIAL getCaveMaterial(int depth);
 
 		virtual Block getPlant();
 		virtual std::vector<Block> getTree() = 0;
