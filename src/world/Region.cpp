@@ -66,6 +66,7 @@ void Region::fetch(Chunk &chunk)
 		flag = GENERATED;
 	}
 
+	chunk.lightUpdated = false;
 	chunk.flag = flag;
 }
 

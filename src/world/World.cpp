@@ -44,6 +44,7 @@ void World::init()
 			{
 				post_generation(chunk);
 			}
+			Generate::Lighting(this,chunk.position);
 		}
 	}
 
@@ -129,7 +130,7 @@ void World::render()
 	glDrawArrays(GL_POINTS, 0, vertices.size());
 }
 
-void World::setBlock(const Block& block)
+void World::setBlock(const Block& block, const bool doPostUpdate)
 {
 	glm::ivec2 c_pos;
 	// floor brings -0.5 to -1 and 0.5 to 0
@@ -146,9 +147,34 @@ void World::setBlock(const Block& block)
 	}
 	else
 	{
-		chunks[a_pos.x][a_pos.y].setBlock(pos,block);
-		// since block is in current view update lighting
-		// Generate::Lighting(this,a_pos);
+		Chunk& chunk = chunks[a_pos.x][a_pos.y];
+		// check if light update should accoure
+		if (doPostUpdate)
+		{
+			if (chunk.getBlock(pos).getInterference() != block.getInterference())
+			{
+				chunk.setBlock(pos,block);
+
+				static constexpr int radius = 1;
+
+				const int min_x = std::max(a_pos.x - radius,0);
+				const int min_y = std::max(a_pos.y - radius,0);
+
+				const int max_x = std::min(a_pos.x + radius,WORLD_WIDTH - 1);
+				const int max_y = std::min(a_pos.y + radius,WORLD_HEIGHT - 1);
+
+				for (int x = min_x; x <= max_x; ++x)
+				{
+					for (int y = min_y; y <= max_y; ++y)
+					{
+						Generate::Lighting(this,chunks[x][y].position);
+					}
+				}
+			} else chunk.setBlock(pos,block);
+
+			Generate::BlockBorder(this,chunk.position);
+
+		} else chunk.setBlock(pos,block);
 	}
 }
 
@@ -281,7 +307,6 @@ void World::post_generation(Chunk& chunk)
 		}
 	}
 
-	Generate::Lighting(this,chunk.position);
 	Generate::BlockBorder(this,chunk.position);
 
 	chunk.flag |= POST_GENERATED;
@@ -303,6 +328,11 @@ inline void World::update_chunks()
 				if (!(chunks[x][y].flag & POST_GENERATED))
 				{
 					post_generation(chunks[x][y]);
+				}
+				if (!chunks[x][y].lightUpdated)
+				{
+					Generate::Lighting(this,chunks[x][y].position);
+					chunks[x][y].lightUpdated = true;
 				}
 				// save all chunks
 				handler.save(chunks[x][y]);

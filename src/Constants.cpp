@@ -17,7 +17,7 @@ bool world::ChunkToArray(glm::ivec2& chunk, const glm::ivec2 origin)
 {
     chunk -= origin;
     chunk.x += (WORLD_WIDTH - 1) / 2;
-    chunk.y += (WORLD_WIDTH - 1) / 2;
+    chunk.y += (WORLD_HEIGHT - 1) / 2;
     return chunk.x >= 0 && chunk.x < WORLD_WIDTH && chunk.y >= 0 && chunk.y < WORLD_HEIGHT;
 }
 void world::ArrayToChunk(glm::ivec2& chunk, const glm::ivec2 origin)

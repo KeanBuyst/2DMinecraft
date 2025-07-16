@@ -24,6 +24,8 @@ namespace world
 		uint32_t blocks[CHUNK_SIZE*CHUNK_SIZE] = { 0 };
 		uint8_t flag;
 
+		bool lightUpdated = false;
+
 		glm::ivec2 position;
 	private:
 		inline uint32_t& GetData(int y, int x);

@@ -204,7 +204,7 @@ void Application::events(bool& running)
                         }
                         break;
                     case SDL_BUTTON_RIGHT:
-                        world.setBlock({world::TORCH, mouse, world::STONE_WALL});
+                        world.setBlock({world::TORCH, mouse, world::STONE_WALL},true);
                         break;
                     case SDL_BUTTON_MIDDLE:
                         {

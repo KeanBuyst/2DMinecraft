@@ -21,7 +21,7 @@ namespace world
 
 		// all positions inputted are world (global) positions
 		[[nodiscard]] Block getBlock(glm::vec2 position) const;
-		void setBlock(const Block& block);
+		void setBlock(const Block& block,bool doPostUpdate = false);
 		// Chunk local position
 		[[nodiscard]] Chunk getChunk(glm::ivec2 position) const;
 		void setChunk(const Chunk &chunk);
