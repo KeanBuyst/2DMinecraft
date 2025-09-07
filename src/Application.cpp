@@ -3,13 +3,18 @@
 #include <glm.hpp>
 #include <filesystem>
 #include <iostream>
+#include <cstring>
 
 #include "glew.h"
 #include "ext/matrix_clip_space.hpp"
 #include "resources/Storage.h"
 #include "world/generation/Generation.h"
 #include "gl/Texture.h"
+#include "ui/Inventory.h"
+#include "ui/UI.h"
 #include "world/entities/EntityHandler.h"
+
+using namespace world;
 
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
@@ -88,7 +93,7 @@ Application::Application() {
     terrain_shader->bind(gl::GetShader("terrain.frag"));
     terrain_shader->build();
 
-    world.init();
+    m_world.init();
 
     entity_shader = std::make_unique<gl::ShaderProgram>();
     entity_shader->bind(gl::GetShader("entity.vert"));
@@ -96,6 +101,14 @@ Application::Application() {
     entity_shader->build();
 
     EntityHandler::Init();
+
+    ui_shader = std::make_unique<gl::ShaderProgram>();
+    ui_shader->bind(gl::GetShader("ui.vert"));
+    ui_shader->bind(gl::GetShader("ui.geom"));
+    ui_shader->bind(gl::GetShader("ui.frag"));
+    ui_shader->build();
+
+    UI::Renderer::Init();
 
     // vsync
     SDL_GL_SetSwapInterval(1);
@@ -109,31 +122,44 @@ Application& Application::GetInstance() {
 void Application::run() {
     // Create texture altas
     const gl::Texture tileAtlas("../assets/tiles.png");
+    const gl::Texture itemAtlas("../assets/items.png");
     const gl::AtlasTexture entityAtlas("../assets/entities.png");
+    const gl::AtlasTexture uiAtlas("../assets/ui.png");
     tileAtlas.bind(0);
     entityAtlas.bind(1);
+    itemAtlas.bind(2);
+    uiAtlas.bind(3);
 
     // Create player entity
-    player = new world::Entity({0,10},world::PLAYER,9);
-    player_hitbox = new world::HitBox(&world,{-2.5f,10,2.5f,-18});
-    player_rigid_body = new world::RigidBody(player_hitbox);
-    auto* leg_1 = new world::Sprite(&world,{0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* leg_2 = new world::Sprite(&world,{0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* head = new world::Sprite(&world,{0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
-    auto** components = new world::Component*[]
+    player = new Entity({0,10},world::PLAYER);
+    player_hitbox = new HitBox({-2.5f,10,2.5f,-18});
+    player_rigid_body = new RigidBody(player_hitbox);
+    auto* leg_1 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* leg_2 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
+    auto* head = new Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
+    auto** components = new Component*[]
     {
         head, // HEAD
-        new world::Sprite(&world,{0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
-        new world::Sprite(&world,{0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
+        new Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
+        new Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
         leg_1,
         leg_2,
         player_rigid_body,
         player_hitbox,
-        new world::LegAnimation(leg_1,leg_2),
-        new world::PlayerHeadAnimation(head)
+        new BipedalAnimation(leg_1,leg_2),
+        new PlayerHeadAnimation(head)
     };
-    player->addComponents(components);
+    player->addComponents(components,9);
     EntityHandler::Add(player);
+
+    // Create Player inventory
+    auto* inventory = new UI::Inventory({-4,-13},9,1);
+    auto* item = new Item({0,0}, GRASS_BLOCK);
+    item->setAmount(64);
+    inventory->addItem(item);
+    inventory->visible = true;
+    UI::Renderer::Add(inventory);
+
 
     glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
 
@@ -167,7 +193,8 @@ bool Application::isKeyUp(const SDL_Scancode key)
 }
 
 Application::~Application() {
-    EntityHandler::Destroy();
+    EntityHandler::Cleanup();
+    UI::Renderer::Cleanup();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -200,15 +227,15 @@ void Application::events(bool& running)
                         {
                             //world::Block block(world::EMPTY,mouse,world::EMPTY);
                             //world.setBlock(block);
-                            world::Generate::Lighting(&world,chunk);
+                            world::Generate::Lighting(&m_world,chunk);
                         }
                         break;
                     case SDL_BUTTON_RIGHT:
-                        world.setBlock({world::TORCH, mouse, world::STONE_WALL},true);
+                        m_world.setBlock({world::TORCH, mouse, world::STONE_WALL},true);
                         break;
                     case SDL_BUTTON_MIDDLE:
                         {
-                            world::Block block = world.getBlock(mouse);
+                            Block block = m_world.getBlock(mouse);
                             std::cout << "\n-------------------------\n"
                                       << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
                                       << "\nType: " << std::to_string(block.getType())
@@ -233,7 +260,6 @@ void Application::events(bool& running)
                 }
                 break;
         }
-        EntityHandler::Event(&e);
     }
 }
 
@@ -253,6 +279,7 @@ void Application::update()
     }
     computePlayer();
     EntityHandler::Update(delta_time);
+    UI::Renderer::Update(delta_time);
 
     world::origin = player->position;
 }
@@ -267,17 +294,22 @@ void Application::render()
     updateViewPort();
     terrain_shader->useTexture("atlas",0);
 
-    world.render();
+    m_world.render();
     // end tile drawing
 
     // Entity drawing
     entity_shader->use();
 
     updateViewPort();
-    entity_shader->useTexture("atlas",1);
-
-    EntityHandler::Render();
+    EntityHandler::Render(entity_shader.get());
     // end entity drawing
+
+    // UI rendering
+    ui_shader->use();
+
+    updateViewPort();
+    UI::Renderer::Render(ui_shader.get());
+    // end UI rendering
 
     SDL_GL_SwapWindow(window);
 }
@@ -304,7 +336,6 @@ void Application::computePlayer()
             SCREEN_HEIGHT = 720;
             SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
         }
-        updateViewPort();
     }
     if (isKeyDown(SDL_SCANCODE_A))
     {
@@ -337,7 +368,7 @@ void Application::updateViewPort() const {
 
     const float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * VIEW_SIZE); // round to help against artifcates
 
-    glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SIZE, VIEW_SIZE,-2.0f,2.0f);
+    glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SIZE, VIEW_SIZE,-5.0f,5.0f);
     VIEW_PORT = glm::vec4(-aspect,aspect,-VIEW_SIZE,VIEW_SIZE);
 
     terrain_shader->sendMatrix("ortho", mat);

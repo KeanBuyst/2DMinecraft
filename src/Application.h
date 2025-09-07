@@ -40,12 +40,12 @@ private:
   static Uint8 prev_keystate[SDL_NUM_SCANCODES];
   static const Uint8* curr_keystate;
 
-  world::World world;
   bool fullscreen = false;
   bool keypressed = false;
   SDL_Window* window;
   std::unique_ptr<gl::ShaderProgram> terrain_shader;
   std::unique_ptr<gl::ShaderProgram> entity_shader;
+  std::unique_ptr<gl::ShaderProgram> ui_shader;
   SDL_GLContext context;
   Uint32 last_frame_time;
   float frame_rate = -1.0f;

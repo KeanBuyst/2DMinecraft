@@ -6,9 +6,9 @@ inline bool shouldSpawn(const glm::vec2 position, const float clump_size, const 
     return Util::terrain_noise.noise((position.x + offset.x) / clump_size,(position.y + offset.y) / clump_size) >= 0.8f;
 }
 
-bool world::Generate::OreGeneration(const glm::vec2 position, const int depth,MATERIAL &ore)
+bool world::Generate::OreGeneration(const glm::vec2 position, const int depth,BlockType &ore)
 {
-    static const std::array<Util::ProbabilitySet<MATERIAL>,7> set = {
+    static const std::array<Util::ProbabilitySet<BlockType>,7> set = {
         Util::ProbabilitySet {COAL_ORE,60.0f},
         Util::ProbabilitySet {IRON_ORE,30.0f},
         Util::ProbabilitySet {COPPER_ORE,50.0f},

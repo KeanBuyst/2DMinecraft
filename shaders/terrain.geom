@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 layout(points) in;    // expect one input point (base position)
 layout(triangle_strip, max_vertices = 12) out;  // generate 1 or 2 quad (8 vertices)

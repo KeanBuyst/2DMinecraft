@@ -1,13 +1,14 @@
 #include "EntityHandler.h"
 
 #include "../../glew.h"
+#include "../../gl/Shader.h"
 
 using namespace world;
 
 Util::Buffer<Entity,128> EntityHandler::buffer;
 
-GLuint VAO;
-GLuint VBO;
+static GLuint VAO;
+static GLuint VBO;
 
 void EntityHandler::Init()
 {
@@ -46,7 +47,7 @@ void EntityHandler::Event(SDL_Event* event)
     }
 }
 
-void EntityHandler::Render()
+void EntityHandler::Render(gl::ShaderProgram* shader)
 {
     Entity* entity;
     while (buffer.next(entity))
@@ -57,11 +58,21 @@ void EntityHandler::Render()
     glBindVertexArray(VAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    glBufferData(GL_ARRAY_BUFFER, entity_render_batch.size() * sizeof(EntityRenderData), entity_render_batch.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, render_batch.size() * sizeof(EntityRenderData), render_batch.data(), GL_STATIC_DRAW);
 
-    glDrawArrays(GL_TRIANGLES, 0, entity_render_batch.size());
+    int size = render_batch.tileBatch.size();
 
-    entity_render_batch.clear();
+    shader->useTexture("atlas",0);
+    glDrawArrays(GL_TRIANGLES, 0, size);
+
+    shader->useTexture("atlas",1);
+    glDrawArrays(GL_TRIANGLES, size, render_batch.entityBatch.size());
+
+    size += render_batch.entityBatch.size();
+    shader->useTexture("atlas",2);
+    glDrawArrays(GL_TRIANGLES, size, render_batch.itemBatch.size());
+
+    render_batch.clear();
 }
 
 void EntityHandler::Update(const float& delta_time)
@@ -78,8 +89,9 @@ void EntityHandler::Update(const float& delta_time)
     }
 }
 
-void EntityHandler::Destroy()
+void EntityHandler::Cleanup()
 {
+    buffer.clean();
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 }
@@ -87,4 +99,11 @@ void EntityHandler::Destroy()
 void EntityHandler::Add(Entity* entity)
 {
     entity->id = buffer.add(entity);
+}
+
+void EntityHandler::EntityRenderBatch::clear()
+{
+    tileBatch.clear();
+    entityBatch.clear();
+    itemBatch.clear();
 }

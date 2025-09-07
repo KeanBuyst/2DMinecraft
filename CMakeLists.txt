@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.5)
 project(2DMC)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 include(FetchContent)
 
 find_package(OpenGL REQUIRED)
+find_package(GLU REQUIRED)
 
 # Fetch SDL2
 FetchContent_Declare(
@@ -13,6 +14,7 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
         GIT_TAG release-2.30.8
         GIT_SHALLOW TRUE
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(SDL2)
 
@@ -22,6 +24,7 @@ FetchContent_Declare(
         GIT_REPOSITORY https://github.com/g-truc/glm.git
         GIT_TAG 1.0.1
         GIT_SHALLOW TRUE
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(GLM)
 
@@ -30,11 +33,13 @@ IF (WIN32)
     FetchContent_Declare(
             GLEW
             URL https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
 ELSE ()
     FetchContent_Declare(
             GLEW
             URL https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
 ENDIF ()
 FetchContent_MakeAvailable(GLEW)
@@ -92,6 +97,12 @@ add_executable(2DMC
         src/Noise.cpp
         src/world/generation/CaveGeneration.cpp
         src/world/generation/BlockBorder.cpp
+        src/world/entities/Item.h
+        src/world/entities/Item.cpp
+        src/ui/UI.h
+        src/ui/Inventory.cpp
+        src/ui/Inventory.h
+        src/ui/UI.cpp
 )
 
 # Link libraries based on the platform

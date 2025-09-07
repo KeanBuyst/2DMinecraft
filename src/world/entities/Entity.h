@@ -9,11 +9,17 @@
 
 namespace world
 {
+    enum ItemType : uint8_t;
+
     enum EntityType : uint8_t
     {
-        PLAYER
+        PLAYER,
+        ITEM
     };
+}
 
+namespace EntityHandler
+{
     struct EntityRenderData
     {
         glm::vec2 vertex;
@@ -21,8 +27,40 @@ namespace world
         float lightLevel;
     };
 
-    // Render Batch
-    extern std::vector<EntityRenderData> entity_render_batch;
+    struct EntityRenderBatch
+    {
+        std::vector<EntityRenderData> tileBatch;
+        std::vector<EntityRenderData> entityBatch;
+        std::vector<EntityRenderData> itemBatch;
+
+        template<typename type>
+        void insert(std::initializer_list<EntityRenderData> data)
+        {
+            if (std::is_same_v<type,world::BlockType>)
+            {
+                tileBatch.insert(tileBatch.end(),data);
+            } else if (std::is_same_v<type,world::EntityType>)
+            {
+                entityBatch.insert(entityBatch.end(),data);
+            } else if (std::is_same_v<type,world::ItemType>)
+            {
+                itemBatch.insert(itemBatch.end(),data);
+            } else
+            {
+                throw std::runtime_error("Invalid entity render batch type");
+            }
+        }
+
+        size_t size() const;
+        EntityRenderData* data();
+
+        void clear();
+    };
+}
+
+namespace world
+{
+    extern EntityHandler::EntityRenderBatch render_batch;
 
     float GetMaxHealth(EntityType type);
 
@@ -30,13 +68,12 @@ namespace world
     {
         EntityType type;
         Component** components;
-        uint16_t id;
+        uint16_t id = 0;
         int numOfComponents;
         float max_health;
         float health;
-        float lightLevel;
 
-        Entity(glm::vec2 position,EntityType type,int numOfComponents);
+        Entity(glm::vec2 position,EntityType type);
         ~Entity();
 
         void event(SDL_Event* event) const;
@@ -55,6 +92,6 @@ namespace world
             return list;
         }
 
-        void addComponents(Component** comps,int size = -1);
+        void addComponents(Component** comps,int size);
     };
 }

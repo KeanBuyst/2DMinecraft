@@ -1,6 +1,27 @@
 #include "Entity.h"
 
-std::vector<world::EntityRenderData> world::entity_render_batch;
+#include "../../gl/Texture.h"
+
+EntityHandler::EntityRenderBatch world::render_batch;
+
+size_t EntityHandler::EntityRenderBatch::size() const
+{
+    return tileBatch.size() + itemBatch.size() + entityBatch.size();
+}
+
+EntityHandler::EntityRenderData* EntityHandler::EntityRenderBatch::data()
+{
+    thread_local std::vector<EntityRenderData> combined;
+    combined.clear();
+
+    combined.reserve(size());
+
+    combined.insert(combined.end(), tileBatch.begin(), tileBatch.end());
+    combined.insert(combined.end(), entityBatch.begin(), entityBatch.end());
+    combined.insert(combined.end(), itemBatch.begin(), itemBatch.end());
+
+    return combined.data();
+}
 
 float world::GetMaxHealth(EntityType type)
 {
@@ -13,16 +34,16 @@ float world::GetMaxHealth(EntityType type)
     }
 }
 
-world::Entity::Entity(const glm::vec2 position,const EntityType type, const int numOfComponents) :
-    VectorTransform(position),type(type), numOfComponents(numOfComponents)
+world::Entity::Entity(const glm::vec2 position,const EntityType type) :
+    VectorTransform(position),type(type), components(nullptr), numOfComponents(0)
 {
     max_health = GetMaxHealth(type);
     health = max_health;
-    components = new Component*[numOfComponents];
 }
 
 world::Entity::~Entity()
 {
+    if (components == nullptr) return;
     for (auto i = 0; i < numOfComponents; ++i)
     {
         delete components[i];
@@ -34,6 +55,7 @@ world::Entity::~Entity()
 
 void world::Entity::event(SDL_Event* event) const
 {
+    if (components == nullptr) return;
     for (auto i = 0; i < numOfComponents; ++i)
     {
         components[i]->event(event);
@@ -42,6 +64,7 @@ void world::Entity::event(SDL_Event* event) const
 
 void world::Entity::update(const float& delta_time)
 {
+    if (components == nullptr) return;
     velocity += acceleration * delta_time;
     for (auto i = 0; i < numOfComponents; ++i)
     {
@@ -53,20 +76,20 @@ void world::Entity::update(const float& delta_time)
 
 void world::Entity::render()
 {
+    if (components == nullptr) return;
     for (auto i = 0; i < numOfComponents; ++i)
     {
         components[i]->render();
     }
 }
 
-void world::Entity::addComponents(Component** comps, int size)
+void world::Entity::addComponents(Component** comps, const int size)
 {
-    if (size > numOfComponents)
-        throw std::runtime_error("Attempted to add more components then the entity allows");
-    if (size == -1) size = numOfComponents;
     for (auto i = 0; i < size; ++i)
     {
+        if (comps[i] == nullptr) continue;
         comps[i]->entity = this;
     }
+    numOfComponents = size;
     components = comps;
 }

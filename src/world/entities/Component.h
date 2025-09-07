@@ -10,13 +10,15 @@ namespace world
 {
     // forward declaration
     struct Entity;
+    struct Item;
 
     enum ComponentType : uint8_t
     {
         SPRITE,
         RIGID_BODY,
         HITBOX,
-        ANIMATION
+        ANIMATION,
+        ITEM_CONTAINER
     };
 
     struct Component : Transform
@@ -25,6 +27,9 @@ namespace world
         Entity* entity = nullptr;
 
         Component(glm::vec2 position,ComponentType type);
+
+        glm::vec2 getNetPosition() const;
+        float getNetRotation() const;
 
         virtual ~Component() = default;
 
@@ -39,11 +44,9 @@ namespace world
         float width,height;
         float lightLevel;
 
-        const World* world;
-
         bool flipped;
 
-        Sprite(const World* world,glm::vec4 dimensions,glm::vec4 textRect,float scale);
+        Sprite(glm::vec4 dimensions,glm::vec4 textRect,float scale);
 
         void render() override;
         void update(const float& delta_time) override;
@@ -52,7 +55,6 @@ namespace world
     struct HitBox : Component
     {
         glm::vec4 offsets;
-        const World* world;
 
         glm::vec2 offset;
 
@@ -64,7 +66,7 @@ namespace world
 
         bool debug;
 
-        HitBox(const World* world,glm::vec4 offsets);
+        HitBox(glm::vec4 offsets);
 
         void update(const float& delta_time) override;
         void render() override;
@@ -101,7 +103,7 @@ namespace world
         float accumulator;
     };
 
-    struct LegAnimation : Animation
+    struct BipedalAnimation : Animation
     {
         Sprite* l1;
         Sprite* l2;
@@ -110,7 +112,7 @@ namespace world
 
         float rot_dir;
 
-        LegAnimation(Sprite* l1, Sprite* l2);
+        BipedalAnimation(Sprite* l1, Sprite* l2);
 
         void nextFrame(int& current_frame) override;
     };
@@ -122,5 +124,15 @@ namespace world
         PlayerHeadAnimation(Sprite* head);
 
         void nextFrame(int& current_frame) override;
+    };
+
+    struct ItemContainer : Component
+    {
+        // inventory handles item pointer, therefore don't delete this!
+        Item* item;
+
+        // item can be NULL
+        ItemContainer(Sprite* arm,Item* item);
+        void render() override;
     };
 }

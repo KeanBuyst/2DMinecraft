@@ -126,8 +126,6 @@ namespace Util
 	template<typename T, uint16_t max_size>
 	struct Buffer
 	{
-		int size = 0;
-
 		Buffer()
 		{
 			for (auto i = 0; i < max_size; ++i)
@@ -205,9 +203,14 @@ namespace Util
 			}
 			return id;
 		}
+		int count()
+		{
+			return size - space_size;
+		}
 	private:
 		T* data[max_size];
 		uint16_t space[max_size];
+		int size = 0;
 		int space_size = 0;
 		int index = 0;
 	};

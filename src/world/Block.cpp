@@ -4,7 +4,7 @@
 
 using namespace world;
 
-Block::Block(const MATERIAL type, const glm::vec2 position,const MATERIAL wall) : position(position)
+Block::Block(const BlockType type, const glm::vec2 position,const BlockType wall) : position(position)
 {
     data = type | wall << 8;
 }
@@ -15,7 +15,7 @@ Block::Block(const glm::vec2 position,const uint32_t data) : position(position),
 
 bool Block::isTransparent() const
 {
-    MATERIAL main_type = getType();
+    BlockType main_type = getType();
     if (main_type == EMPTY) main_type = getWall();
     switch (main_type)
     {
@@ -30,7 +30,7 @@ bool Block::isTransparent() const
 bool Block::isCollidable() const
 {
     if (isEmpty()) return false;
-    const MATERIAL mat = getType();
+    const BlockType mat = getType();
     if (mat == EMPTY) return false;
     // exceptions
     switch (mat)
@@ -41,14 +41,14 @@ bool Block::isCollidable() const
     return true;
 }
 
-MATERIAL Block::getType() const
+BlockType Block::getType() const
 {
-    return static_cast<MATERIAL>(data & 0xFFu);
+    return static_cast<BlockType>(data & 0xFFu);
 }
 
-MATERIAL Block::getWall() const
+BlockType Block::getWall() const
 {
-    return static_cast<MATERIAL>(data >> 8 & 0xFFu);
+    return static_cast<BlockType>(data >> 8 & 0xFFu);
 }
 
 bool Block::isEmpty() const
@@ -61,12 +61,12 @@ int Block::getLightLevel() const
     return static_cast<int>((data >> 16) & 0xFu);
 }
 
-void Block::setWall(const MATERIAL wall)
+void Block::setWall(const BlockType wall)
 {
     data = data & 0xFFFF00FF | wall << 8;
 }
 
-void Block::setType(const MATERIAL type)
+void Block::setType(const BlockType type)
 {
     data = data & 0xFFFFFF00 | type;
 }
@@ -76,7 +76,7 @@ uint32_t Block::getRaw() const
     return data;
 }
 
-short EmitsLight(const MATERIAL mat)
+short EmitsLight(const BlockType mat)
 {
     switch (mat)
     {
@@ -89,9 +89,9 @@ short EmitsLight(const MATERIAL mat)
 
 short Block::getInterference() const
 {
-    const MATERIAL solid = getType();
+    const BlockType solid = getType();
     const short s_result = EmitsLight(solid);
-    const MATERIAL wall = getWall();
+    const BlockType wall = getWall();
     const short w_result = EmitsLight(wall);
     if (s_result != 0 || w_result != 0)
     {

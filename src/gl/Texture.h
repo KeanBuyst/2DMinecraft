@@ -24,7 +24,8 @@ namespace gl
 	public:
 		explicit AtlasTexture(const char* path) : Texture(path) {};
 		// format: x,y,width,height
-		glm::vec4 getTexel(glm::vec4 pixel_rect) const;
+		[[nodiscard]] glm::vec4 getTexel(glm::vec4 pixel_rect) const;
+		static glm::vec4 getTexel(uint8_t index);
 	};
 }
 

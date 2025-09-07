@@ -10,6 +10,7 @@
 using namespace world;
 
 RegionHandler world::handler = RegionHandler();
+World world::m_world;
 
 struct BlockData
 {
@@ -285,7 +286,7 @@ void World::post_generation(Chunk& chunk)
 					}
 					else if (replaced.isTransparent() && replaced.getWall() == EMPTY)
 					{
-						const MATERIAL wall = block.getWall();
+						const BlockType wall = block.getWall();
 						if (wall != EMPTY)
 						{
 							replaced.setWall(wall);

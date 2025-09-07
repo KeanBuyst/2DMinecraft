@@ -1,9 +1,11 @@
-#version 460 core
+#version 430 core
 
 in vec2 texCoords;
 in vec2 position;
 flat in float lumeninance;
 flat in uint border;
+
+out vec4 color;
 
 uniform sampler2D atlas;
 
@@ -22,7 +24,7 @@ bool isEmpty(vec4 color)
 
 void main() {
 
-    vec4 color = texture(atlas,texCoords);
+    color = texture(atlas,texCoords);
 
     if (border != 0)
     {
@@ -37,8 +39,8 @@ void main() {
     }
 
     if (isEmpty(color)) {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+        color = vec4(0.0, 0.0, 0.0, 0.0);
     } else {
-        gl_FragColor = vec4(color.rgb * lumeninance, 1.0);
+        color = vec4(color.rgb * lumeninance, 1.0);
     }
 }

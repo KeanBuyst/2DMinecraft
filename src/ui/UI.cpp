@@ -1,0 +1,120 @@
+#include "UI.h"
+
+static GLuint VAO;
+static GLuint VBO;
+
+Util::Buffer<UI::UIComponent,5> buffer;
+
+struct RenderCell
+{
+    glm::vec2 position;
+    uint32_t type;
+    int item;
+    int stack_size;
+};
+
+void UI::Renderer::Init()
+{
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCell),
+        reinterpret_cast<void*>(offsetof(RenderCell, position)));
+    glEnableVertexAttribArray(0);
+
+    // type attribute
+    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(RenderCell),
+        reinterpret_cast<void*>(offsetof(RenderCell, type)));
+    glEnableVertexAttribArray(1);
+
+    // item attribute
+    glVertexAttribIPointer(2, 1, GL_INT, sizeof(RenderCell),
+        reinterpret_cast<void*>(offsetof(RenderCell, item)));
+    glEnableVertexAttribArray(2);
+
+    // stack size attribute
+    glVertexAttribIPointer(3, 1, GL_INT, sizeof(RenderCell),
+        reinterpret_cast<void*>(offsetof(RenderCell, stack_size)));
+    glEnableVertexAttribArray(3);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+}
+
+void UI::Renderer::Update(const float& delta_time)
+{
+    UIComponent* comp;
+    while (buffer.next(comp))
+    {
+        if (!comp->isVisible())
+        {
+            buffer.destroy(comp->id);
+            continue;
+        }
+        comp->update(delta_time);
+    }
+}
+
+void UI::Renderer::Cleanup()
+{
+    buffer.clean();
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+}
+
+void UI::Renderer::Add(UIComponent* component)
+{
+    component->id = buffer.add(component);
+}
+
+void UI::Renderer::Render(gl::ShaderProgram* shader)
+{
+    static std::vector<RenderCell> render_cells;
+    render_cells.clear();
+
+    shader->useTexture("tileAtlas",0);
+    shader->useTexture("itemAtlas",2);
+    shader->useTexture("uiAtlas",3);
+
+    UIComponent* comp;
+    while (buffer.next(comp))
+    {
+        const Cell* cells = comp->getCells();
+        for (auto i = 0; i < comp->getCount(); ++i)
+        {
+            // ignore empty cells
+            int amount = 0;
+            if (cells[i].type == 0)
+                continue;
+
+            int item;
+            if (cells[i].item == nullptr)
+                item = -1;
+            else
+            {
+                if (cells[i].item->material == 0) continue;
+                item = cells[i].item->material;
+                if (cells[i].item->isBlock) item += 255;
+                amount = cells[i].item->getAmount();
+            }
+            const int width = comp->getSize().x;
+            glm::vec2 position = glm::ivec2(i % width, i / width) + comp->getPosition();
+            render_cells.push_back({
+                position * CELL_SIZE,
+                cells[i].type - 1u,
+                item,
+                amount
+            });
+        }
+    }
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER,render_cells.size() * sizeof(RenderCell), render_cells.data(),GL_STATIC_DRAW);
+    glDrawArrays(GL_POINTS,0,render_cells.size());
+}

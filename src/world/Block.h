@@ -8,7 +8,7 @@
 
 namespace world 
 {
-	enum MATERIAL : uint8_t
+	enum BlockType : uint8_t
 	{
 		EMPTY,
 		GRASS_BLOCK,
@@ -32,7 +32,7 @@ namespace world
 	class Block
 	{
 	public:
-		Block(MATERIAL type,glm::vec2 position,MATERIAL wall);
+		Block(BlockType type,glm::vec2 position,BlockType wall);
 		Block(glm::vec2 position,uint32_t data);
 
 		glm::vec2 position;
@@ -40,14 +40,14 @@ namespace world
 		[[nodiscard]] bool isTransparent() const;
 		[[nodiscard]] bool isCollidable() const;
 		[[nodiscard]] bool isEmpty() const;
-		[[nodiscard]] MATERIAL getType() const;
-		[[nodiscard]] MATERIAL getWall() const;
+		[[nodiscard]] BlockType getType() const;
+		[[nodiscard]] BlockType getWall() const;
 		[[nodiscard]] int getLightLevel() const;
 
 		[[nodiscard]] short getInterference() const;
 
-		void setWall(MATERIAL wall);
-		void setType(MATERIAL type);
+		void setWall(BlockType wall);
+		void setType(BlockType type);
 
 		[[nodiscard]] uint32_t getRaw() const;
 	protected:

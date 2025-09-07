@@ -59,3 +59,9 @@ glm::vec4 AtlasTexture::getTexel(const glm::vec4 pixel_rect) const
 	const float h = pixel_rect.w / static_cast<float>(height);
 	return {x,y,w,h};
 }
+
+glm::vec4 AtlasTexture::getTexel(const uint8_t index)
+{
+	auto tileTexPos = glm::vec2(static_cast<float>(index % 16) / 16.0,static_cast<float>(index / 16) / 16.0);
+	return {tileTexPos,0.0625f,0.0625f};
+}

@@ -1,9 +1,23 @@
 #include "Component.h"
 
 #include "Entity.h"
+#include "Item.h"
 #include "../../Application.h"
 #include "../../Constants.h"
 #include "../../Util.h"
+
+world::Component::Component(const glm::vec2 position,const ComponentType type) : Transform(position), type(type)
+{}
+
+glm::vec2 world::Component::getNetPosition() const
+{
+    return entity->position + position;
+}
+
+float world::Component::getNetRotation() const
+{
+    return entity->rotation + rotation;
+}
 
 void world::Sprite::render()
 {
@@ -30,22 +44,22 @@ void world::Sprite::render()
     const glm::vec2 b_BR = glm::floor(bottomRight);
 
     // bottom left
-    light_BL = static_cast<float>(world->getBlock(b_BL).getLightLevel());
+    light_BL = static_cast<float>(m_world.getBlock(b_BL).getLightLevel());
 
     // top right
     if (b_TR == b_BL) light_TR = light_BL;
-    else light_TR = static_cast<float>(world->getBlock(b_TR).getLightLevel());
+    else light_TR = static_cast<float>(m_world.getBlock(b_TR).getLightLevel());
 
     // top left
     if (b_TL == b_TR) light_TL = light_TR;
     else if (b_TL == b_BL) light_TL = light_BL;
-    else light_TL = static_cast<float>(world->getBlock(b_TL).getLightLevel());
+    else light_TL = static_cast<float>(m_world.getBlock(b_TL).getLightLevel());
 
     // bottom right
     if (b_BR == b_BL) light_BR = light_BL;
     else if (b_BR == b_TR) light_BR = light_TR;
     else if (b_BR == b_TL) light_BR = light_TL;
-    else light_BR = static_cast<float>(world->getBlock(b_BR).getLightLevel());
+    else light_BR = static_cast<float>(m_world.getBlock(b_BR).getLightLevel());
 
 
     const glm::vec2 texBottomLeft = {flipped ? texel.z : texel.x, texel.w};
@@ -59,7 +73,7 @@ void world::Sprite::render()
     bottomRight = (bottomRight - origin) * PIXEL_SCALE;
 
     // Insert two triangles (6 vertices)
-    entity_render_batch.insert(entity_render_batch.end(), {
+    std::initializer_list<EntityHandler::EntityRenderData> data = {
         // First triangle
         {bottomLeft,  texBottomLeft,    light_BL},
         {bottomRight, texBottomRight,   light_BR},
@@ -69,14 +83,22 @@ void world::Sprite::render()
         {topRight,    texTopRight,      light_TR},
         {topLeft,     texTopLeft,       light_TL},
         {bottomLeft,  texBottomLeft,    light_BL}
-    });
+    };
+
+    if (entity->type == ITEM)
+    {
+        auto item = reinterpret_cast<Item*>(entity);
+        if (item->isBlock)
+            render_batch.insert<BlockType>(data);
+        else
+            render_batch.insert<ItemType>(data);
+    }
+    else
+        render_batch.insert<EntityType>(data);
 }
 
-world::Component::Component(const glm::vec2 position,const ComponentType type) : Transform(position), type(type)
-{}
-
-world::Sprite::Sprite(const World* world,const glm::vec4 dimensions,glm::vec4 textRect,const float scale)
-    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE), world(world), flipped(false)
+world::Sprite::Sprite(const glm::vec4 dimensions,glm::vec4 textRect,const float scale)
+    : Component({dimensions.x / PIXEL_SCALE,dimensions.y / PIXEL_SCALE},SPRITE), flipped(false)
 {
     width = (dimensions.z / PIXEL_SCALE) * scale;
     height = (dimensions.w / PIXEL_SCALE) * scale;
@@ -99,8 +121,8 @@ void world::Sprite::update(const float& delta_time)
     }
 }
 
-world::HitBox::HitBox(const World* world, const glm::vec4 offsets)
-    : Component({0,0},HITBOX), offsets(offsets / PIXEL_SCALE), world(world), top(false),
+world::HitBox::HitBox(const glm::vec4 offsets)
+    : Component({0,0},HITBOX), offsets(offsets / PIXEL_SCALE), top(false),
     bottom(false), left(false), right(false), debug(false)
 {}
 
@@ -136,26 +158,26 @@ void world::HitBox::update(const float& delta_time)
 
     // Tile/Block Collision
     // for point 1
-    const Block b1 = world->getBlock(top_p);
+    const Block b1 = m_world.getBlock(top_p);
     if (b1.isCollidable())
     {
         offset.y = b1.position.y - top_p.y;
         top = true;
     }
-    const Block b2 = world->getBlock(right_p);
+    const Block b2 = m_world.getBlock(right_p);
     if (b2.isCollidable())
     {
         // using pos instead of right_p prevents kick back from colliding with walls
         offset.x = b2.position.x - right_p.x;
         right = true;
     }
-    const Block b3 = world->getBlock(left_p);
+    const Block b3 = m_world.getBlock(left_p);
     if (b3.isCollidable())
     {
         offset.x = (b3.position.x + 1.0f) - left_p.x;
         left = true;
     }
-    const Block b4 = world->getBlock(bottom_p);
+    const Block b4 = m_world.getBlock(bottom_p);
     if (b4.isCollidable())
     {
         offset.y = (b4.position.y + 1.0f) - bottom_p.y;
@@ -241,7 +263,7 @@ void world::Animation::update(const float& delta_time)
     }
 }
 
-world::LegAnimation::LegAnimation(Sprite* l1, Sprite* l2) : l1(l1), l2(l2)
+world::BipedalAnimation::BipedalAnimation(Sprite* l1, Sprite* l2) : l1(l1), l2(l2)
 {
     const glm::vec2 pivot(0, -0.4f);
     l1->pivot_point = pivot;
@@ -249,7 +271,7 @@ world::LegAnimation::LegAnimation(Sprite* l1, Sprite* l2) : l1(l1), l2(l2)
     rot_dir = -1;
 }
 
-void world::LegAnimation::nextFrame(int& current_frame)
+void world::BipedalAnimation::nextFrame(int& current_frame)
 {
     float ratio = abs(entity->velocity.x) / RigidBody::max_speed;
     float angle_ratio = ratio * 3.0f;
@@ -304,4 +326,16 @@ void world::PlayerHeadAnimation::nextFrame(int& current_frame)
     Util::clamp(rotation,MAX_ANGLE);
 
     head->rotation = rotation;
+}
+
+world::ItemContainer::ItemContainer(Sprite* arm, Item* item) : Component(arm->position * 2.0f,ITEM_CONTAINER), item(item)
+{
+    item->toComponent();
+}
+
+void world::ItemContainer::render()
+{
+    item->position = getNetPosition();
+    item->rotation = getNetRotation();
+    item->render();
 }

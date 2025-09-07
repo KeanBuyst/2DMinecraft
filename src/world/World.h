@@ -38,4 +38,6 @@ namespace world
 
 		void post_generation(Chunk& chunk);
 	};
+
+	extern World m_world;
 }

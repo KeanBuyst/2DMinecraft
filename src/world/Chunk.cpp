@@ -39,7 +39,7 @@ void Chunk::generate()
 					data = biome->getCaveMaterial(relative) << 8;
 				} else
 				{
-					MATERIAL ore;
+					BlockType ore;
 					if (Generate::OreGeneration(pos,relative,ore))
 						data = static_cast<uint32_t>(ore);
 					else data = biome->getMaterial(relative);
