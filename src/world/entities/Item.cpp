@@ -46,7 +46,7 @@ void world::Item::toEntity()
 {
     if (components[1] != nullptr || components[2] != nullptr) return;
     // add necessary components
-    auto* hitbox = new HitBox({-5,-5,5,5});
+    auto* hitbox = new HitBox({4,4,-4,-4});
     hitbox->entity = this;
     components[1] = hitbox;
     auto* rigid = new RigidBody(hitbox);
