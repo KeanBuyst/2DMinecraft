@@ -5,11 +5,7 @@ namespace UI
 {
     struct Inventory : UIComponent
     {
-        glm::ivec2 position;
-        const int width,height;
-        bool visible;
-        Cell* cells;
-
+    public:
         Inventory(glm::ivec2 position, int width, int height);
         ~Inventory();
 
@@ -21,5 +17,21 @@ namespace UI
         const Cell* getCells() const override;
 
         bool isVisible() const override;
+        void setVisible(bool visible) override;
+    protected:
+        glm::ivec2 position;
+        const int width,height;
+        bool visible;
+        Cell* cells;
+    };
+
+    struct Hotbar : Inventory
+    {
+        Hotbar();
+
+        void update(const float& delta_time) override;
+
+    private:
+        int selected_slot;
     };
 }

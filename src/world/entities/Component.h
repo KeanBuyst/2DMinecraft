@@ -32,6 +32,7 @@ namespace world
         float getNetRotation() const;
 
         virtual ~Component() = default;
+        [[nodiscard]] virtual Component* clone() const = 0;
 
         virtual void event(SDL_Event* event){}
         virtual void update(const float& delta_time){}
@@ -48,6 +49,7 @@ namespace world
 
         Sprite(glm::vec4 dimensions,glm::vec4 textRect,float scale);
 
+        [[nodiscard]] Component* clone() const override;
         void render() override;
         void update(const float& delta_time) override;
     };
@@ -68,6 +70,7 @@ namespace world
 
         HitBox(glm::vec4 offsets);
 
+        [[nodiscard]] Component* clone() const override;
         void update(const float& delta_time) override;
         void render() override;
         [[nodiscard]] bool inBounds(const glm::vec2& point) const;
@@ -86,6 +89,7 @@ namespace world
 
         explicit RigidBody(const HitBox* hitbox);
 
+        [[nodiscard]] Component* clone() const override;
         void update(const float& delta_time) override;
     };
 
@@ -113,6 +117,7 @@ namespace world
         float rot_dir;
 
         BipedalAnimation(Sprite* l1, Sprite* l2);
+        [[nodiscard]] Component* clone() const override;
 
         void nextFrame(int& current_frame) override;
     };
@@ -121,6 +126,7 @@ namespace world
     {
         Sprite* head;
 
+        [[nodiscard]] Component* clone() const override;
         PlayerHeadAnimation(Sprite* head);
 
         void nextFrame(int& current_frame) override;
@@ -133,6 +139,7 @@ namespace world
 
         // item can be NULL
         ItemContainer(Sprite* arm,Item* item);
+        [[nodiscard]] Component* clone() const override;
         void render() override;
     };
 }

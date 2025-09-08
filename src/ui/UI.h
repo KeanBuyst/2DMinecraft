@@ -33,6 +33,7 @@ namespace UI
         virtual const Cell* getCells() const = 0;
 
         virtual bool isVisible() const = 0;
+        virtual void setVisible(bool visible) = 0;
     };
 
     namespace Renderer

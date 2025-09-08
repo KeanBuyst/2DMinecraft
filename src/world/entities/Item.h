@@ -41,6 +41,7 @@ namespace world
 
         Item(glm::vec2 position,BlockType material);
         Item(glm::vec2 position,ItemType material);
+        Item(const Item& other);
 
         void toComponent();
         void toEntity();

@@ -19,6 +19,11 @@ float world::Component::getNetRotation() const
     return entity->rotation + rotation;
 }
 
+world::Component* world::Sprite::clone() const
+{
+    return new Sprite(*this);
+}
+
 void world::Sprite::render()
 {
     const float p1x = position.x - width / 2 - pivot_point.x;
@@ -141,6 +146,21 @@ void world::HitBox::render()
     }
 }
 
+world::Component* world::BipedalAnimation::clone() const
+{
+    return new BipedalAnimation(*this);
+}
+
+world::Component* world::PlayerHeadAnimation::clone() const
+{
+    return new PlayerHeadAnimation(*this);
+}
+
+world::Component* world::HitBox::clone() const
+{
+    return new HitBox(*this);
+}
+
 void world::HitBox::update(const float& delta_time)
 {
     // reset all booleans
@@ -199,6 +219,11 @@ bool world::HitBox::inBounds(const glm::vec2& point) const
 
 world::RigidBody::RigidBody(const HitBox* hitbox) : Component({0,0},RIGID_BODY), hitbox(hitbox), moving(false)
 {}
+
+world::Component* world::RigidBody::clone() const
+{
+    return new RigidBody(*this);
+}
 
 void world::RigidBody::update(const float& delta_time)
 {
@@ -331,6 +356,11 @@ void world::PlayerHeadAnimation::nextFrame(int& current_frame)
 world::ItemContainer::ItemContainer(Sprite* arm, Item* item) : Component(arm->position * 2.0f,ITEM_CONTAINER), item(item)
 {
     item->toComponent();
+}
+
+world::Component* world::ItemContainer::clone() const
+{
+    return new ItemContainer(*this);
 }
 
 void world::ItemContainer::render()

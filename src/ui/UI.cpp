@@ -50,11 +50,6 @@ void UI::Renderer::Update(const float& delta_time)
     UIComponent* comp;
     while (buffer.next(comp))
     {
-        if (!comp->isVisible())
-        {
-            buffer.destroy(comp->id);
-            continue;
-        }
         comp->update(delta_time);
     }
 }
@@ -83,6 +78,8 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
     UIComponent* comp;
     while (buffer.next(comp))
     {
+        if (!comp->isVisible()) continue;
+
         const Cell* cells = comp->getCells();
         for (auto i = 0; i < comp->getCount(); ++i)
         {
@@ -96,10 +93,15 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
                 item = -1;
             else
             {
-                if (cells[i].item->material == 0) continue;
+
                 item = cells[i].item->material;
-                if (cells[i].item->isBlock) item += 255;
+                if (cells[i].item->isBlock)
+                {
+                    if (item == 0) item = -1;
+                    else item += 255;
+                }
                 amount = cells[i].item->getAmount();
+
             }
             const int width = comp->getSize().x;
             glm::vec2 position = glm::ivec2(i % width, i / width) + comp->getPosition();

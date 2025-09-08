@@ -1,5 +1,6 @@
 #include "Item.h"
 
+#include "EntityHandler.h"
 #include "../../gl/Texture.h"
 
 world::Item::Item(glm::vec2 position, BlockType material): Entity(position,ITEM), material(material), isBlock(true), amount(1)
@@ -12,7 +13,6 @@ world::Item::Item(glm::vec2 position, BlockType material): Entity(position,ITEM)
         nullptr
     };
     addComponents(components,3);
-    numOfComponents = 1;
 }
 
 world::Item::Item(glm::vec2 position, ItemType material): Entity(position, ITEM), material(material), isBlock(false), amount(1)
@@ -25,8 +25,11 @@ world::Item::Item(glm::vec2 position, ItemType material): Entity(position, ITEM)
         nullptr
     };
     addComponents(components,3);
-    numOfComponents = 1;
 }
+
+world::Item::Item(const Item& other)
+    : Entity(other), material(other.material), isBlock(other.isBlock), amount(other.amount)
+{}
 
 void world::Item::toComponent()
 {
@@ -36,16 +39,20 @@ void world::Item::toComponent()
         delete components[i];
         components[i] = nullptr;
     }
-    numOfComponents = 1;
+    health = 0;
 }
 
 void world::Item::toEntity()
 {
+    if (components[1] != nullptr || components[2] != nullptr) return;
     // add necessary components
-    auto* hitbox = new HitBox({-4,-4,4,4});
+    auto* hitbox = new HitBox({-5,-5,5,5});
+    hitbox->entity = this;
     components[1] = hitbox;
-    components[2] = new RigidBody(hitbox);
-    numOfComponents = 3;
+    auto* rigid = new RigidBody(hitbox);
+    rigid->entity = this;
+    components[2] = rigid;
+    health = 1;
 }
 
 bool world::Item::isMaterial(const BlockType mat) const

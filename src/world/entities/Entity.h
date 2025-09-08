@@ -68,12 +68,13 @@ namespace world
     {
         EntityType type;
         Component** components;
-        uint16_t id = 0;
+        int id = -1;
         int numOfComponents;
         float max_health;
         float health;
 
         Entity(glm::vec2 position,EntityType type);
+        Entity(const Entity& other);
         ~Entity();
 
         void event(SDL_Event* event) const;

@@ -29,6 +29,8 @@ float world::GetMaxHealth(EntityType type)
     {
     case PLAYER:
         return 100.0f;
+    case ITEM:
+        return 1.0f;
     default:
         return -1.0f;
     }
@@ -38,6 +40,27 @@ world::Entity::Entity(const glm::vec2 position,const EntityType type) :
     VectorTransform(position),type(type), components(nullptr), numOfComponents(0)
 {
     max_health = GetMaxHealth(type);
+    health = max_health;
+}
+
+world::Entity::Entity(const Entity& other) : VectorTransform(other.position), type(other.type)
+{
+    components = new Component*[other.numOfComponents];
+    numOfComponents = other.numOfComponents;
+
+    for (auto i = 0; i < numOfComponents; ++i)
+    {
+        if (other.components[i] != nullptr)
+        {
+            components[i] = other.components[i]->clone();
+            components[i]->entity = this;
+        } else
+        {
+            components[i] = nullptr;
+        }
+    }
+    max_health = other.max_health;
+    // not copying over health
     health = max_health;
 }
 

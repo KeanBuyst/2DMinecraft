@@ -21,6 +21,7 @@ int SCREEN_HEIGHT = 720;
 
 const Uint8* Application::curr_keystate = nullptr;
 Uint8 Application::prev_keystate[SDL_NUM_SCANCODES] = {};
+int Application::scrollDir = 0;
 
 glm::vec4 VIEW_PORT;
 
@@ -153,11 +154,11 @@ void Application::run() {
     EntityHandler::Add(player);
 
     // Create Player inventory
-    auto* inventory = new UI::Inventory({-4,-13},9,1);
+    auto* inventory = new UI::Hotbar();
     auto* item = new Item({0,0}, GRASS_BLOCK);
-    item->setAmount(64);
+    item->setAmount(8);
     inventory->addItem(item);
-    inventory->visible = true;
+    inventory->setVisible(true);
     UI::Renderer::Add(inventory);
 
 
@@ -192,6 +193,11 @@ bool Application::isKeyUp(const SDL_Scancode key)
     return prev_keystate[key] && !curr_keystate[key];
 }
 
+int Application::GetMouseScroll()
+{
+    return scrollDir;
+}
+
 Application::~Application() {
     EntityHandler::Cleanup();
     UI::Renderer::Cleanup();
@@ -213,6 +219,8 @@ glm::vec2 Application::GetWorldMouse()
 
 void Application::events(bool& running)
 {
+    scrollDir = 0;
+
     SDL_Event e;
     while (SDL_PollEvent(&e))
     {
@@ -245,10 +253,12 @@ void Application::events(bool& running)
                                       << std::endl;
                         }
                         break;
-
                 }
                 break;
             }
+            case SDL_MOUSEWHEEL:
+                scrollDir = e.wheel.y;
+                break;
             case SDL_QUIT:
                 running = false;
                 break;

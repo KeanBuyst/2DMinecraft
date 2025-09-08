@@ -25,6 +25,7 @@ public:
   static bool isKeyDown(SDL_Scancode key);
   static bool isKeyPressed(SDL_Scancode key);
   static bool isKeyUp(SDL_Scancode key);
+  static int GetMouseScroll();
 
 private:
   Application();
@@ -53,4 +54,6 @@ private:
   world::Entity* player;
   world::HitBox* player_hitbox;
   world::RigidBody* player_rigid_body;
+
+  static int scrollDir;
 };
