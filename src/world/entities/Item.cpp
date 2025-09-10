@@ -17,7 +17,7 @@ world::Item::Item(glm::vec2 position, BlockType material): Entity(position,ITEM)
 
 world::Item::Item(glm::vec2 position, ItemType material): Entity(position, ITEM), material(material), isBlock(false), amount(1)
 {
-    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),1.0f);
+    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),2.0f);
     auto** components = new Component*[]
     {
         sprite,

@@ -88,9 +88,21 @@ namespace world
             for (auto i = 0; i < numOfComponents; ++i)
             {
                 if (components[i]->type == compType)
-                    list.push_back(static_cast<T*>(components[i]));
+                    list.push_back(reinterpret_cast<T*>(components[i]));
             }
             return list;
+        }
+        template<typename T>
+        [[nodiscard]] T* getComponent(const ComponentType compType) const
+        {
+            for (auto i = 0; i < numOfComponents; ++i)
+            {
+                if (components[i]->type == compType)
+                {
+                    return reinterpret_cast<T*>(components[i]);
+                }
+            }
+            return nullptr;
         }
 
         void addComponents(Component** comps,int size);

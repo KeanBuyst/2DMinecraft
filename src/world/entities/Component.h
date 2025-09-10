@@ -5,12 +5,12 @@
 #include "../World.h"
 #include "../../Util.h"
 #include "../../math/Transform.h"
+#include "../../ui/Inventory.h"
 
 namespace world
 {
     // forward declaration
     struct Entity;
-    struct Item;
 
     enum ComponentType : uint8_t
     {
@@ -134,12 +134,14 @@ namespace world
 
     struct ItemContainer : Component
     {
-        // inventory handles item pointer, therefore don't delete this!
-        Item* item;
+        UI::Hotbar* inv;
+        const float ARM_ANGLE;
+        Sprite* arm;
 
         // item can be NULL
-        ItemContainer(Sprite* arm,Item* item);
+        ItemContainer(Sprite* arm,UI::Hotbar* inv);
         [[nodiscard]] Component* clone() const override;
         void render() override;
+        void update(const float& delta_time) override;
     };
 }

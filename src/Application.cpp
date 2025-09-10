@@ -13,6 +13,7 @@
 #include "ui/Inventory.h"
 #include "ui/UI.h"
 #include "world/entities/EntityHandler.h"
+#include "world/entities/Item.h"
 
 using namespace world;
 
@@ -131,6 +132,14 @@ void Application::run() {
     itemAtlas.bind(2);
     uiAtlas.bind(3);
 
+    // Create Player inventory
+    auto* hotbar = new UI::Hotbar();
+    auto* item = new Item({0,0}, STONE_AXE);
+    item->setAmount(8);
+    hotbar->addItem(item);
+    hotbar->setVisible(true);
+    UI::Renderer::Add(hotbar);
+
     // Create player entity
     player = new Entity({0,10},world::PLAYER);
     player_hitbox = new HitBox({-2.5f,10,2.5f,-18});
@@ -138,29 +147,22 @@ void Application::run() {
     auto* leg_1 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
     auto* leg_2 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
     auto* head = new Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
+    auto* arm = new Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f);
     auto** components = new Component*[]
     {
         head, // HEAD
-        new Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f), // BODY
-        new Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // ARM
+        arm, // ARM
+        new Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // BODY
         leg_1,
         leg_2,
         player_rigid_body,
         player_hitbox,
         new BipedalAnimation(leg_1,leg_2),
-        new PlayerHeadAnimation(head)
+        new PlayerHeadAnimation(head),
+        new ItemContainer(arm,hotbar)
     };
-    player->addComponents(components,9);
+    player->addComponents(components,10);
     EntityHandler::Add(player);
-
-    // Create Player inventory
-    auto* inventory = new UI::Hotbar();
-    auto* item = new Item({0,0}, GRASS_BLOCK);
-    item->setAmount(8);
-    inventory->addItem(item);
-    inventory->setVisible(true);
-    UI::Renderer::Add(inventory);
-
 
     glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
 

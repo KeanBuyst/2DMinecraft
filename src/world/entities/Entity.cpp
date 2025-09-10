@@ -102,6 +102,7 @@ void world::Entity::render()
     if (components == nullptr) return;
     for (auto i = 0; i < numOfComponents; ++i)
     {
+        if (components[i] == nullptr) continue;
         components[i]->render();
     }
 }

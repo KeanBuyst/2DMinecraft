@@ -1,6 +1,11 @@
 #pragma once
 #include "../gl/Shader.h"
-#include "../world/entities/Item.h"
+
+// forward declaration
+namespace world
+{
+    struct Item;
+}
 
 namespace UI
 {

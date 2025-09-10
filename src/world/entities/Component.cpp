@@ -1,6 +1,7 @@
 #include "Component.h"
 
 #include "Entity.h"
+#include "EntityHandler.h"
 #include "Item.h"
 #include "../../Application.h"
 #include "../../Constants.h"
@@ -31,7 +32,7 @@ void world::Sprite::render()
     const float p2x = p1x + width;
     const float p2y = p1y + height;
 
-    const float rot = entity->rotation + rotation;
+    const float rot = flipped ? -getNetRotation() : getNetRotation();
 
     glm::vec2 bottomLeft = entity->position + pivot_point + Util::rotate({p1x, p1y}, rot);
     glm::vec2 topRight = entity->position + pivot_point + Util::rotate({p2x, p2y}, rot);
@@ -343,19 +344,15 @@ void world::PlayerHeadAnimation::nextFrame(int& current_frame)
     if (rotation > MID_ANGLE) rotation = M_PI - rotation;
     if (rotation < -MID_ANGLE) rotation = -static_cast<float>(M_PI) - rotation;
 
-    if (head->flipped)
-    {
-        rotation = -rotation;
-    }
-
     Util::clamp(rotation,MAX_ANGLE);
 
     head->rotation = rotation;
 }
 
-world::ItemContainer::ItemContainer(Sprite* arm, Item* item) : Component(arm->position * 2.0f,ITEM_CONTAINER), item(item)
+world::ItemContainer::ItemContainer(Sprite* arm, UI::Hotbar* inv)
+    : Component(arm->position,ITEM_CONTAINER), inv(inv), ARM_ANGLE(Util::DegToRad(30.0f)), arm(arm)
 {
-    item->toComponent();
+    arm->pivot_point = {0,0.25};
 }
 
 world::Component* world::ItemContainer::clone() const
@@ -365,7 +362,58 @@ world::Component* world::ItemContainer::clone() const
 
 void world::ItemContainer::render()
 {
+
+    Item*& item = inv->getSelectedItem();
+    if (item == nullptr)
+    {
+        arm->rotation = 0.0f;
+        return;
+    }
+    arm->rotation = ARM_ANGLE;
+    rotation = ARM_ANGLE;
+    float x = 0.5f;
+    float y = -0.3f;
+    if (!item->isBlock)
+    {
+        rotation -= Util::DegToRad(30.0f);
+        x = 0.6f;
+        y = 0.15f;
+    }
+    position = Util::rotate(arm->position + pivot_point + glm::vec2(arm->flipped ? -x : x,y), arm->flipped ? -rotation : rotation);
+
     item->position = getNetPosition();
     item->rotation = getNetRotation();
+    item->getComponent<Sprite>(SPRITE)->flipped = arm->flipped;
     item->render();
+}
+
+void world::ItemContainer::update(const float& delta_time)
+{
+    // dropping item
+    if (Application::isKeyPressed(SDL_SCANCODE_Q))
+    {
+        Item*& item = inv->getSelectedItem();
+        if (item != nullptr)
+        {
+            if (item->getAmount() > 1)
+            {
+                item->setAmount(item->getAmount() - 1);
+                auto* newItem = new Item(*item);
+                newItem->setAmount(1);
+                newItem->position = getNetPosition();
+                newItem->velocity = position * 10.0f;
+                newItem->toEntity();
+                EntityHandler::Add(newItem);
+            } else
+            {
+                // pass ownership over to the entity handler
+                item->position = getNetPosition();
+                item->rotation = 0;
+                item->velocity = position * 10.0f;
+                item->toEntity();
+                EntityHandler::Add(item);
+                item = nullptr;
+            }
+        }
+    }
 }

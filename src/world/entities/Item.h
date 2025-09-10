@@ -51,7 +51,6 @@ namespace world
 
         int getAmount() const;
         void setAmount(int amount);
-
     private:
         int amount;
     };

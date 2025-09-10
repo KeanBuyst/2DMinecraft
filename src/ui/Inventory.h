@@ -30,6 +30,8 @@ namespace UI
         Hotbar();
 
         void update(const float& delta_time) override;
+        void setSelectedSlot(int slot);
+        world::Item*& getSelectedItem() const;
 
     private:
         int selected_slot;

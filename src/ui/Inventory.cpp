@@ -2,6 +2,7 @@
 
 #include "../Application.h"
 #include "../world/entities/EntityHandler.h"
+#include "../world/entities/Item.h"
 
 UI::Inventory::Inventory(glm::ivec2 position,const int width, const int height) : position(position), width(width), height(height), visible(false)
 {
@@ -82,43 +83,27 @@ void UI::Hotbar::update(const float& delta_time)
     {
         if (Application::isKeyPressed(static_cast<SDL_Scancode>(SDL_SCANCODE_1 + i)))
         {
-            cells[selected_slot].type = INVENTORY_SLOT;
-            cells[i].type = CELL_SELECTED;
-            selected_slot = i;
+            setSelectedSlot(i);
             break;
         }
     }
     // Scroll selection
     if (Application::GetMouseScroll() != 0)
     {
-        cells[selected_slot].type = INVENTORY_SLOT;
-        selected_slot += Application::GetMouseScroll();
-        if (selected_slot < 0) selected_slot += 9;
-        if (selected_slot > 8) selected_slot -= 9;
-        cells[selected_slot].type = CELL_SELECTED;
+        setSelectedSlot(selected_slot - Application::GetMouseScroll());
     }
-    // dropping item
-    if (Application::isKeyPressed(SDL_SCANCODE_Q))
-    {
-        world::Item*& item = cells[selected_slot].item;
-        if (item != nullptr)
-        {
-            if (item->getAmount() > 1)
-            {
-                item->setAmount(item->getAmount() - 1);
-                auto* newItem = new world::Item(*item);
-                newItem->setAmount(1);
-                newItem->position = world::origin;
-                newItem->toEntity();
-                EntityHandler::Add(newItem);
-            } else
-            {
-                // pass ownership over to the entity handler
-                item->position = world::origin;
-                item->toEntity();
-                EntityHandler::Add(item);
-                item = nullptr;
-            }
-        }
-    }
+}
+
+void UI::Hotbar::setSelectedSlot(const int slot)
+{
+    cells[selected_slot].type = INVENTORY_SLOT;
+    selected_slot = slot;
+    if (selected_slot < 0) selected_slot += 9;
+    if (selected_slot > 8) selected_slot -= 9;
+    cells[selected_slot].type = CELL_SELECTED;
+}
+
+world::Item*& UI::Hotbar::getSelectedItem() const
+{
+    return cells[selected_slot].item;
 }

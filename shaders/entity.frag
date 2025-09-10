@@ -9,5 +9,5 @@ uniform sampler2D atlas;
 
 void main() {
     color = texture(atlas,tex_chord);
-    color = vec4(color.rgb * light, 1.0);
+    color = vec4(color.rgb * light, color.a);
 }

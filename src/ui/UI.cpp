@@ -1,5 +1,9 @@
 #include "UI.h"
 
+#include "../Util.h"
+#include "../glew.h"
+#include "../world/entities/Item.h"
+
 static GLuint VAO;
 static GLuint VBO;
 
