@@ -20,12 +20,18 @@ public:
   static Application& GetInstance();
   void run();
 
+  static bool isMouseDown(int button);
+  static bool isMousePressed(int button);
+  static bool isMouseReleased(int button);
   static glm::vec2 GetWorldMouse();
+  static glm::vec2 GetUIMouse();
+  static int GetMouseScroll();
+
+  static UI::MouseItemHolder* item_holder;
 
   static bool isKeyDown(SDL_Scancode key);
   static bool isKeyPressed(SDL_Scancode key);
   static bool isKeyUp(SDL_Scancode key);
-  static int GetMouseScroll();
 
 private:
   Application();
@@ -41,6 +47,11 @@ private:
   static Uint8 prev_keystate[SDL_NUM_SCANCODES];
   static const Uint8* curr_keystate;
 
+  static Uint32 currentMouseState;
+  static Uint32 previousMouseState;
+
+  static glm::ivec2 mousePos;
+
   bool fullscreen = false;
   bool keypressed = false;
   SDL_Window* window;
@@ -54,6 +65,7 @@ private:
   world::Entity* player;
   world::HitBox* player_hitbox;
   world::RigidBody* player_rigid_body;
+  UI::Inventory* inventory;
 
   static int scrollDir;
 };

@@ -32,7 +32,7 @@ namespace UI
 
         virtual void update(const float& delta_time) {}
 
-        virtual glm::ivec2 getPosition() const = 0;
+        virtual glm::vec2 getPosition() const = 0;
         virtual glm::ivec2 getSize() const = 0;
         virtual int getCount() const = 0;
         virtual const Cell* getCells() const = 0;

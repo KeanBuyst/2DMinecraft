@@ -88,9 +88,10 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
         for (auto i = 0; i < comp->getCount(); ++i)
         {
             // ignore empty cells
-            int amount = 0;
-            if (cells[i].type == 0)
+            if (cells[i].type == EMPTY_CELL && cells[i].item == nullptr)
                 continue;
+
+            int amount = 0;
 
             int item;
             if (cells[i].item == nullptr)
@@ -108,10 +109,10 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
 
             }
             const int width = comp->getSize().x;
-            glm::vec2 position = glm::ivec2(i % width, i / width) + comp->getPosition();
+            glm::vec2 position = glm::vec2(i % width, i / width) + comp->getPosition();
             render_cells.push_back({
                 position * CELL_SIZE,
-                cells[i].type - 1u,
+                cells[i].type,
                 item,
                 amount
             });

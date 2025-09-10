@@ -22,7 +22,13 @@ int SCREEN_HEIGHT = 720;
 
 const Uint8* Application::curr_keystate = nullptr;
 Uint8 Application::prev_keystate[SDL_NUM_SCANCODES] = {};
+
+Uint32 Application::currentMouseState = 0;
+Uint32 Application::previousMouseState = 0;
+
 int Application::scrollDir = 0;
+glm::ivec2 Application::mousePos;
+UI::MouseItemHolder* Application::item_holder = nullptr;
 
 glm::vec4 VIEW_PORT;
 
@@ -139,6 +145,12 @@ void Application::run() {
     hotbar->addItem(item);
     hotbar->setVisible(true);
     UI::Renderer::Add(hotbar);
+    // Main player inventory
+    inventory = new UI::Inventory({-4.5f,-11.5f},9,4);
+    UI::Renderer::Add(inventory);
+    // Mouse item holder (always last in order)
+    item_holder = new UI::MouseItemHolder();
+    UI::Renderer::Add(item_holder);
 
     // Create player entity
     player = new Entity({0,10},world::PLAYER);
@@ -170,6 +182,10 @@ void Application::run() {
     bool running = true;
     while (running)
     {
+        // update mouse sate
+        previousMouseState = currentMouseState;
+        currentMouseState = SDL_GetMouseState(&mousePos.x,&mousePos.y);
+
         // update key state
         memcpy(prev_keystate, curr_keystate, SDL_NUM_SCANCODES);
         curr_keystate = SDL_GetKeyboardState(nullptr);
@@ -178,6 +194,23 @@ void Application::run() {
         update();
         render();
     }
+}
+
+bool Application::isMouseDown(const int button)
+{
+    return currentMouseState & SDL_BUTTON(button);
+}
+
+bool Application::isMousePressed(const int button)
+{
+    return (currentMouseState & SDL_BUTTON(button)) &&
+              !(previousMouseState & SDL_BUTTON(button));
+}
+
+bool Application::isMouseReleased(const int button)
+{
+    return !(currentMouseState & SDL_BUTTON(button)) &&
+               (previousMouseState & SDL_BUTTON(button));
 }
 
 bool Application::isKeyDown(const SDL_Scancode key)
@@ -210,13 +243,17 @@ Application::~Application() {
 // Vector returned has not been floored, thus remember to floor when converting to block positions
 glm::vec2 Application::GetWorldMouse()
 {
-    // Get window local mouse position
-    int window_x, window_y;
-    SDL_GetMouseState(&window_x,&window_y);
     // change to view port local position
-    const float x = (((static_cast<float>(window_x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / world::PIXEL_SCALE;
-    const float y = (( -((static_cast<float>(window_y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / world::PIXEL_SCALE);
+    const float x = (((static_cast<float>(mousePos.x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / PIXEL_SCALE;
+    const float y = (( -((static_cast<float>(mousePos.y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / PIXEL_SCALE);
     return glm::vec2(x,y) + world::origin;
+}
+
+glm::vec2 Application::GetUIMouse()
+{
+    const float x = (((static_cast<float>(mousePos.x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / UI::CELL_SIZE;
+    const float y = (( -((static_cast<float>(mousePos.y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / UI::CELL_SIZE);
+    return {x,y};
 }
 
 void Application::events(bool& running)
@@ -289,9 +326,14 @@ void Application::update()
         const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
         SDL_SetWindowTitle(window,title.c_str());
     }
+    // NB!! Order is important. UI then entities
+    // update mouse item holder
+    item_holder->setPosition(GetUIMouse() - 0.4f);
+    UI::Renderer::Update(delta_time);
+
+    // update entities
     computePlayer();
     EntityHandler::Update(delta_time);
-    UI::Renderer::Update(delta_time);
 
     world::origin = player->position;
 }
@@ -317,10 +359,12 @@ void Application::render()
     // end entity drawing
 
     // UI rendering
+    glDisable(GL_DEPTH_TEST);
     ui_shader->use();
 
     updateViewPort();
     UI::Renderer::Render(ui_shader.get());
+    glEnable(GL_DEPTH_TEST);
     // end UI rendering
 
     SDL_GL_SwapWindow(window);
@@ -372,6 +416,10 @@ void Application::computePlayer()
     {
         player->acceleration.x = 0;
         player_rigid_body->moving = false;
+    }
+    if (isKeyPressed(SDL_SCANCODE_E))
+    {
+        inventory->setVisible(!inventory->isVisible());
     }
 }
 

@@ -416,4 +416,18 @@ void world::ItemContainer::update(const float& delta_time)
             }
         }
     }
+    // also drop item
+    if (Application::isMouseReleased(SDL_BUTTON_LEFT))
+    {
+        Item* item = Application::item_holder->getItem();
+        if (item != nullptr)
+        {
+            item->position = getNetPosition();
+            item->rotation = 0;
+            item->velocity = position * 10.0f;
+            item->toEntity();
+            EntityHandler::Add(item);
+            Application::item_holder->setItem(nullptr);
+        }
+    }
 }

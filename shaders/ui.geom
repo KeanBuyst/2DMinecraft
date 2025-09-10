@@ -21,31 +21,37 @@ void main() {
     float itemTexSize = 0.0625f;
     vec2 numTexSize = vec2(0.03f,0.05f);
 
-    vec2 UITexPos = vec2(float(_ui[0] % 5) / 5.0f, float(_ui[0] / 5) / 5.0f);
+    vec2 quadVertices[4];
+    vec2 texQuad[4];
 
-    vec2 quadVertices[4] = vec2[4](
-        _position[0],                           // Bottom-left
-        _position[0] + vec2(UISize, 0.0f),      // Bottom-right
-        _position[0] + vec2(0.0f, UISize),      // Top-left
-        _position[0] + vec2(UISize,UISize)      // Top-right
-    );
+    if (_ui[0] != 0u)
+    {
+        vec2 UITexPos = vec2(float((_ui[0] - 1) % 5) / 5.0f, float((_ui[0] - 1) / 5) / 5.0f);
 
-    vec2 texQuad[4] = vec2[4](
-        UITexPos + vec2(0.0f, texSize),
-        UITexPos + vec2(texSize, texSize),
-        UITexPos,
-        UITexPos + vec2(texSize, 0.0f)
-    );
+        quadVertices = vec2[4](
+            _position[0],                           // Bottom-left
+            _position[0] + vec2(UISize, 0.0f),      // Bottom-right
+            _position[0] + vec2(0.0f, UISize),      // Top-left
+            _position[0] + vec2(UISize,UISize)      // Top-right
+        );
 
-    // send UI to fragment shader
-    atlas = 0;
+        texQuad = vec2[4](
+            UITexPos + vec2(0.0f, texSize),
+            UITexPos + vec2(texSize, texSize),
+            UITexPos,
+            UITexPos + vec2(texSize, 0.0f)
+        );
 
-    for (int v = 0; v < 4; v++) {
-        texCoords = texQuad[v];
-        gl_Position = vec4(quadVertices[v], 1.0f, 1.0f) * ortho;
-        EmitVertex();
+        // send UI to fragment shader
+        atlas = 0;
+
+        for (int v = 0; v < 4; v++) {
+            texCoords = texQuad[v];
+            gl_Position = vec4(quadVertices[v], 0.0f, 1.0f) * ortho;
+            EmitVertex();
+        }
+        EndPrimitive();
     }
-    EndPrimitive();
 
     // send item to fragment shader
     if (_item[0] == -1) return;
@@ -80,7 +86,7 @@ void main() {
 
     for (int v = 0; v < 4; v++) {
         texCoords = texQuad[v];
-        gl_Position = vec4(quadVertices[v], 2.0f, 1.0f) * ortho;
+        gl_Position = vec4(quadVertices[v], 0.0f, 1.0f) * ortho;
         EmitVertex();
     }
     EndPrimitive();
@@ -117,7 +123,7 @@ void main() {
 
         for (int v = 0; v < 4; v++) {
             texCoords = texQuad[v];
-            gl_Position = vec4(quadVertices[v], 3.0f, 1.0f) * ortho;
+            gl_Position = vec4(quadVertices[v], 0.0f, 1.0f) * ortho;
             EmitVertex();
         }
         EndPrimitive();

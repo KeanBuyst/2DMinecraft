@@ -4,7 +4,7 @@
 #include "../world/entities/EntityHandler.h"
 #include "../world/entities/Item.h"
 
-UI::Inventory::Inventory(glm::ivec2 position,const int width, const int height) : position(position), width(width), height(height), visible(false)
+UI::Inventory::Inventory(glm::vec2 position,const int width, const int height) : position(position), width(width), height(height), visible(false)
 {
     cells = new Cell[width * height];
     for (auto i = 0; i < height * width; ++i)
@@ -38,9 +38,14 @@ bool UI::Inventory::addItem(world::Item* item) const
     return false;
 }
 
-glm::ivec2 UI::Inventory::getPosition() const
+glm::vec2 UI::Inventory::getPosition() const
 {
     return position;
+}
+
+void UI::Inventory::setPosition(glm::vec2 position)
+{
+    this->position = position;
 }
 
 glm::ivec2 UI::Inventory::getSize() const
@@ -58,6 +63,26 @@ const UI::Cell* UI::Inventory::getCells() const
     return cells;
 }
 
+void UI::Inventory::update(const float& delta_time)
+{
+    if (visible && Application::isMousePressed(SDL_BUTTON_LEFT) && Application::item_holder->getItem() == nullptr)
+    {
+        glm::vec2 pos = Application::GetUIMouse() - position;
+        int index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
+        if (index < 0 || index >= getCount()) return;
+        Application::item_holder->setItem(cells[index].item);
+        cells[index].item = nullptr;
+    }
+    if  (visible && Application::isMouseReleased(SDL_BUTTON_LEFT) && Application::item_holder->getItem() != nullptr)
+    {
+        glm::vec2 pos = Application::GetUIMouse() - position;
+        int index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
+        if (index < 0 || index >= getCount()) return;
+        cells[index].item = Application::item_holder->getItem();
+        Application::item_holder->setItem(nullptr);
+    }
+}
+
 bool UI::Inventory::isVisible() const
 {
     return visible;
@@ -70,7 +95,7 @@ void UI::Inventory::setVisible(const bool visible)
 
 // HOTBAR
 
-UI::Hotbar::Hotbar() : Inventory({-4.5f,-13},9,1)
+UI::Hotbar::Hotbar() : Inventory({-4.5f,-13.0f},9,1)
 {
     selected_slot = 0;
     cells[0].type = CELL_SELECTED;
@@ -78,6 +103,7 @@ UI::Hotbar::Hotbar() : Inventory({-4.5f,-13},9,1)
 
 void UI::Hotbar::update(const float& delta_time)
 {
+    Inventory::update(delta_time);
     // Key slot selection
     for (auto i = 0; i < 9; ++i)
     {
@@ -107,3 +133,22 @@ world::Item*& UI::Hotbar::getSelectedItem() const
 {
     return cells[selected_slot].item;
 }
+
+UI::MouseItemHolder::MouseItemHolder() : Inventory({0,0},1,1)
+{
+    cells[0].type = EMPTY_CELL;
+    visible = true;
+}
+
+void UI::MouseItemHolder::setItem(world::Item* item) const
+{
+    cells[0].item = item;
+}
+
+world::Item* UI::MouseItemHolder::getItem() const
+{
+    return cells[0].item;
+}
+
+void UI::MouseItemHolder::update(const float& delta_time)
+{}
