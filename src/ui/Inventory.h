@@ -22,6 +22,8 @@ namespace UI
         bool isVisible() const override;
         void setVisible(bool visible) override;
     protected:
+        Cell& at(int x, int y);
+
         glm::vec2 position;
         const int width,height;
         bool visible;
@@ -46,5 +48,10 @@ namespace UI
         void update(const float& delta_time) override;
         void setItem(world::Item* item) const;
         world::Item* getItem() const;
+    };
+
+    struct PlayerInventory : Inventory
+    {
+        PlayerInventory();
     };
 }

@@ -99,7 +99,7 @@ short Block::getInterference() const
             return s_result;
         return w_result;
     }
-    if (isTransparent()) return -1;
+    if (isTransparent()) return 0;
     if (solid != EMPTY) return -3;
     if (wall != EMPTY) return -1;
     return DAYLIGHT;

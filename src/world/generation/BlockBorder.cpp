@@ -1,8 +1,8 @@
 #include "Generation.h"
 
-bool shouldOutLine(const world::Block& block)
+inline bool shouldOutLine(const world::Block& block)
 {
-    return block.getType() == world::EMPTY && block.getWall() != world::EMPTY && !block.isTransparent();
+    return !block.isCollidable() && (block.getType() != world::EMPTY || !block.isTransparent()) && block.getWall() != world::EMPTY;
 }
 
 enum SIDES : uint8_t
@@ -27,7 +27,7 @@ void world::Generate::BlockBorder(World* world, glm::ivec2 chunk_pos)
              const glm::vec2 pos = globalChunkPos + local_pos;
              Block block = chunk.getBlock(local_pos);
              uint8_t sides = 0;
-             if (block.getType() != EMPTY && block.getWall() == EMPTY && !block.isTransparent())
+             if (!block.isTransparent() && block.isCollidable())
              {
                  const glm::vec2 left(pos.x - 1.0f,pos.y);
                  const glm::vec2 right(pos.x + 1.0f,pos.y);

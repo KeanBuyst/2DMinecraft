@@ -15,7 +15,17 @@ namespace UI
     {
         EMPTY_CELL,
         INVENTORY_SLOT,
-        CELL_SELECTED
+        SELECTED_SLOT,
+        ARROW_CELL,
+        BLANK_CELL,
+        HELMET_SLOT,
+        CHESTPLATE_SLOT,
+        LEGGINGS_SLOT,
+        BOOTS_SLOT,
+        HAT_SLOT,
+        NECKLACE_SLOT,
+        RING_SLOT,
+        SHOES_SLOT
     };
 
     struct Cell

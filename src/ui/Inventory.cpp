@@ -93,12 +93,17 @@ void UI::Inventory::setVisible(const bool visible)
     this->visible = visible;
 }
 
+UI::Cell& UI::Inventory::at(int x, int y)
+{
+    return cells[y * width + x];
+}
+
 // HOTBAR
 
 UI::Hotbar::Hotbar() : Inventory({-4.5f,-13.0f},9,1)
 {
     selected_slot = 0;
-    cells[0].type = CELL_SELECTED;
+    cells[0].type = SELECTED_SLOT;
 }
 
 void UI::Hotbar::update(const float& delta_time)
@@ -126,7 +131,7 @@ void UI::Hotbar::setSelectedSlot(const int slot)
     selected_slot = slot;
     if (selected_slot < 0) selected_slot += 9;
     if (selected_slot > 8) selected_slot -= 9;
-    cells[selected_slot].type = CELL_SELECTED;
+    cells[selected_slot].type = SELECTED_SLOT;
 }
 
 world::Item*& UI::Hotbar::getSelectedItem() const
@@ -152,3 +157,36 @@ world::Item* UI::MouseItemHolder::getItem() const
 
 void UI::MouseItemHolder::update(const float& delta_time)
 {}
+
+UI::PlayerInventory::PlayerInventory(): Inventory({-4.5f,-11.5f},9,7)
+{
+    // set blank cells
+    for (auto y = 3; y < 7; ++y)
+    {
+        for (auto x = 0; x < 6; ++x)
+        {
+            at(x,y).type = BLANK_CELL;
+        }
+    }
+    // set armour slots
+    at(8,6).type = HELMET_SLOT;
+    at(8,5).type = CHESTPLATE_SLOT;
+    at(8,4).type = LEGGINGS_SLOT;
+    at(8,3).type = BOOTS_SLOT;
+    // set trinket slots
+    for (auto i = 0; i < 2; ++i)
+    {
+        at(6 + i,6).type = HAT_SLOT;
+        at(6 + i,5).type = NECKLACE_SLOT;
+        at(6 + i,4).type = RING_SLOT;
+        at(6 + i,3).type = SHOES_SLOT;
+    }
+
+    // set crafting
+    at(1,5).type = INVENTORY_SLOT;
+    at(1,4).type = INVENTORY_SLOT;
+    at(2,5).type = INVENTORY_SLOT;
+    at(2,4).type = INVENTORY_SLOT;
+    at(3,5).type = ARROW_CELL;
+    at(4,5).type = INVENTORY_SLOT;
+}

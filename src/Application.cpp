@@ -146,14 +146,14 @@ void Application::run() {
     hotbar->setVisible(true);
     UI::Renderer::Add(hotbar);
     // Main player inventory
-    inventory = new UI::Inventory({-4.5f,-11.5f},9,4);
+    inventory = new UI::PlayerInventory();
     UI::Renderer::Add(inventory);
     // Mouse item holder (always last in order)
     item_holder = new UI::MouseItemHolder();
     UI::Renderer::Add(item_holder);
 
     // Create player entity
-    player = new Entity({0,10},world::PLAYER);
+    player = new Entity({0,10},PLAYER);
     player_hitbox = new HitBox({-2.5f,10,2.5f,-18});
     player_rigid_body = new RigidBody(player_hitbox);
     auto* leg_1 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
