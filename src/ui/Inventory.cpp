@@ -25,7 +25,7 @@ UI::Inventory::~Inventory()
     delete[] cells;
 }
 
-bool UI::Inventory::addItem(world::Item* item) const
+bool UI::Inventory::addItem(world::Item* item)
 {
     for (auto i = 0; i < getCount(); ++i)
     {
@@ -36,6 +36,27 @@ bool UI::Inventory::addItem(world::Item* item) const
         }
     }
     return false;
+}
+
+void UI::Inventory::setItem(const int index, world::Item* item)
+{
+    if (index < getCount() && index >= 0)
+    {
+        cells[index].item = item;
+    } else
+    {
+        std::cerr << "ERROR: (setItem) invalid slot index" << std::endl;
+    }
+}
+
+world::Item* UI::Inventory::getItem(int index)
+{
+    if (index < getCount() && index >= 0)
+    {
+        return cells[index].item;
+    }
+    std::cerr << "ERROR: (getItem) invalid slot index" << std::endl;
+    return nullptr;
 }
 
 glm::vec2 UI::Inventory::getPosition() const
@@ -65,21 +86,74 @@ const UI::Cell* UI::Inventory::getCells() const
 
 void UI::Inventory::update(const float& delta_time)
 {
-    if (visible && Application::isMousePressed(SDL_BUTTON_LEFT) && Application::item_holder->getItem() == nullptr)
+    if (!visible) return;
+    int index;
+    if (Application::item_holder->getItem() == nullptr)
     {
-        glm::vec2 pos = Application::GetUIMouse() - position;
-        int index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
-        if (index < 0 || index >= getCount()) return;
-        Application::item_holder->setItem(cells[index].item);
-        cells[index].item = nullptr;
+        if (Application::isMousePressed(SDL_BUTTON_LEFT))
+        {
+            if (Cell* cell = GetMouseSlot(index))
+            {
+                Application::item_holder->setItem(cell->item);
+                Application::item_holder->saveLastSlot(this,index);
+                cell->item = nullptr;
+            }
+        }
     }
-    if  (visible && Application::isMouseReleased(SDL_BUTTON_LEFT) && Application::item_holder->getItem() != nullptr)
+    else
     {
-        glm::vec2 pos = Application::GetUIMouse() - position;
-        int index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
-        if (index < 0 || index >= getCount()) return;
-        cells[index].item = Application::item_holder->getItem();
-        Application::item_holder->setItem(nullptr);
+        if  (Application::isMouseReleased(SDL_BUTTON_LEFT))
+        {
+            if (Cell* cell = GetMouseSlot(index))
+            {
+                world::Item* item = Application::item_holder->getItem();
+                if (cell->item != nullptr)
+                {
+                    if (*item == *cell->item)
+                    {
+                        int amount = item->getAmount() + cell->item->getAmount();
+                        const int limit = item->getStackLimit();
+                        int overflow = 0;
+                        if (amount > limit)
+                        {
+                            overflow = amount - limit;
+                            amount = limit;
+                        }
+                        if (overflow == 0)
+                        {
+                            delete item;
+                            Application::item_holder->setItem(nullptr);
+                            cell->item->setAmount(amount);
+                            return;
+                        }
+                        item->setAmount(overflow);
+                        cell->item->setAmount(amount);
+                    }
+                    Application::item_holder->setLastSlot(item);
+                    Application::item_holder->setItem(nullptr);
+                }
+                else
+                {
+                    cell->item = item;
+                    Application::item_holder->setItem(nullptr);
+                }
+            }
+        }
+        else if (Application::isMouseDown(SDL_BUTTON_RIGHT))
+        {
+            if (Cell* cell = GetMouseSlot(index))
+            {
+                if (cell->item != nullptr) return;
+                world::Item& item = *Application::item_holder->getItem();
+                if (item.getAmount() > 1)
+                {
+                    auto* newItem = new world::Item(item);
+                    newItem->setAmount(1);
+                    cell->item = newItem;
+                    item.setAmount(item.getAmount() - 1);
+                }
+            }
+        }
     }
 }
 
@@ -96,6 +170,15 @@ void UI::Inventory::setVisible(const bool visible)
 UI::Cell& UI::Inventory::at(int x, int y)
 {
     return cells[y * width + x];
+}
+
+UI::Cell* UI::Inventory::GetMouseSlot(int& index)
+{
+    glm::vec2 pos = Application::GetUIMouse() - position;
+    index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
+    if (index < 0 || index >= getCount()) return nullptr;
+    if (isCell(cells[index].type)) return nullptr;
+    return &cells[index];
 }
 
 // HOTBAR
@@ -143,16 +226,37 @@ UI::MouseItemHolder::MouseItemHolder() : Inventory({0,0},1,1)
 {
     cells[0].type = EMPTY_CELL;
     visible = true;
+    lastSlot = 0;
+    lastInv = nullptr;
 }
 
-void UI::MouseItemHolder::setItem(world::Item* item) const
+void UI::MouseItemHolder::setItem(world::Item* item)
 {
     cells[0].item = item;
+}
+
+void UI::MouseItemHolder::saveLastSlot(Inventory* last,const int slot)
+{
+    lastSlot = slot;
+    lastInv = last;
 }
 
 world::Item* UI::MouseItemHolder::getItem() const
 {
     return cells[0].item;
+}
+
+void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
+{
+    if (lastInv == nullptr) return;
+    world::Item* current = lastInv->getItem(lastSlot);
+    if (current != nullptr)
+    {
+        current->setAmount(current->getAmount() + item->getAmount());
+        delete item;
+        item = nullptr;
+    }
+    else lastInv->setItem(lastSlot,item);
 }
 
 void UI::MouseItemHolder::update(const float& delta_time)

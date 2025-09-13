@@ -1,10 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <glm.hpp>
-
 #include "../Constants.h"
-#include "../resources/Metadata.h"
 
 namespace world 
 {
@@ -28,6 +25,9 @@ namespace world
 		TORCH,
 		STONE_WALL
 	};
+
+	float GetToughness(BlockType type);
+
 	// Contains a snapshot of chunk info at a position at the time the getBlock function was called
 	class Block
 	{
@@ -43,11 +43,13 @@ namespace world
 		[[nodiscard]] BlockType getType() const;
 		[[nodiscard]] BlockType getWall() const;
 		[[nodiscard]] int getLightLevel() const;
+		[[nodiscard]] int getBreakState() const;
 
 		[[nodiscard]] short getInterference() const;
 
 		void setWall(BlockType wall);
 		void setType(BlockType type);
+		void setBreakState(int state);
 
 		[[nodiscard]] uint32_t getRaw() const;
 	protected:

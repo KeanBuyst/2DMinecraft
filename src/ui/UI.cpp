@@ -125,3 +125,21 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
     glBufferData(GL_ARRAY_BUFFER,render_cells.size() * sizeof(RenderCell), render_cells.data(),GL_STATIC_DRAW);
     glDrawArrays(GL_POINTS,0,render_cells.size());
 }
+
+bool UI::isCell(const CellType& type)
+{
+    switch (type)
+    {
+    case EMPTY_CELL:
+    case ARROW_CELL:
+    case BLANK_CELL:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool UI::isSlot(const CellType& type)
+{
+    return !isCell(type);
+}

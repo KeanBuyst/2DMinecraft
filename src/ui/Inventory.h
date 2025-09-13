@@ -9,7 +9,10 @@ namespace UI
         Inventory(glm::vec2 position, int width, int height);
         ~Inventory();
 
-        bool addItem(world::Item* item) const;
+        bool addItem(world::Item* item);
+        void setItem(int index,world::Item* item);
+
+        world::Item* getItem(int index);
 
         glm::vec2 getPosition() const override;
         void setPosition(glm::vec2 position);
@@ -23,6 +26,7 @@ namespace UI
         void setVisible(bool visible) override;
     protected:
         Cell& at(int x, int y);
+        Cell* GetMouseSlot(int& index);
 
         glm::vec2 position;
         const int width,height;
@@ -46,8 +50,14 @@ namespace UI
     {
         MouseItemHolder();
         void update(const float& delta_time) override;
-        void setItem(world::Item* item) const;
+        void setItem(world::Item* item);
+        void saveLastSlot(Inventory* last,int slot);
+
         world::Item* getItem() const;
+        void setLastSlot(world::Item*& item) const;
+    private:
+        Inventory* lastInv;
+        int lastSlot;
     };
 
     struct PlayerInventory : Inventory

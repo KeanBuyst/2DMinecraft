@@ -5,6 +5,7 @@
 #include <iostream>
 #include <cstring>
 
+#include "Constants.h"
 #include "glew.h"
 #include "ext/matrix_clip_space.hpp"
 #include "resources/Storage.h"
@@ -139,10 +140,15 @@ void Application::run() {
     uiAtlas.bind(3);
 
     // Create Player inventory
-    auto* hotbar = new UI::Hotbar();
-    auto* item = new Item({0,0}, STONE_AXE);
-    item->setAmount(8);
-    hotbar->addItem(item);
+    hotbar = new UI::Hotbar();
+    auto* item1 = new Item(DIAMOND_PICKAXE);
+    auto* item2 = new Item(GRASS_BLOCK);
+    auto* item3 = new Item(GRASS_BLOCK);
+    item2->setAmount(32);
+    item3->setAmount(99);
+    hotbar->addItem(item1);
+    hotbar->addItem(item2);
+    hotbar->addItem(item3);
     hotbar->setVisible(true);
     UI::Renderer::Add(hotbar);
     // Main player inventory
@@ -270,26 +276,19 @@ void Application::events(bool& running)
                     const glm::vec2 chunk = world::ToChunkSpace(mouse);
                 switch (e.button.button)
                 {
-                    case SDL_BUTTON_LEFT:
-                        {
-                            //world::Block block(world::EMPTY,mouse,world::EMPTY);
-                            //world.setBlock(block);
-                            world::Generate::Lighting(&m_world,chunk);
-                        }
-                        break;
-                    case SDL_BUTTON_RIGHT:
-                        m_world.setBlock({world::TORCH, mouse, world::STONE_WALL},true);
-                        break;
                     case SDL_BUTTON_MIDDLE:
                         {
                             Block block = m_world.getBlock(mouse);
+                            block.setBreakState(10);
                             std::cout << "\n-------------------------\n"
                                       << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
                                       << "\nType: " << std::to_string(block.getType())
                                       << "\nWall: " << std::to_string(block.getWall())
                                       << "\nLight Level: " << std::to_string(block.getLightLevel())
+                                      << "\nBreak State: " << std::to_string(block.getBreakState())
                                       << "\n-------------------------\n"
                                       << std::endl;
+                            m_world.setBlock(block);
                         }
                         break;
                 }
@@ -314,17 +313,22 @@ void Application::events(bool& running)
 
 void Application::update()
 {
-    const float delta_time = static_cast<float>(SDL_GetTicks() - last_frame_time) / 1000.0f;
-    last_frame_time = SDL_GetTicks();
+    const Uint32 now = SDL_GetTicks();
+    const float delta_time = static_cast<float>(now - last_frame_time) / 1000.0f;
+    last_frame_time = now;
 
-    const float current_frame_rate = 1.0f / delta_time;
-    if (frame_rate == -1.0f) frame_rate = current_frame_rate;
-    else frame_rate = (frame_rate + current_frame_rate) / 2;
+    const float current_frame_rate = (delta_time > 0.0f) ? (1.0f / delta_time) : 0.0f;
 
-    if (static_cast<int>(last_frame_time) % 30 == 1)
-    {
+    // exponential moving average for smoother FPS
+    if (frame_rate < 0.0f) frame_rate = current_frame_rate;
+    else frame_rate = frame_rate * 0.9f + current_frame_rate * 0.1f;
+
+    // update title once per second
+    static Uint32 last_title_update = 0;
+    if (now - last_title_update >= 1000) {
+        last_title_update = now;
         const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
-        SDL_SetWindowTitle(window,title.c_str());
+        SDL_SetWindowTitle(window, title.c_str());
     }
     // NB!! Order is important. UI then entities
     // update mouse item holder
@@ -332,7 +336,7 @@ void Application::update()
     UI::Renderer::Update(delta_time);
 
     // update entities
-    computePlayer();
+    computePlayer(delta_time);
     EntityHandler::Update(delta_time);
 
     world::origin = player->position;
@@ -370,7 +374,31 @@ void Application::render()
     SDL_GL_SwapWindow(window);
 }
 
-void Application::computePlayer()
+bool Application::breakBlock(int state)
+{
+    const glm::vec2 pos = GetWorldMouse();
+    const float distance = Util::Distance2(origin, pos);
+    if (distance > 10.0f) return false;
+
+    Block block = m_world.getBlock(pos);
+    if (block.getType() == EMPTY) return false;
+
+    if (state > 10)
+    {
+        const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
+        auto* item = new Item(dropPoint,block.getType());
+        block.setBreakState(0);
+        block.setType(EMPTY);
+        m_world.setBlock(block,true);
+        EntityHandler::Add(item);
+        return true;
+    }
+    block.setBreakState(state);
+    m_world.setBlock(block);
+    return false;
+}
+
+void Application::computePlayer(const float& delta_time)
 {
     constexpr float SPEED = 8.0f;
 
@@ -420,6 +448,67 @@ void Application::computePlayer()
     if (isKeyPressed(SDL_SCANCODE_E))
     {
         inventory->setVisible(!inventory->isVisible());
+    }
+    // block breaking
+    static float BREAK_STATE = 0.0f;
+    if (item_holder->getItem() == nullptr)
+    {
+        if (isMouseDown(SDL_BUTTON_LEFT) )
+        {
+            const glm::vec2 pos = GetWorldMouse();
+            const float distance = Util::Distance2(origin, pos);
+            if (distance <= 10.0f)
+            {
+                Block block = m_world.getBlock(pos);
+                if (block.getType() != EMPTY)
+                {
+                    int state = block.getBreakState();
+                    Item* item = hotbar->getSelectedItem();
+                    float scale;
+
+                    if (item == nullptr)
+                    {
+                        scale = 1.0f - GetToughness(block.getType());
+                    } else
+                    {
+                        scale = item->getTool().getToolBonus(block.getType());
+                    }
+                    BREAK_STATE += scale * delta_time;
+
+                    if (BREAK_STATE >= 1.0f)
+                    {
+                        ++state;
+                        --BREAK_STATE;
+
+                        if (state > 10)
+                        {
+                            const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
+                            auto* newItem = new Item(dropPoint,block.getType());
+                            block.setBreakState(0);
+                            block.setType(EMPTY);
+                            m_world.setBlock(block,true);
+                            EntityHandler::Add(newItem);
+                        } else
+                        {
+                            block.setBreakState(state);
+                            m_world.setBlock(block);
+                        }
+                    }
+                }
+            }
+        }
+        else if (isMouseReleased(SDL_BUTTON_LEFT))
+        {
+            const glm::vec2 pos = GetWorldMouse();
+            const float distance = Util::Distance2(origin, pos);
+            if (distance <= 10.0f)
+            {
+                Block block = m_world.getBlock(pos);
+                block.setBreakState(0);
+                m_world.setBlock(block);
+            }
+            BREAK_STATE = 0.0f;
+        }
     }
 }
 

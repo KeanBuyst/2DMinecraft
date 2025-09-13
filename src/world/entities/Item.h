@@ -34,14 +34,57 @@ namespace world
         DIAMOND_AXE
     };
 
+    enum class ToolType
+    {
+        HAND,
+        PICKAXE,
+        SWORD,
+        SHOVEL,
+        AXE
+    };
+
+    enum class ToolTier
+    {
+        NONE,
+        WOOD,
+        STONE,
+        IRON,
+        GOLD,
+        DIAMOND
+    };
+
+    struct Tool
+    {
+        explicit Tool(ItemType type);
+        Tool();
+
+        ToolType getType() const;
+        ToolTier getTier() const;
+        float getDamage() const;
+
+        float getToolBonus(BlockType) const;
+        bool isApplicable(BlockType) const;
+    private:
+        ToolType type;
+        ToolTier tier;
+        float damage;
+    };
+
     struct Item : Entity
     {
         const uint8_t material;
         const bool isBlock;
 
+        Item(BlockType material);
+        Item(ItemType material);
+
         Item(glm::vec2 position,BlockType material);
         Item(glm::vec2 position,ItemType material);
+
         Item(const Item& other);
+
+        Tool getTool() const;
+        int getStackLimit() const;
 
         void toComponent();
         void toEntity();
@@ -51,6 +94,8 @@ namespace world
 
         int getAmount() const;
         void setAmount(int amount);
+        bool operator==(const Item& item) const;
+
     private:
         int amount;
     };

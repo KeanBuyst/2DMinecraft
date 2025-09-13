@@ -59,7 +59,7 @@ void Chunk::setBlock(const glm::ivec2 pos,const Block &block)
 {
 	uint32_t& data = GetData(pos.y,pos.x);
 
-	data = (data & 0xFFFF0000u) | (block.getRaw() & 0xFFFFu);
+	data = (data & 0x00FF0000u) | (block.getRaw() & 0xFF00FFFFu);
 }
 
 void Chunk::setLightLevel(const glm::ivec2 pos,const int luminance)

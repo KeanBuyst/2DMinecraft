@@ -1,8 +1,53 @@
 #include "Block.h"
 
 #include "Region.h"
+#include "../Application.h"
+#include "entities/Item.h"
 
 using namespace world;
+
+float world::GetToughness(const BlockType type)
+{
+    switch (type)
+    {
+    case EMPTY:
+    case TORCH:
+        return 0.0f;
+
+    case GRASS_BLOCK:
+    case DIRT:
+    case GRASS:
+        return 0.1f;
+
+    case OAK_LOG:
+        return 0.3f;
+
+    case OAK_LEAVES:
+        return 0.05f;
+
+    case STONE:
+    case STONE_WALL:
+        return 0.5f;
+
+    case IRON_ORE:
+    case GOLD_ORE:
+    case COPPER_ORE:
+        return 0.8f;
+
+    case COAL_ORE:
+    case LAPIS_ORE:
+        return 0.5f;
+
+    case DIAMOND_ORE:
+    case EMERALD_ORE:
+    case REDSTONE_ORE:
+        return 1.0f;
+
+    default:
+        return 0.4f;
+    }
+}
+
 
 Block::Block(const BlockType type, const glm::vec2 position,const BlockType wall) : position(position)
 {
@@ -61,6 +106,11 @@ int Block::getLightLevel() const
     return static_cast<int>((data >> 16) & 0xFu);
 }
 
+int Block::getBreakState() const
+{
+    return static_cast<int>((data >> 24) & 0xFu);
+}
+
 void Block::setWall(const BlockType wall)
 {
     data = data & 0xFFFF00FF | wall << 8;
@@ -69,6 +119,12 @@ void Block::setWall(const BlockType wall)
 void Block::setType(const BlockType type)
 {
     data = data & 0xFFFFFF00 | type;
+}
+
+void Block::setBreakState(int state)
+{
+    assert(state >= 0 && state <= 10);
+    data = data & 0x00FFFFFF | state << 24;
 }
 
 uint32_t Block::getRaw() const

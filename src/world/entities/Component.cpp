@@ -172,37 +172,55 @@ void world::HitBox::update(const float& delta_time)
 
     const glm::vec2 pos = entity->position + entity->velocity * delta_time;
 
-    const glm::vec2 top_p(pos.x, pos.y + offsets.y); // Top
-    const glm::vec2 bottom_p(pos.x, pos.y + offsets.w); // Bottom
-    const glm::vec2 left_p(pos.x + offsets.x, pos.y - 0.5f); // Left
-    const glm::vec2 right_p(pos.x + offsets.z, pos.y - 0.5f); // Right
+    const float shift = (offsets.z - offsets.x + offsets.y - offsets.w) / 10.0f;
+    // Check Vertical line left
+    for (float y = offsets.w + shift; y < offsets.y; y += 1.0f)
+    {
+        glm::vec2 left_p(pos.x + offsets.x,pos.y + y);
+        const Block block = m_world.getBlock(left_p);
+        if (block.isCollidable())
+        {
+            offset.x = (block.position.x + 1.0f) - left_p.x;
+            left = true;
+        }
+    }
 
-    // Tile/Block Collision
-    // for point 1
-    const Block b1 = m_world.getBlock(top_p);
-    if (b1.isCollidable())
+    // Check Vertical line right
+    for (float y = offsets.w + shift; y < offsets.y; y += 1.0f)
     {
-        offset.y = b1.position.y - top_p.y;
-        top = true;
+        glm::vec2 right_p(pos.x + offsets.z,pos.y + y);
+        const Block block = m_world.getBlock(right_p);
+        if (block.isCollidable())
+        {
+            // using pos instead of right_p prevents kick back from colliding with walls
+            offset.x = block.position.x - right_p.x;
+            right = true;
+        }
     }
-    const Block b2 = m_world.getBlock(right_p);
-    if (b2.isCollidable())
+
+    // Check Horizontal line top
+    for (float x = offsets.x + shift; x < offsets.z; x += 1.0f)
     {
-        // using pos instead of right_p prevents kick back from colliding with walls
-        offset.x = b2.position.x - right_p.x;
-        right = true;
+        glm::vec2 top_p(pos.x + x,pos.y + offsets.y);
+        const Block block = m_world.getBlock(top_p);
+        if (block.isCollidable())
+        {
+            offset.y = block.position.y - top_p.y;
+            top = true;
+        }
     }
-    const Block b3 = m_world.getBlock(left_p);
-    if (b3.isCollidable())
+
+    // Check Horizontal line bottom
+    for (float x = offsets.x + shift; x < offsets.z; x += 1.0f)
     {
-        offset.x = (b3.position.x + 1.0f) - left_p.x;
-        left = true;
-    }
-    const Block b4 = m_world.getBlock(bottom_p);
-    if (b4.isCollidable())
-    {
-        offset.y = (b4.position.y + 1.0f) - bottom_p.y;
-        bottom = true;
+        glm::vec2 bottom_p(pos.x + x,pos.y + offsets.w);
+        const Block block = m_world.getBlock(bottom_p);
+        if (block.isCollidable())
+        {
+            // apply pixel shift 0.0625 = 1 pixel
+            offset.y = ((block.position.y + 1.0f) - bottom_p.y) - 0.0625f;
+            bottom = true;
+        }
     }
 
     // TODO entity collision
@@ -228,6 +246,10 @@ world::Component* world::RigidBody::clone() const
 
 void world::RigidBody::update(const float& delta_time)
 {
+    // Under low speeds offsetting is not required and prevents weird behaviour due to offsetting.
+    // But if speeds are higher than then pixel perfect checking the entity will enter blocks
+    // Thus if higher speeds are required introduce a hybrid system.
+    // Under low speeds no offsets. High speeds. Enable offsets
     if (!moving) Util::decreaseMagnitude(entity->velocity,(hitbox->bottom ? friction : drag) * delta_time);
     if (hitbox->bottom && hitbox->top && hitbox->left && hitbox->right)
     {
@@ -235,20 +257,28 @@ void world::RigidBody::update(const float& delta_time)
     }
     if (hitbox->bottom)
     {
-        if (entity->velocity.y < 0.0f) entity->velocity.y = hitbox->offset.y;
+        if (entity->velocity.y < 0.0f)
+        {
+            entity->position.y = entity->position.y + hitbox->offset.y;
+            entity->velocity.y = 0;
+        }
     } else
     {
         entity->acceleration.y = -gravity;
     }
     if (hitbox->top)
     {
-        if (entity->velocity.y > 0.0f) entity->velocity.y = hitbox->offset.y;
+        if (entity->velocity.y > 0.0f)
+        {
+            // entity->velocity.y = hitbox->offset.y;
+            entity->velocity.y = 0;
+        }
     }
     if (hitbox->right)
     {
         if (entity->velocity.x > 0.0f)
         {
-            entity->position.x += hitbox->offset.x;
+            //entity->position.x += hitbox->offset.x;
             entity->velocity.x = 0;
         }
         if (entity->acceleration.x > 0.0f)
@@ -260,7 +290,7 @@ void world::RigidBody::update(const float& delta_time)
     {
         if (entity->velocity.x < 0.0f)
         {
-            entity->position.x += hitbox->offset.x;
+            //entity->position.x += hitbox->offset.x;
             entity->velocity.x = 0;
         }
         if (entity->acceleration.x < 0.0f)

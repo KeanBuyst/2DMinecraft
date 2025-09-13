@@ -3,7 +3,243 @@
 #include "EntityHandler.h"
 #include "../../gl/Texture.h"
 
-world::Item::Item(glm::vec2 position, BlockType material): Entity(position,ITEM), material(material), isBlock(true), amount(1)
+world::Tool::Tool()
+{
+    type = ToolType::HAND;
+    tier = ToolTier::NONE;
+    damage = 1.0f;
+}
+
+world::Tool::Tool(ItemType t)
+{
+    switch (t)
+    {
+    case WOODEN_PICKAXE:
+        type = ToolType::PICKAXE;
+        tier = ToolTier::WOOD;
+        damage = 2.0f;
+        break;
+    case STONE_PICKAXE:
+        type = ToolType::PICKAXE;
+        tier = ToolTier::STONE;
+        damage = 3.0f;
+        break;
+    case IRON_PICKAXE:
+        type = ToolType::PICKAXE;
+        tier = ToolTier::IRON;
+        damage = 4.0f;
+        break;
+    case GOLD_PICKAXE:
+        type = ToolType::PICKAXE;
+        tier = ToolTier::GOLD;
+        damage = 2.0f;
+        break;
+    case DIAMOND_PICKAXE:
+        type = ToolType::PICKAXE;
+        tier = ToolTier::DIAMOND;
+        damage = 5.0f;
+        break;
+
+    case WOODEN_SWORD:
+        type = ToolType::SWORD;
+        tier = ToolTier::WOOD;
+        damage = 4.0f;
+        break;
+    case STONE_SWORD:
+        type = ToolType::SWORD;
+        tier = ToolTier::STONE;
+        damage = 5.0f;
+        break;
+    case IRON_SWORD:
+        type = ToolType::SWORD;
+        tier = ToolTier::IRON;
+        damage = 6.0f;
+        break;
+    case GOLDEN_SWORD:
+        type = ToolType::SWORD;
+        tier = ToolTier::GOLD;
+        damage = 4.0f;
+        break;
+    case DIAMOND_SWORD:
+        type = ToolType::SWORD;
+        tier = ToolTier::DIAMOND;
+        damage = 7.0f;
+        break;
+
+    case WOODEN_SHOVEL:
+        type = ToolType::SHOVEL;
+        tier = ToolTier::WOOD;
+        damage = 2.5f;
+        break;
+    case STONE_SHOVEL:
+        type = ToolType::SHOVEL;
+        tier = ToolTier::STONE;
+        damage = 3.5f;
+        break;
+    case IRON_SHOVEL:
+        type = ToolType::SHOVEL;
+        tier = ToolTier::IRON;
+        damage = 4.5f;
+        break;
+    case GOLDEN_SHOVEL:
+        type = ToolType::SHOVEL;
+        tier = ToolTier::GOLD;
+        damage = 2.5f;
+        break;
+    case DIAMOND_SHOVEL:
+        type = ToolType::SHOVEL;
+        tier = ToolTier::DIAMOND;
+        damage = 5.5f;
+        break;
+
+    case WOODEN_AXE:
+        type = ToolType::AXE;
+        tier = ToolTier::WOOD;
+        damage = 7.0f;
+        break;
+    case STONE_AXE:
+        type = ToolType::AXE;
+        tier = ToolTier::STONE;
+        damage = 9.0f;
+        break;
+    case IRON_AXE:
+        type = ToolType::AXE;
+        tier = ToolTier::IRON;
+        damage = 9.0f;
+        break;
+    case GOLDEN_AXE:
+        type = ToolType::AXE;
+        tier = ToolTier::GOLD;
+        damage = 7.0f;
+        break;
+    case DIAMOND_AXE:
+        type = ToolType::AXE;
+        tier = ToolTier::DIAMOND;
+        damage = 9.0f;
+        break;
+
+    default:
+        type = ToolType::HAND;
+        tier = ToolTier::NONE;
+        damage = 1.0f;
+        break;
+    }
+}
+
+world::ToolType world::Tool::getType() const
+{
+    return type;
+}
+
+world::ToolTier world::Tool::getTier() const
+{
+    return tier;
+}
+
+float world::Tool::getDamage() const
+{
+    return damage;
+}
+
+float world::Tool::getToolBonus(BlockType t) const
+{
+    float bonus;
+    if (isApplicable(t))
+    {
+        switch (tier)
+        {
+        case ToolTier::WOOD:
+            bonus = 4.0f;
+            break;
+        case ToolTier::STONE:
+            bonus = 8.5f;
+            break;
+        case ToolTier::IRON:
+            bonus = 12.5f;
+            break;
+        case ToolTier::GOLD:
+            bonus = 18.0f;
+            break;
+        case ToolTier::DIAMOND:
+            bonus = 24.0f;
+            break;
+        default:
+            bonus = 1.0f;
+            break;
+        }
+    } else bonus = 1.0f;
+
+    bonus -= GetToughness(t);
+    if (bonus < 0.0f) bonus = 0.0f;
+
+    return bonus;
+}
+
+bool world::Tool::isApplicable(const BlockType t) const
+{
+    switch (type)
+    {
+    case ToolType::PICKAXE:
+        switch (t)
+        {
+            case STONE:
+            case IRON_ORE:
+            case COAL_ORE:
+            case DIAMOND_ORE:
+            case GOLD_ORE:
+            case COPPER_ORE:
+            case LAPIS_ORE:
+            case EMERALD_ORE:
+            case REDSTONE_ORE:
+            case STONE_WALL:
+                    return true;
+            default:
+                    return false;
+        }
+
+    case ToolType::AXE:
+        switch (t)
+        {
+            case OAK_LOG:
+                    return true;
+            default:
+                    return false;
+        }
+
+    case ToolType::SHOVEL:
+        switch (t)
+        {
+            case DIRT:
+            case GRASS_BLOCK:
+            case GRASS:
+                    return true;
+            default:
+                    return false;
+        }
+
+    case ToolType::SWORD:
+        switch (t)
+        {
+            case OAK_LEAVES:
+                    return true;
+            default:
+                    return false;
+        }
+
+    case ToolType::HAND:
+    default:
+        return false;
+    }
+}
+
+world::Tool world::Item::getTool() const
+{
+    if (isBlock)
+        return {};
+    return Tool(static_cast<ItemType>(material));
+}
+
+world::Item::Item(BlockType material) : Entity({0.0f,0.0f},ITEM), material(material), isBlock(true), amount(1)
 {
     auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material - 1),1.0f);
     auto** components = new Component*[]
@@ -15,7 +251,7 @@ world::Item::Item(glm::vec2 position, BlockType material): Entity(position,ITEM)
     addComponents(components,3);
 }
 
-world::Item::Item(glm::vec2 position, ItemType material): Entity(position, ITEM), material(material), isBlock(false), amount(1)
+world::Item::Item(ItemType material) : Entity({0.0f,0.0f}, ITEM), material(material), isBlock(false), amount(1)
 {
     auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),2.0f);
     auto** components = new Component*[]
@@ -25,6 +261,43 @@ world::Item::Item(glm::vec2 position, ItemType material): Entity(position, ITEM)
         nullptr
     };
     addComponents(components,3);
+}
+
+world::Item::Item(glm::vec2 position, BlockType material) : Entity(position,ITEM), material(material), isBlock(true), amount(1)
+{
+    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material - 1),1.0f);
+    auto* hitbox = new HitBox({-4,4,4,-4});
+    auto* rigid = new RigidBody(hitbox);
+    auto** components = new Component*[]
+    {
+        sprite,
+        hitbox,
+        rigid
+    };
+    addComponents(components,3);
+    health = 1;
+}
+
+world::Item::Item(glm::vec2 position, ItemType material) : Entity(position,ITEM), material(material), isBlock(false), amount(1)
+{
+    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),2.0f);
+    auto* hitbox = new HitBox({-4,4,4,-4});
+    auto* rigid = new RigidBody(hitbox);
+    auto** components = new Component*[]
+    {
+        sprite,
+        hitbox,
+        rigid
+    };
+    addComponents(components,3);
+    health = 1;
+}
+
+int world::Item::getStackLimit() const
+{
+    if (isBlock) return 99;
+    if (getTool().getType() != ToolType::HAND) return 1;
+    return 99;
 }
 
 world::Item::Item(const Item& other)
@@ -46,7 +319,7 @@ void world::Item::toEntity()
 {
     if (components[1] != nullptr || components[2] != nullptr) return;
     // add necessary components
-    auto* hitbox = new HitBox({4,4,-4,-4});
+    auto* hitbox = new HitBox({-4,4,4,-4});
     hitbox->entity = this;
     components[1] = hitbox;
     auto* rigid = new RigidBody(hitbox);
@@ -73,4 +346,9 @@ int world::Item::getAmount() const
 void world::Item::setAmount(const int amount)
 {
     this->amount = amount;
+}
+
+bool world::Item::operator==(const Item& item) const
+{
+    return isBlock == item.isBlock && material == item.material;
 }

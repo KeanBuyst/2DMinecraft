@@ -42,7 +42,8 @@ private:
 
   void updateViewPort() const;
 
-  void computePlayer();
+  bool breakBlock(int state);
+  void computePlayer(const float& delta_time);
 
   static Uint8 prev_keystate[SDL_NUM_SCANCODES];
   static const Uint8* curr_keystate;
@@ -61,6 +62,8 @@ private:
   SDL_GLContext context;
   Uint32 last_frame_time;
   float frame_rate = -1.0f;
+
+  UI::Hotbar* hotbar;
 
   world::Entity* player;
   world::HitBox* player_hitbox;

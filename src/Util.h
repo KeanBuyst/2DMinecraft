@@ -40,6 +40,20 @@ namespace Util
 	void drawDebugLines(const glm::vec2* points, int size);
 
 	template<typename T>
+	T Distance2(glm::vec<2,T> p1, glm::vec<2,T> p2)
+	{
+		const float x = p2.x - p1.x;
+		const float y = p2.y - p1.y;
+		return x*x + y*y;
+	}
+
+	template<typename T>
+	T Distance(glm::vec<2,T> p1, glm::vec<2,T> p2)
+	{
+		return sqrtf(Distance2<T>(p1,p2));
+	}
+
+	template<typename T>
 	constexpr T DegToRad(T degrees) {
 			return degrees * static_cast<T>(M_PI / 180.0);
 	}

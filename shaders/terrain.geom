@@ -8,6 +8,7 @@ in uint _block[];
 in uint _wall[];
 in uint _light[];
 in uint _border[];
+in uint _breakState[];
 
 uniform mat4 ortho;
 
@@ -27,6 +28,7 @@ void main() {
 
     vec2 blockTexPos = vec2(float((_block[0] - 1) % 16) / 16.0,float((_block[0] - 1) / 16) / 16.0);
     vec2 wallTexPos = vec2(float((_wall[0] - 1) % 16) / 16.0,float((_wall[0] - 1) / 16) / 16.0);
+    vec2 breakTexPos;
 
     // Generate the quad for this block (2 triangles = 4 vertices)
     vec2 quadVertices[4] = vec2[4](
@@ -76,5 +78,23 @@ void main() {
         }
 
         EndPrimitive();  // End the current quad
+    }
+
+    if (_breakState[0] != 0)
+    {
+        breakTexPos = vec2(float((256 - _breakState[0]) % 16) / 16.0,float((256 - _breakState[0]) / 16) / 16.0);
+        vec2 quadBreakTexCoords[4] = vec2[4](
+            breakTexPos + vec2(0.0, texSize.y),
+            breakTexPos + vec2(texSize.x, texSize.y),
+            breakTexPos,
+            breakTexPos + vec2(texSize.x, 0.0)
+        );
+        for (int v = 0; v < 4; v++) {
+            texCoords = quadBreakTexCoords[v];
+            position = positions[v];
+            gl_Position = vec4(quadVertices[v], 1.0, 1.0) * ortho;
+            EmitVertex();
+        }
+        EndPrimitive();
     }
 }

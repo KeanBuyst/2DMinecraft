@@ -60,4 +60,6 @@ namespace UI
         void Add(UIComponent* component);
     }
 
+    bool isCell(const CellType& type);
+    bool isSlot(const CellType& type);
 }
