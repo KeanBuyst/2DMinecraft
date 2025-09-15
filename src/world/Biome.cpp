@@ -19,12 +19,6 @@ BlockType Biome::getMaterial(const int depth)
 	return DIRT;
 }
 
-BlockType Biome::getCaveMaterial(const int depth)
-{
-	if (depth > 4) return STONE_WALL;
-	return EMPTY;
-}
-
 Block Biome::getPlant()
 {
 	return {EMPTY,{0,0},GRASS};

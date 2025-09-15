@@ -34,15 +34,13 @@ void Chunk::generate()
 			if (relative >= 0)
 			{
 				glm::vec2 pos(blockPos.x + x_fix,blockPos.y + y_fix);
-				if (Generate::CaveGeneration(pos,relative))
-				{
-					data = biome->getCaveMaterial(relative) << 8;
-				} else
+				data = GetWallOf(biome->getMaterial(relative)) << 8;
+				if (!Generate::CaveGeneration(pos,relative))
 				{
 					BlockType ore;
 					if (Generate::OreGeneration(pos,relative,ore))
-						data = static_cast<uint32_t>(ore);
-					else data = biome->getMaterial(relative);
+						data |= static_cast<uint32_t>(ore);
+					else data |= biome->getMaterial(relative);
 				}
 			}
 			else data = 0;

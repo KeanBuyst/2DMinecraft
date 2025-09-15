@@ -99,4 +99,7 @@ namespace world
     private:
         int amount;
     };
+
+    void RemoveAmount(Item*& item,int amount);
+    Item* AddAmount(Item*& item,int amount);
 }

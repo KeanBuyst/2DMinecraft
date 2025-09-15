@@ -380,9 +380,12 @@ void world::PlayerHeadAnimation::nextFrame(int& current_frame)
 }
 
 world::ItemContainer::ItemContainer(Sprite* arm, UI::Hotbar* inv)
-    : Component(arm->position,ITEM_CONTAINER), inv(inv), ARM_ANGLE(Util::DegToRad(30.0f)), arm(arm)
+    : Component(arm->position, ITEM_CONTAINER), inv(inv), ARM_ANGLE(Util::DegToRad(30.0f)), MAX_DIST(10.0f), arm(arm)
 {
-    arm->pivot_point = {0,0.25};
+    arm->pivot_point = {0, 0.25};
+    break_state = 0.0f;
+    animation = 0.0f;
+    dir = 4.0f;
 }
 
 world::Component* world::ItemContainer::clone() const
@@ -399,8 +402,8 @@ void world::ItemContainer::render()
         arm->rotation = 0.0f;
         return;
     }
-    arm->rotation = ARM_ANGLE;
-    rotation = ARM_ANGLE;
+    arm->rotation = ARM_ANGLE + animation;
+    rotation = ARM_ANGLE + animation;
     float x = 0.5f;
     float y = -0.3f;
     if (!item->isBlock)
@@ -446,18 +449,106 @@ void world::ItemContainer::update(const float& delta_time)
             }
         }
     }
-    // also drop item
+    if (Application::isMouseDown(SDL_BUTTON_LEFT))
+    {
+        // break block
+        if (Application::item_holder->getItem() == nullptr)
+        {
+            const glm::vec2 pos = Application::GetWorldMouse();
+            const float distance = Util::Distance2(origin, pos);
+            if (distance <= MAX_DIST)
+            {
+                Block block = m_world.getBlock(pos);
+                if (block.getType() != EMPTY)
+                {
+                    int state = block.getBreakState();
+                    Item* item = inv->getSelectedItem();
+
+                    Tool tool;
+                    if (item == nullptr)
+                    {
+                        tool = Tool(STICK); // stick is equivalent to hand
+                    } else
+                    {
+                        tool = item->getTool();
+                    }
+                    break_state += tool.getToolBonus(block.getType()) * delta_time;
+
+                    if (break_state >= 1.0f)
+                    {
+                        ++state;
+                        --break_state;
+
+                        if (state > 10)
+                        {
+                            const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
+                            auto* newItem = new Item(dropPoint,block.getType());
+                            block.setBreakState(0);
+                            block.setType(EMPTY);
+                            m_world.setBlock(block,true);
+                            EntityHandler::Add(newItem);
+                        } else
+                        {
+                            block.setBreakState(state);
+                            m_world.setBlock(block);
+                        }
+                    }
+                }
+            }
+        }
+        // item swinging animation
+        animation += dir * delta_time;
+        if (animation > ARM_ANGLE || animation < -ARM_ANGLE)
+            dir = -dir;
+    }
     if (Application::isMouseReleased(SDL_BUTTON_LEFT))
     {
         Item* item = Application::item_holder->getItem();
         if (item != nullptr)
         {
+            // also drop item
             item->position = getNetPosition();
             item->rotation = 0;
             item->velocity = position * 10.0f;
             item->toEntity();
             EntityHandler::Add(item);
             Application::item_holder->setItem(nullptr);
+        } else
+        {
+            // reset block break state
+            const glm::vec2 pos = Application::GetWorldMouse();
+            const float distance = Util::Distance2(origin, pos);
+            if (distance <= MAX_DIST)
+            {
+                Block block = m_world.getBlock(pos);
+                block.setBreakState(0);
+                m_world.setBlock(block);
+            }
+            break_state = 0.0f;
+        }
+        animation = 0.0f;
+    }
+    // block placing
+    if (Application::isMousePressed(SDL_BUTTON_RIGHT))
+    {
+        if (Application::item_holder->getItem() == nullptr)
+        {
+            Item*& item = inv->getSelectedItem();
+            if (item != nullptr && item->isBlock)
+            {
+                const glm::vec2 pos = Application::GetWorldMouse();
+                const float distance = Util::Distance2(origin, pos);
+                if (distance <= MAX_DIST)
+                {
+                    Block block = m_world.getBlock(pos);
+                    if (block.getType() == EMPTY)
+                    {
+                        block.setType(static_cast<BlockType>(item->material));
+                        RemoveAmount(item,1);
+                        m_world.setBlock(block);
+                    }
+                }
+            }
         }
     }
 }

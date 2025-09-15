@@ -102,6 +102,11 @@ void World::render()
 				{
 					Block block = chunk.getBlock(glm::ivec2(x,y));
 					if (block.isEmpty()) continue;
+					// Only render wall if block is transparent
+					if (!block.isTransparent() && block.getType() != EMPTY)
+					{
+						block.setWall(EMPTY);
+					}
 					glm::vec2 pixelCoord = block.position;
 					pixelCoord -= origin;
 					pixelCoord *= PIXEL_SCALE; // size each texture in the scene is 16x16 (atlas 8x8). This helps prevent atrificing if it were kept at 1x1.
@@ -169,6 +174,7 @@ void World::setBlock(const Block& block, const bool doPostUpdate)
 					for (int y = min_y; y <= max_y; ++y)
 					{
 						Generate::Lighting(this,chunks[x][y].position);
+						Generate::BlockBorder(this,chunks[x][y].position);
 					}
 				}
 			} else chunk.setBlock(pos,block);

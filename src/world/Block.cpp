@@ -10,44 +10,60 @@ float world::GetToughness(const BlockType type)
 {
     switch (type)
     {
-    case EMPTY:
-    case TORCH:
-        return 0.0f;
-
     case GRASS_BLOCK:
     case DIRT:
-    case GRASS:
-        return 0.1f;
+        return 1.0f;
 
     case OAK_LOG:
-        return 0.3f;
+        return 2.0f;
 
     case OAK_LEAVES:
-        return 0.05f;
+        return 0.5f;
 
     case STONE:
     case STONE_WALL:
-        return 0.5f;
-
-    case IRON_ORE:
-    case GOLD_ORE:
-    case COPPER_ORE:
-        return 0.8f;
+        return 5.0f;
 
     case COAL_ORE:
+    case GOLD_ORE:
+    case COPPER_ORE:
+        return 5.5f;
+
+    case IRON_ORE:
     case LAPIS_ORE:
-        return 0.5f;
+        return 10.0f;
 
     case DIAMOND_ORE:
     case EMERALD_ORE:
     case REDSTONE_ORE:
-        return 1.0f;
+        return 17.0f;
 
     default:
-        return 0.4f;
+        return 0.0f;
     }
 }
 
+BlockType world::GetWallOf(const BlockType type)
+{
+    switch (type)
+    {
+        case GRASS_BLOCK:
+        case DIRT:
+            return DIRT;
+        case STONE:
+        case IRON_ORE:
+        case GOLD_ORE:
+        case COPPER_ORE:
+        case COAL_ORE:
+        case LAPIS_ORE:
+        case DIAMOND_ORE:
+        case EMERALD_ORE:
+        case REDSTONE_ORE:
+            return STONE_WALL;
+        default:
+            return EMPTY;
+    }
+}
 
 Block::Block(const BlockType type, const glm::vec2 position,const BlockType wall) : position(position)
 {

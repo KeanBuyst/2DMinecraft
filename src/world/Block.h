@@ -27,6 +27,7 @@ namespace world
 	};
 
 	float GetToughness(BlockType type);
+	BlockType GetWallOf(BlockType type);
 
 	// Contains a snapshot of chunk info at a position at the time the getBlock function was called
 	class Block

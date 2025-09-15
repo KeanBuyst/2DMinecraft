@@ -136,6 +136,8 @@ namespace world
     {
         UI::Hotbar* inv;
         const float ARM_ANGLE;
+        const float MAX_DIST;
+        float break_state;
         Sprite* arm;
 
         // item can be NULL
@@ -143,5 +145,9 @@ namespace world
         [[nodiscard]] Component* clone() const override;
         void render() override;
         void update(const float& delta_time) override;
+    private:
+        // animation components
+        float animation;
+        float dir;
     };
 }

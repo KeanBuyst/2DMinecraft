@@ -41,8 +41,6 @@ private:
   void render();
 
   void updateViewPort() const;
-
-  bool breakBlock(int state);
   void computePlayer(const float& delta_time);
 
   static Uint8 prev_keystate[SDL_NUM_SCANCODES];

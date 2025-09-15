@@ -144,9 +144,11 @@ void Application::run() {
     auto* item1 = new Item(DIAMOND_PICKAXE);
     auto* item2 = new Item(GRASS_BLOCK);
     auto* item3 = new Item(GRASS_BLOCK);
+    auto* item4 = new Item(DIAMOND_SHOVEL);
     item2->setAmount(32);
     item3->setAmount(99);
     hotbar->addItem(item1);
+    hotbar->addItem(item4);
     hotbar->addItem(item2);
     hotbar->addItem(item3);
     hotbar->setVisible(true);
@@ -374,30 +376,6 @@ void Application::render()
     SDL_GL_SwapWindow(window);
 }
 
-bool Application::breakBlock(int state)
-{
-    const glm::vec2 pos = GetWorldMouse();
-    const float distance = Util::Distance2(origin, pos);
-    if (distance > 10.0f) return false;
-
-    Block block = m_world.getBlock(pos);
-    if (block.getType() == EMPTY) return false;
-
-    if (state > 10)
-    {
-        const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
-        auto* item = new Item(dropPoint,block.getType());
-        block.setBreakState(0);
-        block.setType(EMPTY);
-        m_world.setBlock(block,true);
-        EntityHandler::Add(item);
-        return true;
-    }
-    block.setBreakState(state);
-    m_world.setBlock(block);
-    return false;
-}
-
 void Application::computePlayer(const float& delta_time)
 {
     constexpr float SPEED = 8.0f;
@@ -448,67 +426,6 @@ void Application::computePlayer(const float& delta_time)
     if (isKeyPressed(SDL_SCANCODE_E))
     {
         inventory->setVisible(!inventory->isVisible());
-    }
-    // block breaking
-    static float BREAK_STATE = 0.0f;
-    if (item_holder->getItem() == nullptr)
-    {
-        if (isMouseDown(SDL_BUTTON_LEFT) )
-        {
-            const glm::vec2 pos = GetWorldMouse();
-            const float distance = Util::Distance2(origin, pos);
-            if (distance <= 10.0f)
-            {
-                Block block = m_world.getBlock(pos);
-                if (block.getType() != EMPTY)
-                {
-                    int state = block.getBreakState();
-                    Item* item = hotbar->getSelectedItem();
-                    float scale;
-
-                    if (item == nullptr)
-                    {
-                        scale = 1.0f - GetToughness(block.getType());
-                    } else
-                    {
-                        scale = item->getTool().getToolBonus(block.getType());
-                    }
-                    BREAK_STATE += scale * delta_time;
-
-                    if (BREAK_STATE >= 1.0f)
-                    {
-                        ++state;
-                        --BREAK_STATE;
-
-                        if (state > 10)
-                        {
-                            const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
-                            auto* newItem = new Item(dropPoint,block.getType());
-                            block.setBreakState(0);
-                            block.setType(EMPTY);
-                            m_world.setBlock(block,true);
-                            EntityHandler::Add(newItem);
-                        } else
-                        {
-                            block.setBreakState(state);
-                            m_world.setBlock(block);
-                        }
-                    }
-                }
-            }
-        }
-        else if (isMouseReleased(SDL_BUTTON_LEFT))
-        {
-            const glm::vec2 pos = GetWorldMouse();
-            const float distance = Util::Distance2(origin, pos);
-            if (distance <= 10.0f)
-            {
-                Block block = m_world.getBlock(pos);
-                block.setBreakState(0);
-                m_world.setBlock(block);
-            }
-            BREAK_STATE = 0.0f;
-        }
     }
 }
 

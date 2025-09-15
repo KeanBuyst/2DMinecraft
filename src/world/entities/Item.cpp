@@ -149,25 +149,25 @@ float world::Tool::getToolBonus(BlockType t) const
         switch (tier)
         {
         case ToolTier::WOOD:
-            bonus = 4.0f;
+            bonus = 8.0f;
             break;
         case ToolTier::STONE:
-            bonus = 8.5f;
+            bonus = 12.0f;
             break;
         case ToolTier::IRON:
-            bonus = 12.5f;
+            bonus = 18.0f;
             break;
         case ToolTier::GOLD:
-            bonus = 18.0f;
+            bonus = 17.5f;
             break;
         case ToolTier::DIAMOND:
             bonus = 24.0f;
             break;
         default:
-            bonus = 1.0f;
+            bonus = 5.0f;
             break;
         }
-    } else bonus = 1.0f;
+    } else bonus = 5.0f;
 
     bonus -= GetToughness(t);
     if (bonus < 0.0f) bonus = 0.0f;
@@ -351,4 +351,36 @@ void world::Item::setAmount(const int amount)
 bool world::Item::operator==(const Item& item) const
 {
     return isBlock == item.isBlock && material == item.material;
+}
+
+void world::RemoveAmount(Item*& item, const int amount)
+{
+    const int sum = item->getAmount() - amount;
+    if (sum <= 0)
+    {
+        delete item;
+        item = nullptr;
+    }
+    else
+    {
+        item->setAmount(sum);
+    }
+}
+
+// only produces 1 overflow item
+world::Item* world::AddAmount(Item*& item, const int amount)
+{
+    int sum = item->getAmount() + amount;
+    const int limit = item->getStackLimit();
+    if (sum > limit)
+    {
+        assert(sum <= limit * 2);
+        item->setAmount(limit);
+        sum -= limit;
+        auto* newItem = new Item(*item);
+        newItem->setAmount(sum);
+        return newItem;
+    }
+    item->setAmount(sum);
+    return nullptr;
 }
