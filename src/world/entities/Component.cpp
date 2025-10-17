@@ -94,7 +94,7 @@ void world::Sprite::render()
     if (entity->type == ITEM)
     {
         auto item = reinterpret_cast<Item*>(entity);
-        if (item->isBlock)
+        if (item->material.isBlock())
             render_batch.insert<BlockType>(data);
         else
             render_batch.insert<ItemType>(data);
@@ -406,7 +406,7 @@ void world::ItemContainer::render()
     rotation = ARM_ANGLE + animation;
     float x = 0.5f;
     float y = -0.3f;
-    if (!item->isBlock)
+    if (!item->material.isBlock())
     {
         rotation -= Util::DegToRad(30.0f);
         x = 0.6f;
@@ -495,11 +495,11 @@ void world::ItemContainer::update(const float& delta_time)
                     }
                 }
             }
+            // item swinging animation
+            animation += dir * delta_time;
+            if (animation > ARM_ANGLE || animation < -ARM_ANGLE)
+                dir = -dir;
         }
-        // item swinging animation
-        animation += dir * delta_time;
-        if (animation > ARM_ANGLE || animation < -ARM_ANGLE)
-            dir = -dir;
     }
     if (Application::isMouseReleased(SDL_BUTTON_LEFT))
     {
@@ -534,7 +534,7 @@ void world::ItemContainer::update(const float& delta_time)
         if (Application::item_holder->getItem() == nullptr)
         {
             Item*& item = inv->getSelectedItem();
-            if (item != nullptr && item->isBlock)
+            if (item != nullptr && item->material.isBlock())
             {
                 const glm::vec2 pos = Application::GetWorldMouse();
                 const float distance = Util::Distance2(origin, pos);

@@ -98,15 +98,8 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
                 item = -1;
             else
             {
-
-                item = cells[i].item->material;
-                if (cells[i].item->isBlock)
-                {
-                    if (item == 0) item = -1;
-                    else item += 255;
-                }
+                item = cells[i].item->material.getRenderData();
                 amount = cells[i].item->getAmount();
-
             }
             const int width = comp->getSize().x;
             glm::vec2 position = glm::vec2(i % width, i / width) + comp->getPosition();

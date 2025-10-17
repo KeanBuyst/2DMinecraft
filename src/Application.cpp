@@ -13,6 +13,7 @@
 #include "gl/Texture.h"
 #include "ui/Inventory.h"
 #include "ui/UI.h"
+#include "world/crafting/Crafting.h"
 #include "world/entities/EntityHandler.h"
 #include "world/entities/Item.h"
 
@@ -119,6 +120,9 @@ Application::Application() {
 
     UI::Renderer::Init();
 
+    // Crafting handler
+    Crafting::Init();
+
     // vsync
     SDL_GL_SetSwapInterval(1);
 }
@@ -142,8 +146,8 @@ void Application::run() {
     // Create Player inventory
     hotbar = new UI::Hotbar();
     auto* item1 = new Item(DIAMOND_PICKAXE);
-    auto* item2 = new Item(GRASS_BLOCK);
-    auto* item3 = new Item(GRASS_BLOCK);
+    auto* item2 = new Item(OAK_LOG);
+    auto* item3 = new Item(OAK_PLANKS);
     auto* item4 = new Item(DIAMOND_SHOVEL);
     item2->setAmount(32);
     item3->setAmount(99);
@@ -244,6 +248,7 @@ int Application::GetMouseScroll()
 Application::~Application() {
     EntityHandler::Cleanup();
     UI::Renderer::Cleanup();
+    Crafting::Destroy();
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();

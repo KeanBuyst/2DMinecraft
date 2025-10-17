@@ -232,16 +232,117 @@ bool world::Tool::isApplicable(const BlockType t) const
     }
 }
 
+world::Material::Material() : mat(0), block(true)
+{}
+
+world::Material::Material(const ItemType& item) : mat(item), block(false)
+{}
+
+world::Material::Material(const BlockType& block) : mat(block), block(true)
+{}
+
+world::Material& world::Material::operator=(const ItemType& item)
+{
+    mat = item;
+    block = false;
+    return *this;
+}
+
+world::Material& world::Material::operator=(const BlockType& item)
+{
+    mat = item;
+    block = true;
+    return *this;
+}
+
+world::Material::operator ItemType() const
+{
+    return static_cast<ItemType>(mat);
+}
+
+world::Material::operator BlockType() const
+{
+    return static_cast<BlockType>(mat);
+}
+
+bool world::Material::operator==(const ItemType& item) const
+{
+    if (block) return false;
+    return mat == item;
+}
+
+bool world::Material::operator==(const BlockType& item) const
+{
+    if (!block) return false;
+    return mat == item;
+}
+
+bool world::Material::operator==(const Material& material) const
+{
+    return block == material.block && mat == material.mat;
+}
+
+bool world::Material::operator!=(const ItemType& item) const
+{
+    return !this->operator==(item);
+}
+
+bool world::Material::operator!=(const BlockType& item) const
+{
+    return !this->operator==(item);
+}
+
+bool world::Material::operator!=(const Material& material) const
+{
+    return !this->operator==(material);
+}
+
+bool world::Material::isBlock() const
+{
+    return block;
+}
+
+bool world::Material::isItem() const
+{
+    return !block;
+}
+
+bool world::Material::isEmpty() const
+{
+    return block && mat == EMPTY;
+}
+
+int world::Material::getRenderData() const
+{
+    int item = mat;
+    if (block)
+    {
+        if (item == 0) item = -1;
+        else item += 255;
+    }
+    return item;
+}
+
+uint8_t world::Material::getRaw() const
+{
+    return mat;
+}
+
 world::Tool world::Item::getTool() const
 {
-    if (isBlock)
+    if (material.isBlock())
         return {};
-    return Tool(static_cast<ItemType>(material));
+    return Tool(material);
 }
 
-world::Item::Item(BlockType material) : Entity({0.0f,0.0f},ITEM), material(material), isBlock(true), amount(1)
+world::Item::Item(Material material) : Entity({0.0f,0.0f},ITEM), material(material), amount(1)
 {
-    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material - 1),1.0f);
+    Sprite* sprite;
+    if (material.isBlock())
+        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw() - 1),1.0f);
+    else
+        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw()),2.0f);
+
     auto** components = new Component*[]
     {
         sprite,
@@ -251,36 +352,14 @@ world::Item::Item(BlockType material) : Entity({0.0f,0.0f},ITEM), material(mater
     addComponents(components,3);
 }
 
-world::Item::Item(ItemType material) : Entity({0.0f,0.0f}, ITEM), material(material), isBlock(false), amount(1)
+world::Item::Item(glm::vec2 position, Material material) : Entity(position,ITEM), material(material), amount(1)
 {
-    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),2.0f);
-    auto** components = new Component*[]
-    {
-        sprite,
-        nullptr,
-        nullptr
-    };
-    addComponents(components,3);
-}
+    Sprite* sprite;
+    if (material.isBlock())
+        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw() - 1),1.0f);
+    else
+        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw()),2.0f);
 
-world::Item::Item(glm::vec2 position, BlockType material) : Entity(position,ITEM), material(material), isBlock(true), amount(1)
-{
-    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material - 1),1.0f);
-    auto* hitbox = new HitBox({-4,4,4,-4});
-    auto* rigid = new RigidBody(hitbox);
-    auto** components = new Component*[]
-    {
-        sprite,
-        hitbox,
-        rigid
-    };
-    addComponents(components,3);
-    health = 1;
-}
-
-world::Item::Item(glm::vec2 position, ItemType material) : Entity(position,ITEM), material(material), isBlock(false), amount(1)
-{
-    auto* sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material),2.0f);
     auto* hitbox = new HitBox({-4,4,4,-4});
     auto* rigid = new RigidBody(hitbox);
     auto** components = new Component*[]
@@ -295,13 +374,13 @@ world::Item::Item(glm::vec2 position, ItemType material) : Entity(position,ITEM)
 
 int world::Item::getStackLimit() const
 {
-    if (isBlock) return 99;
+    if (material.isBlock()) return 99;
     if (getTool().getType() != ToolType::HAND) return 1;
     return 99;
 }
 
 world::Item::Item(const Item& other)
-    : Entity(other), material(other.material), isBlock(other.isBlock), amount(other.amount)
+    : Entity(other), material(other.material), amount(other.amount)
 {}
 
 void world::Item::toComponent()
@@ -328,16 +407,6 @@ void world::Item::toEntity()
     health = 1;
 }
 
-bool world::Item::isMaterial(const BlockType mat) const
-{
-    return isBlock && material == mat;
-}
-
-bool world::Item::isMaterial(const ItemType mat) const
-{
-    return !isBlock && material == mat;
-}
-
 int world::Item::getAmount() const
 {
     return amount;
@@ -350,11 +419,12 @@ void world::Item::setAmount(const int amount)
 
 bool world::Item::operator==(const Item& item) const
 {
-    return isBlock == item.isBlock && material == item.material;
+    return material == item.material;
 }
 
 void world::RemoveAmount(Item*& item, const int amount)
 {
+    if (item == nullptr) return;
     const int sum = item->getAmount() - amount;
     if (sum <= 0)
     {
@@ -370,6 +440,7 @@ void world::RemoveAmount(Item*& item, const int amount)
 // only produces 1 overflow item
 world::Item* world::AddAmount(Item*& item, const int amount)
 {
+    if (item == nullptr) return nullptr;
     int sum = item->getAmount() + amount;
     const int limit = item->getStackLimit();
     if (sum > limit)

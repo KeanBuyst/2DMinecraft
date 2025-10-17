@@ -30,6 +30,7 @@ namespace UI
 
         glm::vec2 position;
         const int width,height;
+        bool updated;
         bool visible;
         Cell* cells;
     };
@@ -63,5 +64,7 @@ namespace UI
     struct PlayerInventory : Inventory
     {
         PlayerInventory();
+
+        void update(const float& delta_time) override;
     };
 }

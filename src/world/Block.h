@@ -23,7 +23,11 @@ namespace world
 		EMERALD_ORE,
 		REDSTONE_ORE,
 		TORCH,
-		STONE_WALL
+		STONE_WALL,
+		CRAFTING_TABLE,
+		FURNACE,
+		FURNACE_LIT,
+		OAK_PLANKS
 	};
 
 	float GetToughness(BlockType type);

@@ -103,6 +103,8 @@ add_executable(2DMC
         src/ui/Inventory.cpp
         src/ui/Inventory.h
         src/ui/UI.cpp
+        src/world/crafting/Crafting.cpp
+        src/world/crafting/Crafting.h
 )
 
 # Link libraries based on the platform

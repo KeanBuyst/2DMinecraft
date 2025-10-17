@@ -1,10 +1,12 @@
 #include "Inventory.h"
 
 #include "../Application.h"
+#include "../world/crafting/Crafting.h"
 #include "../world/entities/EntityHandler.h"
 #include "../world/entities/Item.h"
 
-UI::Inventory::Inventory(glm::vec2 position,const int width, const int height) : position(position), width(width), height(height), visible(false)
+UI::Inventory::Inventory(glm::vec2 position,const int width, const int height)
+    : position(position), width(width), height(height), updated(false), visible(false)
 {
     cells = new Cell[width * height];
     for (auto i = 0; i < height * width; ++i)
@@ -86,6 +88,7 @@ const UI::Cell* UI::Inventory::getCells() const
 
 void UI::Inventory::update(const float& delta_time)
 {
+    updated = false;
     if (!visible) return;
     int index;
     if (Application::item_holder->getItem() == nullptr)
@@ -97,6 +100,7 @@ void UI::Inventory::update(const float& delta_time)
                 Application::item_holder->setItem(cell->item);
                 Application::item_holder->saveLastSlot(this,index);
                 cell->item = nullptr;
+                updated = true;
             }
         }
     }
@@ -137,20 +141,24 @@ void UI::Inventory::update(const float& delta_time)
                     cell->item = item;
                     Application::item_holder->setItem(nullptr);
                 }
+                updated = true;
             }
         }
         else if (Application::isMouseDown(SDL_BUTTON_RIGHT))
         {
             if (Cell* cell = GetMouseSlot(index))
             {
-                if (cell->item != nullptr) return;
-                world::Item& item = *Application::item_holder->getItem();
-                if (item.getAmount() > 1)
+                if (cell->item == nullptr)
                 {
-                    auto* newItem = new world::Item(item);
-                    newItem->setAmount(1);
-                    cell->item = newItem;
-                    item.setAmount(item.getAmount() - 1);
+                    world::Item& item = *Application::item_holder->getItem();
+                    if (item.getAmount() > 1)
+                    {
+                        auto* newItem = new world::Item(item);
+                        newItem->setAmount(1);
+                        cell->item = newItem;
+                        item.setAmount(item.getAmount() - 1);
+                        updated = true;
+                    }
                 }
             }
         }
@@ -293,4 +301,51 @@ UI::PlayerInventory::PlayerInventory(): Inventory({-4.5f,-11.5f},9,7)
     at(2,4).type = INVENTORY_SLOT;
     at(3,5).type = ARROW_CELL;
     at(4,5).type = INVENTORY_SLOT;
+}
+
+void UI::PlayerInventory::update(const float& delta_time)
+{
+    bool previous;
+    world::Item*& c5 = at(4,5).item;
+    if (c5) previous = true;
+
+    Inventory::update(delta_time);
+
+    if (updated)
+    {
+        world::Item*& c1 = at(1,5).item;
+        world::Item*& c2 = at(1,4).item;
+        world::Item*& c3 = at(2,5).item;
+        world::Item*& c4 = at(2,4).item;
+
+        if (previous && !c5)
+        {
+            world::RemoveAmount(c1,1);
+            world::RemoveAmount(c2,1);
+            world::RemoveAmount(c3,1);
+            world::RemoveAmount(c4,1);
+        }
+
+        int size = (c1 ? 1 : 0) + (c2 ? 1 : 0) + (c3 ? 1 : 0) + (c4 ? 1 : 0);
+        if (size)
+        {
+            world::Crafting::Recipe recipe(size == 1 ? 1 : 2);
+            if (c1) recipe.at({0,0}) = c1->material;
+            if (c2) recipe.at({0,1}) = c2->material;
+            if (c3) recipe.at({1,0}) = c3->material;
+            if (c4) recipe.at({1,1}) = c4->material;
+
+            world::Item* result = world::Crafting::GetRecipe(recipe);
+
+            delete c5;
+            if (result)
+                c5 = result;
+            else c5 = nullptr;
+
+        } else if (c5)
+        {
+            delete c5;
+            c5 = nullptr;
+        }
+    }
 }

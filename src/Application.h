@@ -66,7 +66,7 @@ private:
   world::Entity* player;
   world::HitBox* player_hitbox;
   world::RigidBody* player_rigid_body;
-  UI::Inventory* inventory;
+  UI::PlayerInventory* inventory;
 
   static int scrollDir;
 };

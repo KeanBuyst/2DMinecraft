@@ -70,16 +70,45 @@ namespace world
         float damage;
     };
 
+    struct Material
+    {
+    private:
+        uint8_t mat;
+        bool block;
+    public:
+        Material();
+        Material(const ItemType& item);
+        Material(const BlockType& block);
+
+        Material& operator=(const ItemType& item);
+        Material& operator=(const BlockType& item);
+
+        operator ItemType() const;
+        operator BlockType() const;
+
+        bool operator==(const ItemType& item) const;
+        bool operator==(const BlockType& item) const;
+        bool operator==(const Material& material) const;
+
+        bool operator!=(const ItemType& item) const;
+        bool operator!=(const BlockType& item) const;
+        bool operator!=(const Material& material) const;
+
+        bool isBlock() const;
+        bool isItem() const;
+        bool isEmpty() const;
+
+        int getRenderData() const;
+        uint8_t getRaw() const;
+    };
+
     struct Item : Entity
     {
-        const uint8_t material;
-        const bool isBlock;
+        const Material material;
 
-        Item(BlockType material);
-        Item(ItemType material);
+        explicit Item(Material material);
 
-        Item(glm::vec2 position,BlockType material);
-        Item(glm::vec2 position,ItemType material);
+        Item(glm::vec2 position,Material material);
 
         Item(const Item& other);
 
@@ -88,9 +117,6 @@ namespace world
 
         void toComponent();
         void toEntity();
-
-        bool isMaterial(BlockType mat) const;
-        bool isMaterial(ItemType mat) const;
 
         int getAmount() const;
         void setAmount(int amount);
