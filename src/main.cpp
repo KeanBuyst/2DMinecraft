@@ -5,13 +5,31 @@
 
 int APIENTRY WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShow)
 {
-	Application::GetInstance().run();
+	try
+	{
+		Application::GetInstance().run();
+	}
+	catch (const char* str)
+	{
+		MessageBoxA(NULL,str,"Exception occurred",MB_ICONERROR | MB_OK);
+		return -1;
+	}
 	return 0;
 }
 #endif
 
 int main(int argc, char** argv)
 {
-	Application::GetInstance().run();
+	try
+	{
+		Application::GetInstance().run();
+	}
+	catch (const char* str)
+	{
+		std::cerr << "Exception occurred:\n";
+		std::cerr << "-------------------\n";
+		std::cerr << str << std::endl;
+		return -1;
+	}
 	return 0;
 }

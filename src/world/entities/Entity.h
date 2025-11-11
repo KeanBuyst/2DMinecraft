@@ -6,6 +6,7 @@
 
 #include "Component.h"
 #include "../../math/Transform.h"
+#include "../Block.h"
 
 namespace world
 {
@@ -64,14 +65,20 @@ namespace world
 
     float GetMaxHealth(EntityType type);
 
-    struct Entity : VectorTransform
+    class Entity : public VectorTransform
     {
-        EntityType type;
+    private:
+        Entity* next;
+
+    protected:
         Component** components;
         int id = -1;
         int numOfComponents;
         float max_health;
         float health;
+
+    public:
+        const EntityType type;
 
         Entity(glm::vec2 position,EntityType type);
         Entity(const Entity& other);
@@ -106,5 +113,8 @@ namespace world
         }
 
         void addComponents(Component** comps,int size);
+
+        Entity* getNext();
+        void setNext(Entity* entity);
     };
 }

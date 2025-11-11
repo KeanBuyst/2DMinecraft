@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cassert>
+#include <cstring>
 #include <random>
 #include <stdexcept>
 #include <glm.hpp>
@@ -227,6 +228,50 @@ namespace Util
 		int size = 0;
 		int space_size = 0;
 		int index = 0;
+	};
+
+	template<typename T>
+	struct Array
+	{
+	private:
+		size_t length;
+		T* data;
+	public:
+		Array(size_t length) : length(length)
+		{
+			data = new T[length];
+		}
+		~Array()
+		{
+			delete[] data;
+		}
+		size_t size()
+		{
+			return length;
+		}
+		operator T*() const
+		{
+			return data;
+		}
+		T& operator[](size_t index)
+		{
+			return data[index];
+		}
+		const T& operator[](size_t index) const
+		{
+			return data[index];
+		}
+		Array& operator+=(const Array& other)
+		{
+			T* newArr = new T[length + other.length];
+			std::memcpy(newArr,data,length * sizeof(T));
+			std::memcpy(newArr + length,other.data,other.length * sizeof(T));
+
+			length += other.length;
+			delete[] data;
+			data = newArr;
+			return *this;
+		}
 	};
 }
 

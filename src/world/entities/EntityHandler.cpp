@@ -5,7 +5,7 @@
 
 using namespace world;
 
-Util::Buffer<Entity,128> EntityHandler::buffer;
+Entity* EntityHandler::head = nullptr;
 
 static GLuint VAO;
 static GLuint VBO;
@@ -40,19 +40,23 @@ void EntityHandler::Init()
 
 void EntityHandler::Event(SDL_Event* event)
 {
-    Entity* entity;
-    while (buffer.next(entity))
+    Entity* entity = head;
+    while (entity)
     {
         entity->event(event);
+
+        entity = entity->getNext();
     }
 }
 
 void EntityHandler::Render(gl::ShaderProgram* shader)
 {
-    Entity* entity;
-    while (buffer.next(entity))
+    Entity* entity = head;
+    while (entity)
     {
         entity->render();
+
+        entity = entity->getNext();
     }
 
     glBindVertexArray(VAO);
@@ -77,28 +81,34 @@ void EntityHandler::Render(gl::ShaderProgram* shader)
 
 void EntityHandler::Update(const float& delta_time)
 {
-    Entity* entity;
-    while (buffer.next(entity))
+    Entity* entity = head;
+    while (entity)
     {
-        if (entity->health <= 0)
-        {
-            buffer.destroy(entity->id);
-            continue;
-        }
         entity->update(delta_time);
+
+        entity = entity->getNext();
     }
 }
 
 void EntityHandler::Cleanup()
 {
-    buffer.clean();
+    Entity* entity = head;
+    while (entity)
+    {
+        Entity* next = entity->getNext();
+        delete entity;
+        entity = next;
+    }
+    head = nullptr;
+
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 }
 
 void EntityHandler::Add(Entity* entity)
 {
-    entity->id = buffer.add(entity);
+    entity->setNext(head);
+    head = entity;
 }
 
 void EntityHandler::EntityRenderBatch::clear()

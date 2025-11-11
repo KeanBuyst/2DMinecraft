@@ -325,6 +325,12 @@ void UI::PlayerInventory::update(const float& delta_time)
             world::RemoveAmount(c3,1);
             world::RemoveAmount(c4,1);
         }
+        else if (!previous && c5)
+        {
+            // prevents placing items in crafting output slot
+            Application::item_holder->addItem(c5);
+            c5 = nullptr;
+        }
 
         int size = (c1 ? 1 : 0) + (c2 ? 1 : 0) + (c3 ? 1 : 0) + (c4 ? 1 : 0);
         if (size)

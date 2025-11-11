@@ -102,14 +102,15 @@ namespace world
         uint8_t getRaw() const;
     };
 
-    struct Item : Entity
+    class Item : public Entity
     {
+    private:
+        int amount;
+    public:
         const Material material;
 
         explicit Item(Material material);
-
         Item(glm::vec2 position,Material material);
-
         Item(const Item& other);
 
         Tool getTool() const;
@@ -121,9 +122,6 @@ namespace world
         int getAmount() const;
         void setAmount(int amount);
         bool operator==(const Item& item) const;
-
-    private:
-        int amount;
     };
 
     void RemoveAmount(Item*& item,int amount);

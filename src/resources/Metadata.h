@@ -1,6 +1,5 @@
 #pragma once
-class Metadata
+struct Metadata
 {
 	// TODO
 };
-

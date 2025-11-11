@@ -116,3 +116,22 @@ void world::Entity::addComponents(Component** comps, const int size)
     numOfComponents = size;
     components = comps;
 }
+
+world::Entity* world::Entity::getNext()
+{
+    if (next)
+    {
+        if (next->health <= 0)
+        {
+            Entity* temp = next->next;
+            delete next;
+            next = temp;
+        }
+    }
+    return next;
+}
+
+void world::Entity::setNext(Entity* entity)
+{
+    next = entity;
+}

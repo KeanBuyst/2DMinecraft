@@ -20,7 +20,7 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 
 ### Planned feature's
 * Entity Collision
-* Metadata Tiles (e.g. chests)
+* Metadata Tiles & Entities (e.g. chests)
 * Multiple biomes
 * Structures
 * Combat

@@ -27,7 +27,9 @@ namespace world
 		CRAFTING_TABLE,
 		FURNACE,
 		FURNACE_LIT,
-		OAK_PLANKS
+		OAK_PLANKS,
+		CHEST,
+		CHEST_OPEN
 	};
 
 	float GetToughness(BlockType type);

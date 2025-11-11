@@ -2,7 +2,6 @@
 
 #include <SDL_events.h>
 
-#include "../World.h"
 #include "../../Util.h"
 #include "../../math/Transform.h"
 #include "../../ui/Inventory.h"
@@ -27,6 +26,7 @@ namespace world
         Entity* entity = nullptr;
 
         Component(glm::vec2 position,ComponentType type);
+        //Component(const Component&) = delete;
 
         glm::vec2 getNetPosition() const;
         float getNetRotation() const;

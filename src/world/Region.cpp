@@ -25,7 +25,10 @@ Region::Region(const glm::ivec2 position) : position(position)
 	if (file.available())
 	{
 		file.read(flags, SIZE);
-		file.read(buffer,BUFFER_SIZE);
+		file.read(tileBuffer,BUFFER_SIZE);
+
+		uint8_t size;
+		file.read(&size,1);
 
 		std::cout << "Loading region at " << position.x << "," << position.y << std::endl;
 	}
@@ -42,7 +45,7 @@ Region::~Region()
 	DataFile file(name(position) + ".region",std::ios::out);
 
 	file.write(flags, SIZE);
-	file.write(buffer, BUFFER_SIZE);
+	file.write(tileBuffer, BUFFER_SIZE);
 
 	std::cout << "Unloading region at " << position.x << "," << position.y << std::endl;
 }
@@ -56,13 +59,13 @@ void Region::fetch(Chunk &chunk)
 
 	if (flag & FLAGS::GENERATED)
 	{
-		memcpy(chunk.blocks, buffer + index * CHUNK_SIZE*CHUNK_SIZE, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
+		memcpy(chunk.blocks, tileBuffer + index * CHUNK_SIZE*CHUNK_SIZE, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 	}
 	else 
 	{
 		chunk.generate();
 		// but generated data into buffer
-		memcpy(buffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
+		memcpy(tileBuffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 		flag = GENERATED;
 	}
 
@@ -79,7 +82,7 @@ void Region::save(const Chunk& chunk)
 {
 	const int index = GetIndex(chunk);
 	flags[index] = chunk.flag;
-	memcpy(buffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
+	memcpy(tileBuffer + index * CHUNK_SIZE*CHUNK_SIZE, chunk.blocks, sizeof(uint32_t) * CHUNK_SIZE*CHUNK_SIZE);
 }
 
 inline int world::Region::GetIndex(const Chunk& chunk) {
