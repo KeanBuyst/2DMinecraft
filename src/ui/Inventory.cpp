@@ -86,7 +86,7 @@ const UI::Cell* UI::Inventory::getCells() const
     return cells;
 }
 
-void UI::Inventory::update(const float& delta_time)
+void UI::Inventory::update()
 {
     updated = false;
     if (!visible) return;
@@ -197,9 +197,9 @@ UI::Hotbar::Hotbar() : Inventory({-4.5f,-13.0f},9,1)
     cells[0].type = SELECTED_SLOT;
 }
 
-void UI::Hotbar::update(const float& delta_time)
+void UI::Hotbar::update()
 {
-    Inventory::update(delta_time);
+    Inventory::update();
     // Key slot selection
     for (auto i = 0; i < 9; ++i)
     {
@@ -267,7 +267,7 @@ void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
     else lastInv->setItem(lastSlot,item);
 }
 
-void UI::MouseItemHolder::update(const float& delta_time)
+void UI::MouseItemHolder::update()
 {}
 
 UI::PlayerInventory::PlayerInventory(): Inventory({-4.5f,-11.5f},9,7)
@@ -303,13 +303,13 @@ UI::PlayerInventory::PlayerInventory(): Inventory({-4.5f,-11.5f},9,7)
     at(4,5).type = INVENTORY_SLOT;
 }
 
-void UI::PlayerInventory::update(const float& delta_time)
+void UI::PlayerInventory::update()
 {
     bool previous;
     world::Item*& c5 = at(4,5).item;
     if (c5) previous = true;
 
-    Inventory::update(delta_time);
+    Inventory::update();
 
     if (updated)
     {

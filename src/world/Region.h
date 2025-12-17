@@ -22,14 +22,17 @@ namespace world
 		~Region();
 
 		void fetch(Chunk& chunk);
+		std::vector<uint8_t>& fetch(glm::ivec2 chunk_entities);
 		bool contains(glm::ivec2 chunk) const;
 
 		void save(const Chunk& chunk);
 	private:
 		uint8_t flags[REGION_SIZE * REGION_SIZE] = { 0 };
 		uint32_t tileBuffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE * CHUNK_SIZE] = { 0 };
+		// each index represents a chunk of entity data for that chunk
+		std::vector<uint8_t> entityChunkBuffer[REGION_SIZE * REGION_SIZE];
 
-		static inline int GetIndex(const Chunk& chunk);
+		static inline int GetIndex(const glm::ivec2& chunk);
 	};
 	
 	glm::ivec2 ToRegionSpace(glm::ivec2 pos);
@@ -40,6 +43,7 @@ namespace world
 		~RegionHandler();
 
 		void fetch(Chunk& chunk);
+		std::vector<uint8_t>& fetch(glm::ivec2 chunk_entities);
 		void save(const Chunk &chunk);
 	private:
 		// max 4 regions for times of intersection between 4 different regions

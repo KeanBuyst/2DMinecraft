@@ -4,8 +4,10 @@
 #include <SDL.h>
 
 #include "gl/Shader.h"
+#include "ui/Inventory.h"
 #include "world/World.h"
 #include "world/entities/Entity.h"
+#include "world/entities/Player.h"
 
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
@@ -41,7 +43,6 @@ private:
   void render();
 
   void updateViewPort() const;
-  void computePlayer(const float& delta_time);
 
   static Uint8 prev_keystate[SDL_NUM_SCANCODES];
   static const Uint8* curr_keystate;
@@ -61,12 +62,7 @@ private:
   Uint32 last_frame_time;
   float frame_rate = -1.0f;
 
-  UI::Hotbar* hotbar;
-
-  world::Entity* player;
-  world::HitBox* player_hitbox;
-  world::RigidBody* player_rigid_body;
-  UI::PlayerInventory* inventory;
+  world::Player* player;
 
   static int scrollDir;
 };

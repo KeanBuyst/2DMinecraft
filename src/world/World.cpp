@@ -36,9 +36,9 @@ void World::init()
 		}
 	}
 	// post generation
-	for (auto wx = 0; wx < WORLD_WIDTH; wx++)
+	for (auto wx = POST_GEN_BUF; wx < WORLD_WIDTH - POST_GEN_BUF; wx++)
 	{
-		for (auto wy = 0; wy < WORLD_HEIGHT; wy++)
+		for (auto wy = POST_GEN_BUF; wy < WORLD_HEIGHT - POST_GEN_BUF; wy++)
 		{
 			Chunk& chunk = chunks[wx][wy];
 			if (!(chunk.flag & POST_GENERATED))
@@ -327,9 +327,63 @@ inline void World::update_chunks()
 	if (current != chunk_origin){
 		auto direction = current - chunk_origin;
 		auto quantity = glm::abs(direction);
-		// save all chunks & post generation
+
+		int count = 0;
+		// update chunks
 		for (auto y = 0; y < WORLD_HEIGHT; ++y)
+		{
 			for (auto x = 0; x < WORLD_WIDTH; ++x)
+			{
+				// check if shifting is applicable
+				if (quantity.x >= WORLD_WIDTH || quantity.y >= WORLD_HEIGHT)
+				{
+					// fetch all chunks
+					handler.save(chunks[x][y]);
+					GetChunk(x,y,current);
+					++count;
+					continue;
+				}
+				int x_index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
+				int y_index = direction.y < 0 ? (WORLD_HEIGHT - 1) - y : y;
+
+				bool is_trailing_edge_x = (direction.x < 0 && x_index == WORLD_WIDTH - 1) ||
+									(direction.x > 0 && x_index == 0);
+
+				bool is_trailing_edge_y = (direction.y < 0 && y_index == WORLD_HEIGHT - 1) ||
+										  (direction.y > 0 && y_index == 0);
+
+				// saving
+				if (is_trailing_edge_x || is_trailing_edge_y)
+				{
+					handler.save(chunks[x_index][y_index]);
+				}
+
+				// shifting
+				int source_x = x_index + direction.x;
+				int source_y = y_index + direction.y;
+
+				bool valid_source_x = source_x >= 0 && source_x < WORLD_WIDTH;
+				bool valid_source_y = source_y >= 0 && source_y < WORLD_HEIGHT;
+
+				if (valid_source_x && valid_source_y)
+				{
+					chunks[x_index][y_index] = chunks[source_x][source_y];
+				}
+				else
+				{
+					// replace old chunk
+					GetChunk(x_index,y_index,current);
+					++count;
+				}
+			}
+		}
+		std::cout << "Displacement in chunks: " << direction.x << " " << direction.y;
+		std::cout << "\nChunks fetched from region: " << count << std::endl;
+		chunk_origin = current;
+
+		for (auto y = POST_GEN_BUF; y < WORLD_HEIGHT - POST_GEN_BUF; ++y)
+		{
+			for (auto x = POST_GEN_BUF; x < WORLD_WIDTH - POST_GEN_BUF; ++x)
 			{
 				// do post generation
 				if (!(chunks[x][y].flag & POST_GENERATED))
@@ -341,62 +395,7 @@ inline void World::update_chunks()
 					Generate::Lighting(this,chunks[x][y].position);
 					chunks[x][y].lightUpdated = true;
 				}
-				// save all chunks
-				handler.save(chunks[x][y]);
-			}
-		// update chunks
-		for (auto y = 0; y < WORLD_HEIGHT; ++y)
-		{
-			for (auto x = 0; x < WORLD_WIDTH; ++x)
-			{
-				// check if shifting is applicable
-				if (quantity.x >= WORLD_WIDTH || quantity.y >= WORLD_HEIGHT)
-				{
-					// shifting not applicable
-					glm::ivec2 pos(x, y);
-					ArrayToChunk(pos,current);
-					Chunk& chunk = chunks[x][y];
-					handler.save(chunk);
-					chunk.position = pos;
-					handler.fetch(chunk);
-				}
-				else
-				{
-					int index;
-					// horizontal shifting
-					if (quantity.x != 0) // don't generate if no change accorded
-					{
-						index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
-						if (x <= quantity.x)
-						{
-							const Chunk& chunk = chunks[index + direction.x][y];
-							chunks[index][y] = chunk;
-						}
-						else
-						{
-							// replace old chunk
-							GetChunk(index, y,current);
-							continue;
-						}
-					}
-					// vertical shifting
-					if (quantity.y != 0)
-					{
-						index = direction.y < 0 ? (WORLD_HEIGHT - 1) - y : y;
-						if (y <= quantity.y)
-						{
-							chunks[x][index] = chunks[x][index + direction.y];
-						}
-						else if (quantity.y != 0)
-						{
-							// replace old chunk
-							GetChunk(x, index,current);
-							continue;
-						}
-					}
-				}
 			}
 		}
-		chunk_origin = current;
 	}
 }

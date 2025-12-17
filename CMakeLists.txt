@@ -72,39 +72,22 @@ add_executable(2DMC
         src/world/generation/Light.cpp
         src/Constants.cpp
         src/world/generation/OreGeneration.cpp
-        src/Util.h
-        src/glew.h
-        src/Constants.h
-        src/Application.h
-        src/world/World.h
-        src/world/Region.h
-        src/world/Chunk.h
-        src/world/Block.h
-        src/world/Biome.h
-        src/resources/Storage.h
-        src/resources/Metadata.h
-        src/libs/stb_image.h
-        src/gl/Texture.h
-        src/gl/Shader.h
-        src/world/generation/Generation.h
-        src/world/entities/Entity.h
-        src/math/Transform.h
         src/world/entities/EntityHandler.cpp
-        src/world/entities/EntityHandler.h
-        src/world/entities/Component.h
         src/world/entities/Entity.cpp
-        src/world/entities/Component.cpp
         src/Noise.cpp
         src/world/generation/CaveGeneration.cpp
         src/world/generation/BlockBorder.cpp
-        src/world/entities/Item.h
         src/world/entities/Item.cpp
-        src/ui/UI.h
         src/ui/Inventory.cpp
-        src/ui/Inventory.h
         src/ui/UI.cpp
         src/world/crafting/Crafting.cpp
-        src/world/crafting/Crafting.h
+        src/world/entities/Procedure.cpp
+        src/world/entities/Sprite.cpp
+        src/world/entities/Player.cpp
+        src/world/entities/Player.h
+        src/gl/Frame.cpp
+        src/resources/Resources.cpp
+        src/world/entities/MetaEntity.cpp
 )
 
 # Link libraries based on the platform

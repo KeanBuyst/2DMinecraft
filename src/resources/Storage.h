@@ -9,22 +9,43 @@ namespace res
 
 	class DataFile
 	{
+	private:
+		static constexpr size_t BUFFER_SIZE = 1024; // 1 KB
+		char internal[BUFFER_SIZE];
+		size_t cursor;
+		std::fstream stream;
+		char pending_char;
+		uint8_t pending_count;
 	public:
 		explicit DataFile(std::string path,const std::_Ios_Openmode &type);
 		~DataFile();
 
 		bool available() const;
 
-		void write(const uint64_t* data,unsigned int size);
-		void write(const uint8_t* data, unsigned int size);
-		void write(const uint32_t* data, unsigned int size);
+		void flush();
+		void write(const char* data,size_t size);
 
-		void read(uint64_t* data,unsigned int size);
-		void read(uint8_t* data, unsigned int size);
-		void read(uint32_t* data, unsigned int size);
-	private:
-		std::fstream stream;
+		void read(char* data,size_t size);
+
+		template<typename T>
+		void write(const T* data,size_t size);
+
+		template<typename T>
+		void read(T* data,size_t size);
+
+		bool hasNext();
+		int getPosition();
 	};
 
-	
+	template <typename T>
+	void DataFile::write(const T* data, size_t size)
+	{
+		write(reinterpret_cast<const char*>(data), size * sizeof(T));
+	}
+
+	template <typename T>
+	void DataFile::read(T* data, size_t size)
+	{
+		read(reinterpret_cast<char*>(data), size * sizeof(T));
+	}
 }

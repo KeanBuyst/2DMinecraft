@@ -11,11 +11,13 @@
 #include "resources/Storage.h"
 #include "world/generation/Generation.h"
 #include "gl/Texture.h"
+#include "resources/Resources.h"
 #include "ui/Inventory.h"
 #include "ui/UI.h"
 #include "world/crafting/Crafting.h"
 #include "world/entities/EntityHandler.h"
 #include "world/entities/Item.h"
+#include "world/entities/Player.h"
 
 using namespace world;
 
@@ -103,8 +105,6 @@ Application::Application() {
     terrain_shader->bind(gl::GetShader("terrain.frag"));
     terrain_shader->build();
 
-    m_world.init();
-
     entity_shader = std::make_unique<gl::ShaderProgram>();
     entity_shader->bind(gl::GetShader("entity.vert"));
     entity_shader->bind(gl::GetShader("entity.frag"));
@@ -120,6 +120,27 @@ Application::Application() {
 
     UI::Renderer::Init();
 
+    // load resources
+    res::load();
+
+    // load state data
+    std::fstream file(res::basePath + "world.dat",std::ios::binary | std::ios::in);
+
+    if (file.is_open())
+    {
+        Util::ByteStream stream(&file);
+        uint8_t entityType;
+        stream >> Util::seed_value;
+        stream >> entityType;
+        player = new Player(stream);
+        origin = player->position;
+    } else
+    {
+        player = new Player(origin);
+    }
+
+    m_world.init();
+
     // Crafting handler
     Crafting::Init();
 
@@ -133,62 +154,18 @@ Application& Application::GetInstance() {
 }
 
 void Application::run() {
-    // Create texture altas
-    const gl::Texture tileAtlas("../assets/tiles.png");
-    const gl::Texture itemAtlas("../assets/items.png");
-    const gl::AtlasTexture entityAtlas("../assets/entities.png");
-    const gl::AtlasTexture uiAtlas("../assets/ui.png");
-    tileAtlas.bind(0);
-    entityAtlas.bind(1);
-    itemAtlas.bind(2);
-    uiAtlas.bind(3);
+    // Registure player entity
+    EntityHandler::Add(player);
 
-    // Create Player inventory
-    hotbar = new UI::Hotbar();
-    auto* item1 = new Item(DIAMOND_PICKAXE);
-    auto* item2 = new Item(OAK_LOG);
-    auto* item3 = new Item(OAK_PLANKS);
-    auto* item4 = new Item(DIAMOND_SHOVEL);
-    item2->setAmount(32);
-    item3->setAmount(99);
-    hotbar->addItem(item1);
-    hotbar->addItem(item4);
-    hotbar->addItem(item2);
-    hotbar->addItem(item3);
-    hotbar->setVisible(true);
-    UI::Renderer::Add(hotbar);
-    // Main player inventory
-    inventory = new UI::PlayerInventory();
-    UI::Renderer::Add(inventory);
     // Mouse item holder (always last in order)
     item_holder = new UI::MouseItemHolder();
     UI::Renderer::Add(item_holder);
 
-    // Create player entity
-    player = new Entity({0,10},PLAYER);
-    player_hitbox = new HitBox({-2.5f,10,2.5f,-18});
-    player_rigid_body = new RigidBody(player_hitbox);
-    auto* leg_1 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* leg_2 = new Sprite({0,-12,4,12},entityAtlas.getTexel({8,8,4,12}),1.0f);
-    auto* head = new Sprite({0,10,9,8},entityAtlas.getTexel({0,0,8,7}),1.0f);
-    auto* arm = new Sprite({0,0,4,12},entityAtlas.getTexel({4,8,4,12}),1.0f);
-    auto** components = new Component*[]
-    {
-        head, // HEAD
-        arm, // ARM
-        new Sprite({0,0,4,12},entityAtlas.getTexel({0,8,4,12}),1.0f), // BODY
-        leg_1,
-        leg_2,
-        player_rigid_body,
-        player_hitbox,
-        new BipedalAnimation(leg_1,leg_2),
-        new PlayerHeadAnimation(head),
-        new ItemContainer(arm,hotbar)
-    };
-    player->addComponents(components,10);
-    EntityHandler::Add(player);
-
     glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
+
+
+    // reset clock
+    last_frame_time = SDL_GetTicks();
 
     // creating loop
     bool running = true;
@@ -249,6 +226,18 @@ Application::~Application() {
     EntityHandler::Cleanup();
     UI::Renderer::Cleanup();
     Crafting::Destroy();
+    res::clear();
+
+    // save player state
+    std::fstream file(res::basePath + "world.dat",std::ios::binary | std::ios::out);
+    Util::ByteStream stream(&file);
+
+    // seed
+    stream << Util::seed_value;
+    // player
+    player->serialize(stream);
+    delete player;
+
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -321,8 +310,14 @@ void Application::events(bool& running)
 void Application::update()
 {
     const Uint32 now = SDL_GetTicks();
-    const float delta_time = static_cast<float>(now - last_frame_time) / 1000.0f;
+    delta_time = static_cast<float>(now - last_frame_time) / 1000.0f;
     last_frame_time = now;
+
+    // clamp delta time. Prevent physics explosions or huge movement jumps
+    if (delta_time > 0.1f) // MIN FPS is 10
+    {
+        delta_time = 0.1f;
+    }
 
     const float current_frame_rate = (delta_time > 0.0f) ? (1.0f / delta_time) : 0.0f;
 
@@ -340,13 +335,33 @@ void Application::update()
     // NB!! Order is important. UI then entities
     // update mouse item holder
     item_holder->setPosition(GetUIMouse() - 0.4f);
-    UI::Renderer::Update(delta_time);
+    UI::Renderer::Update();
+
+    // full screen
+    if (isKeyPressed(SDL_SCANCODE_F11))
+    {
+        fullscreen = !fullscreen;
+        if (fullscreen)
+        {
+            SDL_DisplayMode displayMode;
+            SDL_GetCurrentDisplayMode(0, &displayMode);
+            SCREEN_WIDTH = displayMode.w;
+            SCREEN_HEIGHT = displayMode.h;
+            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+        }
+        else
+        {
+            SDL_SetWindowFullscreen(window, 0);
+            SCREEN_WIDTH = 1280;
+            SCREEN_HEIGHT = 720;
+            SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
+        }
+    }
 
     // update entities
-    computePlayer(delta_time);
-    EntityHandler::Update(delta_time);
+    EntityHandler::Update();
 
-    world::origin = player->position;
+    origin = player->position;
 }
 
 void Application::render()
@@ -379,59 +394,6 @@ void Application::render()
     // end UI rendering
 
     SDL_GL_SwapWindow(window);
-}
-
-void Application::computePlayer(const float& delta_time)
-{
-    constexpr float SPEED = 8.0f;
-
-    if (isKeyPressed(SDL_SCANCODE_F11))
-    {
-        fullscreen = !fullscreen;
-        if (fullscreen)
-        {
-            SDL_DisplayMode displayMode;
-            SDL_GetCurrentDisplayMode(0, &displayMode);
-            SCREEN_WIDTH = displayMode.w;
-            SCREEN_HEIGHT = displayMode.h;
-            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-        }
-        else
-        {
-            SDL_SetWindowFullscreen(window, 0);
-            SCREEN_WIDTH = 1280;
-            SCREEN_HEIGHT = 720;
-            SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
-        }
-    }
-    if (isKeyDown(SDL_SCANCODE_A))
-    {
-        if (player->acceleration.x == 0) player->velocity.x = -SPEED / 2.0f;
-
-        player->acceleration.x = -SPEED;
-        player_rigid_body->moving = true;
-    }
-    if (isKeyDown(SDL_SCANCODE_D))
-    {
-        // creates more instantaneous movement
-        if (player->acceleration.x == 0) player->velocity.x = SPEED / 2.0f;
-
-        player->acceleration.x = SPEED;
-        player_rigid_body->moving = true;
-    }
-    if (isKeyPressed(SDL_SCANCODE_W) && player_hitbox->bottom)
-    {
-        player->velocity.y = 20.0f;
-    }
-    if (isKeyUp(SDL_SCANCODE_A) || isKeyUp(SDL_SCANCODE_D))
-    {
-        player->acceleration.x = 0;
-        player_rigid_body->moving = false;
-    }
-    if (isKeyPressed(SDL_SCANCODE_E))
-    {
-        inventory->setVisible(!inventory->isVisible());
-    }
 }
 
 void Application::updateViewPort() const {

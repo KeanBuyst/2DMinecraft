@@ -49,12 +49,12 @@ void UI::Renderer::Init()
     glBindVertexArray(0);
 }
 
-void UI::Renderer::Update(const float& delta_time)
+void UI::Renderer::Update()
 {
     UIComponent* comp;
     while (buffer.next(comp))
     {
-        comp->update(delta_time);
+        comp->update();
     }
 }
 

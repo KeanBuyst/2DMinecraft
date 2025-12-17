@@ -4,20 +4,12 @@
 #include <SDL_events.h>
 #include <vector>
 
-#include "Component.h"
+#include "Sprite.h"
 #include "../../math/Transform.h"
 #include "../Block.h"
-
-namespace world
-{
-    enum ItemType : uint8_t;
-
-    enum EntityType : uint8_t
-    {
-        PLAYER,
-        ITEM
-    };
-}
+#include "../../Util.h"
+#include "../../gl/Frame.h"
+#include "EntityType.h"
 
 namespace EntityHandler
 {
@@ -65,56 +57,43 @@ namespace world
 
     float GetMaxHealth(EntityType type);
 
-    class Entity : public VectorTransform
+    class Entity : public Transform
     {
     private:
         Entity* next;
 
     protected:
-        Component** components;
-        int id = -1;
-        int numOfComponents;
-        float max_health;
+        uint64_t id;
+        gl::Frame dimensions;
         float health;
+
+        bool appliedMovement;
+        bool doDeque;
+        float max_health;
 
     public:
         const EntityType type;
+        glm::vec2 velocity;
+        glm::vec2 acceleration;
 
-        Entity(glm::vec2 position,EntityType type);
-        Entity(const Entity& other);
-        ~Entity();
+        Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& stream);
+        Entity(glm::vec2 position,gl::Frame dimensions,EntityType type);
+        virtual ~Entity() = default;
 
-        void event(SDL_Event* event) const;
-        void update(const float& delta_time);
-        void render();
+        virtual void event(SDL_Event* event) const = 0;
+        virtual void update();
+        virtual void render() = 0;
+        virtual void serialize(Util::ByteStream& stream);
 
-        template<typename T>
-        [[nodiscard]] std::vector<T*> getComponents(const ComponentType compType) const
-        {
-            std::vector<T*> list;
-            for (auto i = 0; i < numOfComponents; ++i)
-            {
-                if (components[i]->type == compType)
-                    list.push_back(reinterpret_cast<T*>(components[i]));
-            }
-            return list;
-        }
-        template<typename T>
-        [[nodiscard]] T* getComponent(const ComponentType compType) const
-        {
-            for (auto i = 0; i < numOfComponents; ++i)
-            {
-                if (components[i]->type == compType)
-                {
-                    return reinterpret_cast<T*>(components[i]);
-                }
-            }
-            return nullptr;
-        }
+        virtual Sprite& getSprite(int index) = 0;
 
-        void addComponents(Component** comps,int size);
+        bool hasAppliedMovement() const;
+        gl::Frame getDimensions() const;
+        uint64_t getID() const;
 
         Entity* getNext();
         void setNext(Entity* entity);
+        bool dead();
+        void deque();
     };
 }

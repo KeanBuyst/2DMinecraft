@@ -5,10 +5,13 @@
 #include <random>
 #include <stdexcept>
 #include <glm.hpp>
+#include <iostream>
+#include <istream>
+#include <streambuf>
 
 namespace Util 
 {
-	extern unsigned int seed_value;
+	extern uint64_t seed_value;
 	extern std::mt19937 rng;
 
 	struct PerlinNoise
@@ -33,7 +36,11 @@ namespace Util
 
 	void InitNoise();
 
+	uint64_t GetRadomNumber(uint64_t bits);
+
 	glm::vec2 rotate(const glm::vec2& point, float angle);
+
+	uint64_t GetTimeBasedID();
 
 	void decreaseMagnitude(glm::vec2& vector,float scaler);
 	void decreaseMagnitude(float& vector,float scaler);
@@ -230,46 +237,34 @@ namespace Util
 		int index = 0;
 	};
 
-	template<typename T>
-	struct Array
+	class ByteStream
 	{
 	private:
-		size_t length;
-		T* data;
+		std::iostream* stream;
+		std::vector<uint8_t>* vector;
+		size_t cursor;
 	public:
-		Array(size_t length) : length(length)
-		{
-			data = new T[length];
-		}
-		~Array()
-		{
-			delete[] data;
-		}
-		size_t size()
-		{
-			return length;
-		}
-		operator T*() const
-		{
-			return data;
-		}
-		T& operator[](size_t index)
-		{
-			return data[index];
-		}
-		const T& operator[](size_t index) const
-		{
-			return data[index];
-		}
-		Array& operator+=(const Array& other)
-		{
-			T* newArr = new T[length + other.length];
-			std::memcpy(newArr,data,length * sizeof(T));
-			std::memcpy(newArr + length,other.data,other.length * sizeof(T));
+		ByteStream(std::vector<uint8_t>* array);
+		ByteStream(std::iostream* stream);
 
-			length += other.length;
-			delete[] data;
-			data = newArr;
+		void write(const void* data, size_t size);
+		void read(void* data, size_t size);
+
+		bool hasNext();
+		void reset();
+
+		template<typename T>
+		ByteStream& operator<<(const T& value)
+		{
+			static_assert(std::is_trivially_copyable<T>::value, "Data must be trivial (POD)");
+			write(&value, sizeof(T));
+			return *this;
+		}
+		template<typename T>
+		ByteStream& operator>>(T& value)
+		{
+			static_assert(std::is_trivially_copyable<T>::value, "Data must be trivial (POD)");
+			read(&value, sizeof(T));
 			return *this;
 		}
 	};

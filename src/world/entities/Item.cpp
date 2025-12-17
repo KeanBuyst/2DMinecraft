@@ -1,7 +1,11 @@
 #include "Item.h"
 
 #include "EntityHandler.h"
+#include "Sprite.h"
 #include "../../gl/Texture.h"
+#include "../../resources/Resources.h"
+
+REGISTER_ENTITY(world::EntityType::ITEM,world::Item);
 
 world::Tool::Tool()
 {
@@ -335,41 +339,85 @@ world::Tool world::Item::getTool() const
     return Tool(material);
 }
 
-world::Item::Item(Material material) : Entity({0.0f,0.0f},ITEM), material(material), amount(1)
+gl::TextureMap GetMapping(uint8_t index)
 {
-    Sprite* sprite;
-    if (material.isBlock())
-        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw() - 1),1.0f);
-    else
-        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw()),2.0f);
-
-    auto** components = new Component*[]
-    {
-        sprite,
-        nullptr,
-        nullptr
+    float x = static_cast<float>(index % 16) / 16.0f;
+    float y = static_cast<float>(index / 16) / 16.0f;
+    return {
+        x,
+        x + 0.0625f,
+         y,
+        y + 0.0625f
     };
-    addComponents(components,3);
 }
 
-world::Item::Item(glm::vec2 position, Material material) : Entity(position,ITEM), material(material), amount(1)
-{
-    Sprite* sprite;
-    if (material.isBlock())
-        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw() - 1),1.0f);
-    else
-        sprite = new Sprite({0,0,8,8},gl::AtlasTexture::getTexel(material.getRaw()),2.0f);
+static gl::Frame frame = gl::GetFrame(0,0,8,8);
 
-    auto* hitbox = new HitBox({-4,4,4,-4});
-    auto* rigid = new RigidBody(hitbox);
-    auto** components = new Component*[]
+world::Item::Item(Util::ByteStream& stream) : Entity(EntityType::ITEM,frame,stream)
+{
+    uint8_t flags;
+    uint8_t mat;
+    uint8_t amt;
+    stream >> flags;
+    stream >> mat;
+    stream >> amt;
+
+    doUpdate = flags & 1;
+    if (flags & 0b10)
     {
-        sprite,
-        hitbox,
-        rigid
-    };
-    addComponents(components,3);
-    health = 1;
+        material = static_cast<BlockType>(mat);
+    } else
+    {
+        material = static_cast<ItemType>(mat);
+    }
+    sprite = Sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f);
+    health = doUpdate ? 1.0f : 0.0f;
+    amount = amt; // max stack is 99 so should never exceed
+}
+
+world::Item::Item(Material material)
+    : Entity({0.0f, 0.0f}, frame, EntityType::ITEM),
+    sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f),
+    amount(1), material(material)
+{
+    health = 0.0f;
+    doUpdate = false;
+}
+
+world::Item::Item(glm::vec2 position,Material material)
+    : Entity(position, frame, EntityType::ITEM),
+    sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f),
+    amount(1), material(material)
+{
+    health = 1.0f;
+    doUpdate = true;
+}
+
+void world::Item::serialize(Util::ByteStream& stream)
+{
+    Entity::serialize(stream);
+    stream << static_cast<uint8_t>((material.isBlock() << 1) | doUpdate);
+    stream << material.getRaw();
+    stream << static_cast<uint8_t>(amount);
+}
+
+void world::Item::event(SDL_Event* event) const
+{}
+
+void world::Item::update()
+{
+    if (doUpdate)
+        Entity::update();
+}
+
+void world::Item::render()
+{
+    sprite.render(this);
+}
+
+world::Sprite& world::Item::getSprite(int)
+{
+    return sprite;
 }
 
 int world::Item::getStackLimit() const
@@ -380,31 +428,19 @@ int world::Item::getStackLimit() const
 }
 
 world::Item::Item(const Item& other)
-    : Entity(other), material(other.material), amount(other.amount)
+    : Entity(other), sprite(other.sprite), amount(other.amount), material(other.material)
 {}
 
 void world::Item::toComponent()
 {
-    // remove unnecessary components
-    for (auto i = 1; i < numOfComponents; ++i)
-    {
-        delete components[i];
-        components[i] = nullptr;
-    }
-    health = 0;
+    doUpdate = false;
+    health = 0.0f;
 }
 
 void world::Item::toEntity()
 {
-    if (components[1] != nullptr || components[2] != nullptr) return;
-    // add necessary components
-    auto* hitbox = new HitBox({-4,4,4,-4});
-    hitbox->entity = this;
-    components[1] = hitbox;
-    auto* rigid = new RigidBody(hitbox);
-    rigid->entity = this;
-    components[2] = rigid;
-    health = 1;
+    doUpdate = true;
+    health = 1.0f;
 }
 
 int world::Item::getAmount() const

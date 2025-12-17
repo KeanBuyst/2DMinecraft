@@ -1,6 +1,9 @@
 #include "Entity.h"
 
 #include "../../gl/Texture.h"
+#include "Procedure.h"
+
+#include <chrono>
 
 EntityHandler::EntityRenderBatch world::render_batch;
 
@@ -27,101 +30,71 @@ float world::GetMaxHealth(EntityType type)
 {
     switch (type)
     {
-    case PLAYER:
+    case EntityType::PLAYER:
         return 100.0f;
-    case ITEM:
+    case EntityType::ITEM:
         return 1.0f;
     default:
         return -1.0f;
     }
 }
 
-world::Entity::Entity(const glm::vec2 position,const EntityType type) :
-    VectorTransform(position),type(type), components(nullptr), numOfComponents(0)
+world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& stream)
+: Transform(stream), dimensions(dimensions), appliedMovement(false), doDeque(false), type(type)
+{
+    stream >> id;
+    stream >> health;
+    stream >> velocity.x;
+    stream >> velocity.y;
+}
+
+world::Entity::Entity(const glm::vec2 position,gl::Frame dimensions,const EntityType type) :
+    Transform(position), id((Util::GetTimeBasedID() << 22) | Util::GetRadomNumber(22)),
+    dimensions(dimensions), appliedMovement(false), doDeque(false), type(type)
 {
     max_health = GetMaxHealth(type);
     health = max_health;
 }
 
-world::Entity::Entity(const Entity& other) : VectorTransform(other.position), type(other.type)
+void world::Entity::update()
 {
-    components = new Component*[other.numOfComponents];
-    numOfComponents = other.numOfComponents;
-
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        if (other.components[i] != nullptr)
-        {
-            components[i] = other.components[i]->clone();
-            components[i]->entity = this;
-        } else
-        {
-            components[i] = nullptr;
-        }
-    }
-    max_health = other.max_health;
-    // not copying over health
-    health = max_health;
-}
-
-world::Entity::~Entity()
-{
-    if (components == nullptr) return;
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        delete components[i];
-        components[i] = nullptr;
-    }
-    delete[] components;
-    components = nullptr;
-}
-
-void world::Entity::event(SDL_Event* event) const
-{
-    if (components == nullptr) return;
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        components[i]->event(event);
-    }
-}
-
-void world::Entity::update(const float& delta_time)
-{
-    if (components == nullptr) return;
     velocity += acceleration * delta_time;
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        components[i]->update(delta_time);
-    }
+    Procedure::HitBoxResult collision = Procedure::HitBox(this,dimensions);
+    Procedure::RigidBody(this,collision);
     position += velocity * delta_time;
 }
 
-void world::Entity::render()
+void world::Entity::serialize(Util::ByteStream& stream)
 {
-    if (components == nullptr) return;
-    for (auto i = 0; i < numOfComponents; ++i)
-    {
-        if (components[i] == nullptr) continue;
-        components[i]->render();
-    }
+    stream << static_cast<uint8_t>(type);
+    Transform::serialize(stream);
+    stream << id;
+    stream << health;
+    stream << velocity.x;
+    stream << velocity.y;
+    // not storing acceleration
 }
 
-void world::Entity::addComponents(Component** comps, const int size)
+bool world::Entity::hasAppliedMovement() const
 {
-    for (auto i = 0; i < size; ++i)
-    {
-        if (comps[i] == nullptr) continue;
-        comps[i]->entity = this;
-    }
-    numOfComponents = size;
-    components = comps;
+    return appliedMovement;
+}
+
+gl::Frame world::Entity::getDimensions() const
+{
+    return dimensions;
+}
+
+uint64_t world::Entity::getID() const
+{
+    return id;
 }
 
 world::Entity* world::Entity::getNext()
 {
     if (next)
     {
-        if (next->health <= 0)
+        if (next->dead())
         {
             Entity* temp = next->next;
             delete next;
@@ -134,4 +107,14 @@ world::Entity* world::Entity::getNext()
 void world::Entity::setNext(Entity* entity)
 {
     next = entity;
+}
+
+bool world::Entity::dead()
+{
+    return health <= 0 || doDeque;
+}
+
+void world::Entity::deque()
+{
+    doDeque = true;
 }

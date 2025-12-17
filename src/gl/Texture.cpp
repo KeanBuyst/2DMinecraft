@@ -18,8 +18,8 @@ Texture::Texture(const char* path)
 	}
 
 	// create openGL texture
-	glGenTextures(1, &ID);
-	glBindTexture(GL_TEXTURE_2D, ID);
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_2D, id);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -38,12 +38,12 @@ Texture::Texture(const char* path)
 
 Texture::~Texture()
 {
-	glDeleteTextures(1, &ID);
+	glDeleteTextures(1, &id);
 }
 
 void Texture::bind(const unsigned int slot) const {
 	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D,ID);
+	glBindTexture(GL_TEXTURE_2D,id);
 }
 
 void Texture::unbind()
@@ -51,17 +51,27 @@ void Texture::unbind()
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-glm::vec4 AtlasTexture::getTexel(const glm::vec4 pixel_rect) const
+uint32_t Texture::getID()
 {
-	const float x = pixel_rect.x / static_cast<float>(width);
-	const float y = pixel_rect.y / static_cast<float>(height);
-	const float w = pixel_rect.z / static_cast<float>(width);
-	const float h = pixel_rect.w / static_cast<float>(height);
-	return {x,y,w,h};
+	return id;
 }
 
-glm::vec4 AtlasTexture::getTexel(const uint8_t index)
+int Texture::getWidth()
 {
-	auto tileTexPos = glm::vec2(static_cast<float>(index % 16) / 16.0,static_cast<float>(index / 16) / 16.0);
-	return {tileTexPos,0.0625f,0.0625f};
+	return width;
+}
+
+int Texture::getHeight()
+{
+	return height;
+}
+
+TextureMap Texture::format(float pX, float pY, float pWidth, float pHeight)
+{
+	return{
+		pX / static_cast<float>(width),
+		(pX + pWidth) / static_cast<float>(width),
+		pY / static_cast<float>(height),
+		(pY + pHeight) / static_cast<float>(height)
+	};
 }

@@ -7,6 +7,7 @@ namespace UI
     {
     public:
         Inventory(glm::vec2 position, int width, int height);
+        Inventory(const Inventory& other) = delete;
         ~Inventory();
 
         bool addItem(world::Item* item);
@@ -20,7 +21,7 @@ namespace UI
         int getCount() const override;
         const Cell* getCells() const override;
 
-        void update(const float& delta_time) override;
+        void update() override;
 
         bool isVisible() const override;
         void setVisible(bool visible) override;
@@ -39,7 +40,7 @@ namespace UI
     {
         Hotbar();
 
-        void update(const float& delta_time) override;
+        void update() override;
         void setSelectedSlot(int slot);
         world::Item*& getSelectedItem() const;
 
@@ -50,7 +51,7 @@ namespace UI
     struct MouseItemHolder : Inventory
     {
         MouseItemHolder();
-        void update(const float& delta_time) override;
+        void update() override;
         void setItem(world::Item* item);
         void saveLastSlot(Inventory* last,int slot);
 
@@ -65,6 +66,6 @@ namespace UI
     {
         PlayerInventory();
 
-        void update(const float& delta_time) override;
+        void update() override;
     };
 }

@@ -3,12 +3,20 @@
 #include "../../glew.h"
 #include "../../gl/Shader.h"
 
+#include <functional>
+
+#include "../Region.h"
+#include "../World.h"
+
 using namespace world;
 
 Entity* EntityHandler::head = nullptr;
 
 static GLuint VAO;
 static GLuint VBO;
+
+static constexpr int MAX_ENTITY_TYPES = static_cast<int>(EntityType::COUNT);
+static std::array<EntityHandler::EntityCreator, MAX_ENTITY_TYPES> registry = { nullptr };
 
 void EntityHandler::Init()
 {
@@ -54,8 +62,10 @@ void EntityHandler::Render(gl::ShaderProgram* shader)
     Entity* entity = head;
     while (entity)
     {
-        entity->render();
-
+        if (!OutOfBounds(entity->position))
+        {
+            entity->render();
+        }
         entity = entity->getNext();
     }
 
@@ -79,13 +89,43 @@ void EntityHandler::Render(gl::ShaderProgram* shader)
     render_batch.clear();
 }
 
-void EntityHandler::Update(const float& delta_time)
+void EntityHandler::Register(EntityType type, EntityCreator creator)
 {
+    registry[static_cast<int>(type)] = creator;
+}
+
+void EntityHandler::Update()
+{
+    // special case for if the head needs to be destroyed
+    if (head && head->dead())
+    {
+        Entity* temp = head->getNext();
+        delete head;
+        head = temp;
+    }
+
     Entity* entity = head;
     while (entity)
     {
-        entity->update(delta_time);
+        // check if entity is still in processing area (loaded chunks minus the post-processing buffer area)
+        if (OutOfBounds(entity->position))
+        {
+            glm::ivec2 chunk_pos = ToChunkSpace(entity->position);
+            if(glm::ivec2 a_pos = chunk_pos; !ChunkToArray(a_pos))
+            {
+                entity->deque();
 
+                std::vector<uint8_t>& vector = handler.fetch(chunk_pos);
+                Util::ByteStream stream(&vector);
+
+                if (entity->type != EntityType::PLAYER)
+                    entity->serialize(stream);
+            }
+        }
+        else
+        {
+            entity->update();
+        }
         entity = entity->getNext();
     }
 }
@@ -95,8 +135,16 @@ void EntityHandler::Cleanup()
     Entity* entity = head;
     while (entity)
     {
+        std::vector<uint8_t>& vector = handler.fetch(ToChunkSpace(entity->position));
+        Util::ByteStream stream(&vector);
+
         Entity* next = entity->getNext();
-        delete entity;
+
+        if (entity->type != EntityType::PLAYER)
+        {
+            entity->serialize(stream);
+            delete entity;
+        }
         entity = next;
     }
     head = nullptr;
@@ -109,6 +157,20 @@ void EntityHandler::Add(Entity* entity)
 {
     entity->setNext(head);
     head = entity;
+}
+
+Entity* EntityHandler::Add(Util::ByteStream& stream)
+{
+    uint8_t nil = static_cast<uint8_t>(EntityType::COUNT);
+    uint8_t type = nil;
+    Entity* entity = nullptr;
+    stream >> type;
+    if (type != nil)
+    {
+        entity = registry[type](stream);
+        Add(entity);
+    }
+    return entity;
 }
 
 void EntityHandler::EntityRenderBatch::clear()

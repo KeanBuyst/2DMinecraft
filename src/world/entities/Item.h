@@ -4,36 +4,10 @@
 
 #include <cstdint>
 
+#include "Sprite.h"
+
 namespace world
 {
-    enum ItemType : uint8_t
-    {
-        WOODEN_PICKAXE,
-        STONE_PICKAXE,
-        IRON_PICKAXE,
-        GOLD_PICKAXE,
-        DIAMOND_PICKAXE,
-        WOODEN_SWORD,
-        STONE_SWORD,
-        IRON_SWORD,
-        GOLDEN_SWORD,
-        DIAMOND_SWORD,
-        WOODEN_SHOVEL,
-        STONE_SHOVEL,
-        IRON_SHOVEL,
-        GOLDEN_SHOVEL,
-        DIAMOND_SHOVEL,
-        STICK,
-        IRON_INGOT,
-        GOLD_INGOT,
-        DIAMOND,
-        WOODEN_AXE,
-        STONE_AXE,
-        IRON_AXE,
-        GOLDEN_AXE,
-        DIAMOND_AXE
-    };
-
     enum class ToolType
     {
         HAND,
@@ -105,13 +79,24 @@ namespace world
     class Item : public Entity
     {
     private:
+        Sprite sprite;
+        bool doUpdate;
         int amount;
     public:
-        const Material material;
+        Material material;
 
+        explicit Item(Util::ByteStream& stream);
         explicit Item(Material material);
         Item(glm::vec2 position,Material material);
         Item(const Item& other);
+
+        void serialize(Util::ByteStream& stream) override;
+
+        void event(SDL_Event* event) const override;
+        void update() override;
+        void render() override;
+
+        Sprite& getSprite(int) override;
 
         Tool getTool() const;
         int getStackLimit() const;

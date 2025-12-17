@@ -40,7 +40,7 @@ namespace UI
 
         virtual ~UIComponent() = default;
 
-        virtual void update(const float& delta_time) {}
+        virtual void update() {}
 
         virtual glm::vec2 getPosition() const = 0;
         virtual glm::ivec2 getSize() const = 0;
@@ -55,7 +55,7 @@ namespace UI
     {
         void Init();
         void Render(gl::ShaderProgram* shader);
-        void Update(const float& delta_time);
+        void Update();
         void Cleanup();
         void Add(UIComponent* component);
     }

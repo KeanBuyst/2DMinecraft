@@ -9,11 +9,17 @@ Modified to use pesudo-random instead of constant table
 
 #include <ctime>
 
-unsigned int Util::seed_value = static_cast<unsigned int>(time(nullptr));
-std::mt19937 Util::rng(seed_value);
+uint64_t Util::seed_value = time(nullptr);
+std::mt19937 Util::rng;
 
 Util::PerlinNoise Util::terrain_noise;
 Util::PerlinNoise Util::cave_noise;
+
+uint64_t Util::GetRadomNumber(uint64_t bits)
+{
+    std::uniform_int_distribution<uint32_t> dist(0,(1ULL << bits) - 1ULL);
+    return dist(Util::rng);
+}
 
 inline int32_t Util::PerlinNoise::fastfloor(const float fp) {
     int32_t i = static_cast<int32_t>(fp);
@@ -42,6 +48,7 @@ float Util::PerlinNoise::grad(int32_t hash, float x, float y) {
 void Util::InitNoise()
 {
     std::uniform_int_distribution<uint8_t> dist(0, 255);
+    rng.seed(seed_value);
 
     // Init terrain noise
     for (uint8_t& i : terrain_noise.perm) {
