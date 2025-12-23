@@ -14,31 +14,7 @@ static gl::Frame lower_frame = gl::GetFrame(0,-12,4,12);
 REGISTER_ENTITY(world::EntityType::PLAYER, world::Player);
 
 world::Player::Player(Util::ByteStream& stream)
-: MetaEntity(EntityType::PLAYER,gl::GetFrame(0.0f, -3.0f, 5.0f, 32.0f),stream),
-    sprites{
-        Sprite(upper_frame, res::atlas::entities->format(0, 0, 8, 7)), // head
-        Sprite(mid_frame, res::atlas::entities->format(4, 8, 4, 12)), // arm
-        Sprite(mid_frame, res::atlas::entities->format(0, 8, 4, 12)), // body
-        Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 1
-        Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 2
-}, break_state(0.0f), arm_rotation(0.0f), arm_dir(4.0f), leg_dir(-1.0f)
-{
-    numOfInventories = 2;
-    inventories = new UI::Inventory*[2] {
-        new UI::Hotbar(),
-        new UI::PlayerInventory()
-   };
-
-    // set up pivot points
-    sprites[0].pivot_point = {0,sprites[0].position.y};
-    sprites[1].pivot_point = {0, 0.25};
-    const glm::vec2 pivot(0, -0.4f);
-    sprites[3].pivot_point = pivot;
-    sprites[4].pivot_point = pivot;
-}
-
-world::Player::Player(glm::vec2 position)
-    : MetaEntity(position, gl::GetFrame(0.0f, -3.0f, 5.0f, 32.0f), EntityType::PLAYER),
+    : Entity(EntityType::PLAYER, gl::GetFrame(0.0f, -3.0f, 5.0f, 32.0f), stream),
       sprites{
           Sprite(upper_frame, res::atlas::entities->format(0, 0, 8, 7)), // head
           Sprite(mid_frame, res::atlas::entities->format(4, 8, 4, 12)), // arm
@@ -47,14 +23,42 @@ world::Player::Player(glm::vec2 position)
           Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 2
       }, break_state(0.0f), arm_rotation(0.0f), arm_dir(4.0f), leg_dir(-1.0f)
 {
-    numOfInventories = 2;
-    inventories = new UI::Inventory*[2] {
-         new UI::Hotbar(),
-         new UI::PlayerInventory()
-    };
-    inventories[0]->setVisible(true);
-    UI::Renderer::Add(inventories[0]);
-    UI::Renderer::Add(inventories[1]);
+    uint8_t flags;
+    stream >> flags;
+
+    sprites[0].flip(flags);
+    sprites[1].flip(flags);
+    sprites[2].flip(flags);
+    sprites[3].flip(flags);
+
+    hotbar.load(stream);
+    inventory.load(stream);
+
+    hotbar.setVisible(true);
+    UI::Renderer::Add(&hotbar);
+    UI::Renderer::Add(&inventory);
+
+    // set up pivot points
+    sprites[0].pivot_point = {0, sprites[0].position.y};
+    sprites[1].pivot_point = {0, 0.25};
+    const glm::vec2 pivot(0, -0.4f);
+    sprites[3].pivot_point = pivot;
+    sprites[4].pivot_point = pivot;
+}
+
+world::Player::Player(glm::vec2 position)
+    : Entity(position, gl::GetFrame(0.0f, -3.0f, 5.0f, 32.0f), EntityType::PLAYER),
+      sprites{
+          Sprite(upper_frame, res::atlas::entities->format(0, 0, 8, 7)), // head
+          Sprite(mid_frame, res::atlas::entities->format(4, 8, 4, 12)), // arm
+          Sprite(mid_frame, res::atlas::entities->format(0, 8, 4, 12)), // body
+          Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 1
+          Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 2
+      }, break_state(0.0f), arm_rotation(0.0f), arm_dir(4.0f), leg_dir(-1.0f)
+{
+    hotbar.setVisible(true);
+    UI::Renderer::Add(&hotbar);
+    UI::Renderer::Add(&inventory);
 
     // set up pivot points
     sprites[0].pivot_point = {0,sprites[0].position.y};
@@ -64,7 +68,7 @@ world::Player::Player(glm::vec2 position)
     sprites[4].pivot_point = pivot;
 
     // test items
-    inventories[0]->addItem(new Item(DIAMOND_PICKAXE));
+    hotbar.addItem(new Item(DIAMOND_PICKAXE));
 }
 
 world::Player::~Player()
@@ -81,7 +85,7 @@ void world::Player::update()
 
     if (Application::isKeyPressed(SDL_SCANCODE_E))
     {
-        inventories[1]->setVisible(!inventories[1]->isVisible());
+        inventory.setVisible(!inventory.isVisible());
     }
     if (Application::isKeyDown(SDL_SCANCODE_A))
     {
@@ -116,7 +120,7 @@ void world::Player::update()
     // dropping item
     if (Application::isKeyPressed(SDL_SCANCODE_Q))
     {
-        Item*& item = reinterpret_cast<UI::Hotbar*>(inventories[0])->getSelectedItem();
+        Item*& item = hotbar.getSelectedItem();
         if (item != nullptr)
         {
             if (item->getAmount() > 1)
@@ -143,7 +147,7 @@ void world::Player::update()
     if (Application::isMouseDown(SDL_BUTTON_LEFT))
     {
         // break block
-        if (Application::item_holder->getItem() == nullptr)
+        if (Application::item_holder.getItem() == nullptr)
         {
             const glm::vec2 pos = Application::GetWorldMouse();
             const float distance = Util::Distance2(origin, pos);
@@ -153,7 +157,7 @@ void world::Player::update()
                 if (block.getType() != EMPTY)
                 {
                     int state = block.getBreakState();
-                    Item*& item = reinterpret_cast<UI::Hotbar*>(inventories[0])->getSelectedItem();
+                    Item*& item = hotbar.getSelectedItem();
 
                     Tool tool;
                     if (item == nullptr)
@@ -194,7 +198,7 @@ void world::Player::update()
     }
     if (Application::isMouseReleased(SDL_BUTTON_LEFT))
     {
-        Item* item = Application::item_holder->getItem();
+        Item* item = Application::item_holder.getItem();
         if (item != nullptr)
         {
             // also drop item
@@ -203,7 +207,7 @@ void world::Player::update()
             item->velocity = position * 10.0f;
             item->toEntity();
             EntityHandler::Add(item);
-            Application::item_holder->setItem(nullptr);
+            Application::item_holder.setItem(nullptr);
         } else
         {
             // reset block break state
@@ -222,9 +226,9 @@ void world::Player::update()
     // block placing
     if (Application::isMousePressed(SDL_BUTTON_RIGHT))
     {
-        if (Application::item_holder->getItem() == nullptr)
+        if (Application::item_holder.getItem() == nullptr)
         {
-            Item*& item = reinterpret_cast<UI::Hotbar*>(inventories[0])->getSelectedItem();
+            Item*& item = hotbar.getSelectedItem();
             if (item != nullptr && item->material.isBlock())
             {
                 const glm::vec2 pos = Application::GetWorldMouse();
@@ -294,7 +298,7 @@ void world::Player::render()
         sprite.render(this);
     }
     // holding item render
-    Item*& item = reinterpret_cast<UI::Hotbar*>(inventories[0])->getSelectedItem();
+    Item*& item = hotbar.getSelectedItem();
     if (item == nullptr)
     {
 
@@ -317,6 +321,15 @@ void world::Player::render()
     item->rotation = net_rotation;
     item->getSprite(0).flip(sprites[1].isFlipped());
     item->render();
+}
+
+void world::Player::serialize(Util::ByteStream& stream)
+{
+    Entity::serialize(stream);
+    uint8_t flags = sprites[0].isFlipped();
+    stream << flags;
+    hotbar.serialize(stream);
+    inventory.serialize(stream);
 }
 
 world::Sprite& world::Player::getSprite(int index)

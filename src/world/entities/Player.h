@@ -1,17 +1,20 @@
 #pragma once
 
-#include "MetaEntity.h"
+#include "Entity.h"
 #include "Sprite.h"
 #include "../../Util.h"
+#include "../../ui/Inventory.h"
 
 namespace world
 {
-    class Player : public MetaEntity
+    class Player : public Entity
     {
     private:
         static constexpr float MAX_DIST = 10.0f;
         static constexpr float ARM_ANGLE = Util::DegToRad(30.0f);
 
+        UI::Hotbar hotbar;
+        UI::PlayerInventory inventory;
         Sprite sprites[5];
         // block the player is attempting to break's state
         float break_state;
@@ -25,6 +28,7 @@ namespace world
         void event(SDL_Event* event) const override;
         void update() override;
         void render() override;
+        void serialize(Util::ByteStream& stream) override;
         Sprite& getSprite(int index) override;
     };
 }

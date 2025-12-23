@@ -32,7 +32,7 @@ Uint32 Application::previousMouseState = 0;
 
 int Application::scrollDir = 0;
 glm::ivec2 Application::mousePos;
-UI::MouseItemHolder* Application::item_holder = nullptr;
+UI::MouseItemHolder Application::item_holder;
 
 glm::vec4 VIEW_PORT;
 
@@ -134,6 +134,7 @@ Application::Application() {
         stream >> entityType;
         player = new Player(stream);
         origin = player->position;
+        chunk_origin = ToChunkSpace(origin);
     } else
     {
         player = new Player(origin);
@@ -158,8 +159,7 @@ void Application::run() {
     EntityHandler::Add(player);
 
     // Mouse item holder (always last in order)
-    item_holder = new UI::MouseItemHolder();
-    UI::Renderer::Add(item_holder);
+    UI::Renderer::Add(&item_holder);
 
     glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
 
@@ -275,7 +275,6 @@ void Application::events(bool& running)
                     case SDL_BUTTON_MIDDLE:
                         {
                             Block block = m_world.getBlock(mouse);
-                            block.setBreakState(10);
                             std::cout << "\n-------------------------\n"
                                       << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
                                       << "\nType: " << std::to_string(block.getType())
@@ -284,7 +283,6 @@ void Application::events(bool& running)
                                       << "\nBreak State: " << std::to_string(block.getBreakState())
                                       << "\n-------------------------\n"
                                       << std::endl;
-                            m_world.setBlock(block);
                         }
                         break;
                 }
@@ -334,7 +332,7 @@ void Application::update()
     }
     // NB!! Order is important. UI then entities
     // update mouse item holder
-    item_holder->setPosition(GetUIMouse() - 0.4f);
+    item_holder.setPosition(GetUIMouse() - 0.4f);
     UI::Renderer::Update();
 
     // full screen

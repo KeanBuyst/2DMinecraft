@@ -1,14 +1,16 @@
 #pragma once
 #include "UI.h"
 
+#include "../Util.h"
+
 namespace UI
 {
     struct Inventory : UIComponent
     {
     public:
-        Inventory(glm::vec2 position, int width, int height);
+        Inventory(glm::vec2 position, uint8_t width, uint8_t height);
         Inventory(const Inventory& other) = delete;
-        ~Inventory();
+        ~Inventory() override;
 
         bool addItem(world::Item* item);
         void setItem(int index,world::Item* item);
@@ -21,6 +23,9 @@ namespace UI
         int getCount() const override;
         const Cell* getCells() const override;
 
+        virtual void serialize(Util::ByteStream& stream);
+        virtual void load(Util::ByteStream& stream);
+
         void update() override;
 
         bool isVisible() const override;
@@ -30,7 +35,7 @@ namespace UI
         Cell* GetMouseSlot(int& index);
 
         glm::vec2 position;
-        const int width,height;
+        uint8_t width,height;
         bool updated;
         bool visible;
         Cell* cells;

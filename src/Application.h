@@ -29,7 +29,7 @@ public:
   static glm::vec2 GetUIMouse();
   static int GetMouseScroll();
 
-  static UI::MouseItemHolder* item_holder;
+  static UI::MouseItemHolder item_holder;
 
   static bool isKeyDown(SDL_Scancode key);
   static bool isKeyPressed(SDL_Scancode key);

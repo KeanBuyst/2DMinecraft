@@ -87,7 +87,6 @@ add_executable(2DMC
         src/world/entities/Player.h
         src/gl/Frame.cpp
         src/resources/Resources.cpp
-        src/world/entities/MetaEntity.cpp
 )
 
 # Link libraries based on the platform

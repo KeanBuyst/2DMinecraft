@@ -11,7 +11,7 @@ namespace UI
 {
     constexpr float CELL_SIZE = 20.0f;
 
-    enum CellType : uint32_t
+    enum CellType : uint8_t
     {
         EMPTY_CELL,
         INVENTORY_SLOT,
@@ -36,8 +36,6 @@ namespace UI
 
     struct UIComponent
     {
-        uint16_t id = 0;
-
         virtual ~UIComponent() = default;
 
         virtual void update() {}

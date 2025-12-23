@@ -5,11 +5,11 @@
 #include "../world/entities/EntityHandler.h"
 #include "../world/entities/Item.h"
 
-UI::Inventory::Inventory(glm::vec2 position,const int width, const int height)
+UI::Inventory::Inventory(glm::vec2 position,const uint8_t width, const uint8_t height)
     : position(position), width(width), height(height), updated(false), visible(false)
 {
-    cells = new Cell[width * height];
-    for (auto i = 0; i < height * width; ++i)
+    cells = new Cell[getCount()];
+    for (auto i = 0; i < getCount(); ++i)
     {
         cells[i] = {INVENTORY_SLOT,nullptr};
     }
@@ -86,19 +86,55 @@ const UI::Cell* UI::Inventory::getCells() const
     return cells;
 }
 
+void UI::Inventory::serialize(Util::ByteStream& stream)
+{
+    // store items (other data is static)
+    for (auto i = 0; i < getCount(); ++i)
+    {
+        if (cells[i].item)
+        {
+            cells[i].item->serialize(stream);
+        }
+        else
+        {
+            uint8_t zero = 0;
+            stream << zero;
+        }
+    }
+}
+
+void UI::Inventory::load(Util::ByteStream& stream)
+{
+    // load items (other data is static)
+    for (auto i = 0; i < getCount(); ++i)
+    {
+        uint8_t type;
+        stream >> type;
+        if (type != 0)
+        {
+            if (cells[i].item)
+            {
+                std::cerr << "Inventory load conflicting with already populated inventory\nOverriding item" << std::endl;
+                delete cells[i].item;
+            }
+            cells[i].item = new world::Item(stream);
+        }
+    }
+}
+
 void UI::Inventory::update()
 {
     updated = false;
     if (!visible) return;
     int index;
-    if (Application::item_holder->getItem() == nullptr)
+    if (Application::item_holder.getItem() == nullptr)
     {
         if (Application::isMousePressed(SDL_BUTTON_LEFT))
         {
             if (Cell* cell = GetMouseSlot(index))
             {
-                Application::item_holder->setItem(cell->item);
-                Application::item_holder->saveLastSlot(this,index);
+                Application::item_holder.setItem(cell->item);
+                Application::item_holder.saveLastSlot(this,index);
                 cell->item = nullptr;
                 updated = true;
             }
@@ -110,7 +146,7 @@ void UI::Inventory::update()
         {
             if (Cell* cell = GetMouseSlot(index))
             {
-                world::Item* item = Application::item_holder->getItem();
+                world::Item* item = Application::item_holder.getItem();
                 if (cell->item != nullptr)
                 {
                     if (*item == *cell->item)
@@ -126,20 +162,20 @@ void UI::Inventory::update()
                         if (overflow == 0)
                         {
                             delete item;
-                            Application::item_holder->setItem(nullptr);
+                            Application::item_holder.setItem(nullptr);
                             cell->item->setAmount(amount);
                             return;
                         }
                         item->setAmount(overflow);
                         cell->item->setAmount(amount);
                     }
-                    Application::item_holder->setLastSlot(item);
-                    Application::item_holder->setItem(nullptr);
+                    Application::item_holder.setLastSlot(item);
+                    Application::item_holder.setItem(nullptr);
                 }
                 else
                 {
                     cell->item = item;
-                    Application::item_holder->setItem(nullptr);
+                    Application::item_holder.setItem(nullptr);
                 }
                 updated = true;
             }
@@ -150,7 +186,7 @@ void UI::Inventory::update()
             {
                 if (cell->item == nullptr)
                 {
-                    world::Item& item = *Application::item_holder->getItem();
+                    world::Item& item = *Application::item_holder.getItem();
                     if (item.getAmount() > 1)
                     {
                         auto* newItem = new world::Item(item);
@@ -328,7 +364,7 @@ void UI::PlayerInventory::update()
         else if (!previous && c5)
         {
             // prevents placing items in crafting output slot
-            Application::item_holder->addItem(c5);
+            Application::item_holder.addItem(c5);
             c5 = nullptr;
         }
 

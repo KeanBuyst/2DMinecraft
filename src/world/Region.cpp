@@ -36,12 +36,11 @@ Region::Region(const glm::ivec2 position) : position(position)
 		while (file.hasNext())
 		{
 			file.read(&size,1);
-			if (size == 0) continue;
-			std::cout << "NUM BYTES OF ENTITIES: " << size << " chunk index " << chunkIndex << std::endl;
-
-			entityChunkBuffer[chunkIndex].resize(size);
-			file.read(entityChunkBuffer[chunkIndex].data(),size);
-
+			if (size != 0)
+			{
+				entityChunkBuffer[chunkIndex].resize(size);
+				file.read(entityChunkBuffer[chunkIndex].data(),size);
+			}
 			++chunkIndex;
 		}
 
@@ -120,6 +119,7 @@ void Region::fetch(Chunk &chunk)
 
 std::vector<uint8_t>& Region::fetch(glm::ivec2 chunk_entities)
 {
+	std::cout << GetIndex(chunk_entities) << std::endl;
 	return entityChunkBuffer[GetIndex(chunk_entities)];
 }
 
@@ -136,8 +136,13 @@ void Region::save(const Chunk& chunk)
 }
 
 inline int Region::GetIndex(const glm::ivec2& chunk) {
-	const glm::ivec2 pos = glm::abs(chunk % REGION_SIZE);
-	return pos.x + pos.y * REGION_SIZE; // account for rows
+	int x,y;
+	if (chunk.x < 0) x = (REGION_SIZE - 1) + (chunk.x % REGION_SIZE);
+	else x = chunk.x % REGION_SIZE;
+	if (chunk.y < 0) y = (REGION_SIZE - 1) + (chunk.y % REGION_SIZE);
+	else y = chunk.y % REGION_SIZE;
+
+	return x + y * REGION_SIZE; // account for rows
 }
 
 RegionHandler::~RegionHandler()

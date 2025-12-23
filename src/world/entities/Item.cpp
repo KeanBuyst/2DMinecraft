@@ -371,6 +371,7 @@ world::Item::Item(Util::ByteStream& stream) : Entity(EntityType::ITEM,frame,stre
         material = static_cast<ItemType>(mat);
     }
     sprite = Sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f);
+    sprite.flip(flags & 0b100);
     health = doUpdate ? 1.0f : 0.0f;
     amount = amt; // max stack is 99 so should never exceed
 }
@@ -396,7 +397,7 @@ world::Item::Item(glm::vec2 position,Material material)
 void world::Item::serialize(Util::ByteStream& stream)
 {
     Entity::serialize(stream);
-    stream << static_cast<uint8_t>((material.isBlock() << 1) | doUpdate);
+    stream << static_cast<uint8_t>(doUpdate | (material.isBlock() << 1) | (sprite.isFlipped() << 2));
     stream << material.getRaw();
     stream << static_cast<uint8_t>(amount);
 }

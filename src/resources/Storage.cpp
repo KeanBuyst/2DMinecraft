@@ -122,7 +122,7 @@ void DataFile::read(char* data, size_t size)
 
 bool DataFile::hasNext()
 {
-	return stream.peek() != EOF;
+	return stream.peek() != EOF || pending_count > 0;
 }
 
 int DataFile::getPosition()

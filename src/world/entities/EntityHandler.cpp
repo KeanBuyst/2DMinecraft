@@ -115,11 +115,12 @@ void EntityHandler::Update()
             {
                 entity->deque();
 
-                std::vector<uint8_t>& vector = handler.fetch(chunk_pos);
-                Util::ByteStream stream(&vector);
-
                 if (entity->type != EntityType::PLAYER)
+                {
+                    std::vector<uint8_t>& vector = handler.fetch(chunk_pos);
+                    Util::ByteStream stream(&vector);
                     entity->serialize(stream);
+                }
             }
         }
         else
@@ -135,13 +136,13 @@ void EntityHandler::Cleanup()
     Entity* entity = head;
     while (entity)
     {
-        std::vector<uint8_t>& vector = handler.fetch(ToChunkSpace(entity->position));
-        Util::ByteStream stream(&vector);
-
         Entity* next = entity->getNext();
 
         if (entity->type != EntityType::PLAYER)
         {
+            std::vector<uint8_t>& vector = handler.fetch(ToChunkSpace(entity->position));
+            Util::ByteStream stream(&vector);
+
             entity->serialize(stream);
             delete entity;
         }

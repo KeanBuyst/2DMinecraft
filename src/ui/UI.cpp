@@ -7,7 +7,7 @@
 static GLuint VAO;
 static GLuint VBO;
 
-Util::Buffer<UI::UIComponent,5> buffer;
+std::vector<UI::UIComponent*> buffer;
 
 struct RenderCell
 {
@@ -19,6 +19,8 @@ struct RenderCell
 
 void UI::Renderer::Init()
 {
+    buffer.reserve(5);
+
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
@@ -51,8 +53,7 @@ void UI::Renderer::Init()
 
 void UI::Renderer::Update()
 {
-    UIComponent* comp;
-    while (buffer.next(comp))
+    for (UIComponent*& comp : buffer)
     {
         comp->update();
     }
@@ -60,14 +61,13 @@ void UI::Renderer::Update()
 
 void UI::Renderer::Cleanup()
 {
-    buffer.clean();
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 }
 
 void UI::Renderer::Add(UIComponent* component)
 {
-    component->id = buffer.add(component);
+    buffer.push_back(component);
 }
 
 void UI::Renderer::Render(gl::ShaderProgram* shader)
@@ -79,8 +79,7 @@ void UI::Renderer::Render(gl::ShaderProgram* shader)
     shader->useTexture("itemAtlas",2);
     shader->useTexture("uiAtlas",3);
 
-    UIComponent* comp;
-    while (buffer.next(comp))
+    for (UIComponent*& comp : buffer)
     {
         if (!comp->isVisible()) continue;
 
