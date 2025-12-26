@@ -15,6 +15,6 @@ namespace Procedure
         glm::vec2 translation;
     };
 
-    HitBoxResult HitBox(const world::Entity* entity,const gl::Frame& dimensions);
+    HitBoxResult HitBox(world::Entity* entity);
     void RigidBody(world::Entity* entity, const HitBoxResult& result);
 }

@@ -7,14 +7,14 @@
 namespace EntityHandler
 {
     using EntityCreator = world::Entity* (*)(Util::ByteStream&);
-    extern world::Entity* head;
 
     void Init();
     void Cleanup();
 
-    void Event(SDL_Event* event);
     void Update();
     void Render(gl::ShaderProgram* shader);
+
+    world::Entity* GetHead();
 
     void Register(world::EntityType type, EntityCreator creator);
 

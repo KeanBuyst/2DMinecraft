@@ -1,6 +1,7 @@
 #include "Item.h"
 
 #include "EntityHandler.h"
+#include "Player.h"
 #include "Sprite.h"
 #include "../../gl/Texture.h"
 #include "../../resources/Resources.h"
@@ -362,8 +363,7 @@ world::Item::Item(Util::ByteStream& stream) : Entity(EntityType::ITEM,frame,stre
     stream >> mat;
     stream >> amt;
 
-    doUpdate = flags & 1;
-    if (flags & 0b10)
+    if (flags & 0b1)
     {
         material = static_cast<BlockType>(mat);
     } else
@@ -371,8 +371,9 @@ world::Item::Item(Util::ByteStream& stream) : Entity(EntityType::ITEM,frame,stre
         material = static_cast<ItemType>(mat);
     }
     sprite = Sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f);
-    sprite.flip(flags & 0b100);
-    health = doUpdate ? 1.0f : 0.0f;
+    dimensions *= material.isBlock() ? 1.0f : 2.0f;
+    sprite.flip(flags & 0b10);
+    health = 1.0f;
     amount = amt; // max stack is 99 so should never exceed
 }
 
@@ -381,8 +382,8 @@ world::Item::Item(Material material)
     sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f),
     amount(1), material(material)
 {
-    health = 0.0f;
-    doUpdate = false;
+    dimensions *= material.isBlock() ? 1.0f : 2.0f;
+    health = 1.0f;
 }
 
 world::Item::Item(glm::vec2 position,Material material)
@@ -390,30 +391,38 @@ world::Item::Item(glm::vec2 position,Material material)
     sprite(frame,GetMapping(material.isBlock() ? material.getRaw() - 1 : material.getRaw()),material.isBlock() ? 1.0f : 2.0f),
     amount(1), material(material)
 {
+    dimensions *= material.isBlock() ? 1.0f : 2.0f;
     health = 1.0f;
-    doUpdate = true;
 }
 
 void world::Item::serialize(Util::ByteStream& stream)
 {
     Entity::serialize(stream);
-    stream << static_cast<uint8_t>(doUpdate | (material.isBlock() << 1) | (sprite.isFlipped() << 2));
+    stream << static_cast<uint8_t>(material.isBlock() | (sprite.isFlipped() << 1));
     stream << material.getRaw();
     stream << static_cast<uint8_t>(amount);
 }
 
-void world::Item::event(SDL_Event* event) const
-{}
-
 void world::Item::update()
 {
-    if (doUpdate)
-        Entity::update();
+    Entity::update();
 }
 
 void world::Item::render()
 {
     sprite.render(this);
+}
+
+void world::Item::onCollision(Entity* other)
+{
+    if (other->type == EntityType::PLAYER)
+    {
+        Player& player = reinterpret_cast<Player&>(*other);
+        if (player.getHotbar().addItem(this) || player.getInventory().addItem(this))
+        {
+            deque(true);
+        }
+    }
 }
 
 world::Sprite& world::Item::getSprite(int)
@@ -431,18 +440,6 @@ int world::Item::getStackLimit() const
 world::Item::Item(const Item& other)
     : Entity(other), sprite(other.sprite), amount(other.amount), material(other.material)
 {}
-
-void world::Item::toComponent()
-{
-    doUpdate = false;
-    health = 0.0f;
-}
-
-void world::Item::toEntity()
-{
-    doUpdate = true;
-    health = 1.0f;
-}
 
 int world::Item::getAmount() const
 {

@@ -39,8 +39,9 @@ float world::GetMaxHealth(EntityType type)
     }
 }
 
-world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& stream)
-: Transform(stream), dimensions(dimensions), appliedMovement(false), doDeque(false), type(type)
+world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& stream) :
+    Transform(stream), next(nullptr), dimensions(dimensions),
+    appliedMovement(false), doDeque(false), type(type)
 {
     stream >> id;
     stream >> health;
@@ -49,7 +50,7 @@ world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& str
 }
 
 world::Entity::Entity(const glm::vec2 position,gl::Frame dimensions,const EntityType type) :
-    Transform(position), id((Util::GetTimeBasedID() << 22) | Util::GetRadomNumber(22)),
+    Transform(position), next(nullptr), id((Util::GetTimeBasedID() << 22) | Util::GetRadomNumber(22)),
     dimensions(dimensions), appliedMovement(false), doDeque(false), type(type)
 {
     max_health = GetMaxHealth(type);
@@ -59,7 +60,7 @@ world::Entity::Entity(const glm::vec2 position,gl::Frame dimensions,const Entity
 void world::Entity::update()
 {
     velocity += acceleration * delta_time;
-    Procedure::HitBoxResult collision = Procedure::HitBox(this,dimensions);
+    Procedure::HitBoxResult collision = Procedure::HitBox(this);
     Procedure::RigidBody(this,collision);
     position += velocity * delta_time;
 }
@@ -97,7 +98,12 @@ world::Entity* world::Entity::getNext()
         if (next->dead())
         {
             Entity* temp = next->next;
-            delete next;
+            if (destroy()) delete next;
+            else
+            {
+                next->setNext(nullptr);
+                next->requeue();
+            }
             next = temp;
         }
     }
@@ -109,12 +115,23 @@ void world::Entity::setNext(Entity* entity)
     next = entity;
 }
 
+bool world::Entity::destroy()
+{
+    return doDeque == 1;
+}
+
 bool world::Entity::dead()
 {
     return health <= 0 || doDeque;
 }
 
-void world::Entity::deque()
+// if soft deque we don't delete the memory
+void world::Entity::deque(bool soft)
 {
-    doDeque = true;
+    doDeque = 1 + soft;
+}
+
+void world::Entity::requeue()
+{
+    doDeque = 0;
 }

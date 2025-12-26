@@ -17,13 +17,16 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Inventory and items
 * Block breaking and block placing
 * Items
+* Entity Collision
 
 ### Planned feature's
-* Entity Collision
 * Metadata Tiles & Entities (e.g. chests)
 * Multiple biomes
 * Structures
 * Combat
+* Multiple entities
+* Entity spawning
+* Better file compression
 
 ## Build
 CMake build system

@@ -1,12 +1,48 @@
 #include "Procedure.h"
 
+#include "EntityHandler.h"
 #include "../World.h"
 #include "../../Util.h"
 
 using namespace world;
 
-Procedure::HitBoxResult Procedure::HitBox(const Entity* entity, const gl::Frame& dimensions)
+bool intersects(Entity* a, Entity* b) {
+    // MANHATTAN BROAD PHASE
+    if (std::abs(a->position.x - b->position.x) > CHUNK_SIZE || // ignores entities further than the chunks size
+        std::abs(a->position.y - b->position.y) > CHUNK_SIZE) { // e.g. 16 blocks in distance
+        return false;
+    }
+
+    gl::Frame dimA = a->getDimensions();
+    gl::Frame dimB = b->getDimensions();
+
+    // Standard AABB: If any side is beyond the other, they cannot be touching.
+    if (a->position.x + dimA.right  < b->position.x + dimB.left)   return false; // A is left of B
+    if (a->position.x + dimA.left   > b->position.x + dimB.right)  return false; // A is right of B
+    if (a->position.y + dimA.top    < b->position.y + dimB.bottom) return false; // A is below B
+    if (a->position.y + dimA.bottom > b->position.y + dimB.top)    return false; // A is above B
+
+    return true;
+}
+
+Procedure::HitBoxResult Procedure::HitBox(Entity* entity)
 {
+    gl::Frame dimensions = entity->getDimensions();
+    // ENTITY COLLISION
+    Entity* next = EntityHandler::GetHead();
+    while (next)
+    {
+        if (next != entity)
+        {
+            // collision logic (AABB collision)
+            if (intersects(entity,next))
+            {
+                entity->onCollision(next);
+            }
+        }
+        next = next->getNext();
+    }
+
     HitBoxResult result = {
         false,
         false,
@@ -15,8 +51,8 @@ Procedure::HitBoxResult Procedure::HitBox(const Entity* entity, const gl::Frame&
         {0.0f,0.0f}
     };
 
+    // BLOCK COLLISION
     const glm::vec2 pos = entity->position + entity->velocity * delta_time;
-
     // xy zw
     // left top | right bottom
     const float shift = (dimensions.right - dimensions.left + dimensions.top - dimensions.bottom) / 10.0f;

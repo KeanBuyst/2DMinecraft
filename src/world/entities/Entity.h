@@ -68,7 +68,7 @@ namespace world
         float health;
 
         bool appliedMovement;
-        bool doDeque;
+        uint8_t doDeque;
         float max_health;
 
     public:
@@ -80,9 +80,9 @@ namespace world
         Entity(glm::vec2 position,gl::Frame dimensions,EntityType type);
         virtual ~Entity() = default;
 
-        virtual void event(SDL_Event* event) const = 0;
         virtual void update();
         virtual void render() = 0;
+        virtual void onCollision(Entity* other) = 0;
         virtual void serialize(Util::ByteStream& stream);
 
         virtual Sprite& getSprite(int index) = 0;
@@ -93,7 +93,9 @@ namespace world
 
         Entity* getNext();
         void setNext(Entity* entity);
+        bool destroy();
         bool dead();
-        void deque();
+        void deque(bool soft = false);
+        void requeue();
     };
 }

@@ -25,10 +25,14 @@ namespace world
         Player(glm::vec2 position);
         Player(Util::ByteStream& stream);
         ~Player() override;
-        void event(SDL_Event* event) const override;
+        void drop(Item* item);
         void update() override;
         void render() override;
+        void onCollision(Entity* other) override;
         void serialize(Util::ByteStream& stream) override;
         Sprite& getSprite(int index) override;
+
+        UI::Hotbar& getHotbar();
+        UI::PlayerInventory& getInventory();
     };
 }

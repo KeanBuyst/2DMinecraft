@@ -74,14 +74,23 @@ world::Player::Player(glm::vec2 position)
 world::Player::~Player()
 {}
 
-void world::Player::event(SDL_Event* event) const
-{}
+void world::Player::drop(Item* item)
+{
+    float direction = sprites[0].isFlipped() ? -1.0f : 1.0f;
+
+    item->position = position;
+    item->position.x += direction;
+
+    item->rotation = 0.0f;
+    item->velocity = (velocity + glm::vec2(direction,0.0f)) * 2.0f;
+    EntityHandler::Add(item);
+}
 
 void world::Player::update()
 {
     constexpr float SPEED = 8.0f;
 
-    Procedure::HitBoxResult collision = Procedure::HitBox(this,dimensions);
+    Procedure::HitBoxResult collision = Procedure::HitBox(this);
 
     if (Application::isKeyPressed(SDL_SCANCODE_E))
     {
@@ -128,18 +137,11 @@ void world::Player::update()
                 item->setAmount(item->getAmount() - 1);
                 auto* newItem = new Item(*item);
                 newItem->setAmount(1);
-                newItem->position = position;
-                newItem->velocity = velocity * 10.0f;
-                newItem->toEntity();
-                EntityHandler::Add(newItem);
+                drop(newItem);
             } else
             {
                 // pass ownership over to the entity handler
-                item->position = position;
-                item->rotation = 0.0f;
-                item->velocity = velocity * 10.0f;
-                item->toEntity();
-                EntityHandler::Add(item);
+                drop(item);
                 item = nullptr;
             }
         }
@@ -202,11 +204,7 @@ void world::Player::update()
         if (item != nullptr)
         {
             // also drop item
-            item->position = position;
-            item->rotation = 0;
-            item->velocity = position * 10.0f;
-            item->toEntity();
-            EntityHandler::Add(item);
+            drop(item);
             Application::item_holder.setItem(nullptr);
         } else
         {
@@ -323,6 +321,11 @@ void world::Player::render()
     item->render();
 }
 
+void world::Player::onCollision(Entity* other)
+{
+
+}
+
 void world::Player::serialize(Util::ByteStream& stream)
 {
     Entity::serialize(stream);
@@ -337,4 +340,14 @@ world::Sprite& world::Player::getSprite(int index)
     if (index < 0 || index > 4)
         throw "Player: Invalid sprite index";
     return sprites[index];
+}
+
+UI::Hotbar& world::Player::getHotbar()
+{
+    return hotbar;
+}
+
+UI::PlayerInventory& world::Player::getInventory()
+{
+    return inventory;
 }

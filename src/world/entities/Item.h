@@ -80,7 +80,6 @@ namespace world
     {
     private:
         Sprite sprite;
-        bool doUpdate;
         int amount;
     public:
         Material material;
@@ -92,17 +91,14 @@ namespace world
 
         void serialize(Util::ByteStream& stream) override;
 
-        void event(SDL_Event* event) const override;
         void update() override;
         void render() override;
+        void onCollision(Entity* other) override;
 
         Sprite& getSprite(int) override;
 
         Tool getTool() const;
         int getStackLimit() const;
-
-        void toComponent();
-        void toEntity();
 
         int getAmount() const;
         void setAmount(int amount);

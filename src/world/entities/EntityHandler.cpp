@@ -10,7 +10,7 @@
 
 using namespace world;
 
-Entity* EntityHandler::head = nullptr;
+static Entity* head = nullptr;
 
 static GLuint VAO;
 static GLuint VBO;
@@ -46,20 +46,9 @@ void EntityHandler::Init()
     glBindVertexArray(0);
 }
 
-void EntityHandler::Event(SDL_Event* event)
-{
-    Entity* entity = head;
-    while (entity)
-    {
-        entity->event(event);
-
-        entity = entity->getNext();
-    }
-}
-
 void EntityHandler::Render(gl::ShaderProgram* shader)
 {
-    Entity* entity = head;
+    Entity* entity = GetHead();
     while (entity)
     {
         if (!OutOfBounds(entity->position))
@@ -89,6 +78,23 @@ void EntityHandler::Render(gl::ShaderProgram* shader)
     render_batch.clear();
 }
 
+Entity* EntityHandler::GetHead()
+{
+    // special case for if the head needs to be destroyed
+    if (head && head->dead())
+    {
+        Entity* temp = head->getNext();
+        if (head->destroy()) delete head;
+        else
+        {
+            head->setNext(nullptr);
+            head->requeue();
+        }
+        head = temp;
+    }
+    return head;
+}
+
 void EntityHandler::Register(EntityType type, EntityCreator creator)
 {
     registry[static_cast<int>(type)] = creator;
@@ -96,15 +102,7 @@ void EntityHandler::Register(EntityType type, EntityCreator creator)
 
 void EntityHandler::Update()
 {
-    // special case for if the head needs to be destroyed
-    if (head && head->dead())
-    {
-        Entity* temp = head->getNext();
-        delete head;
-        head = temp;
-    }
-
-    Entity* entity = head;
+    Entity* entity = GetHead();
     while (entity)
     {
         // check if entity is still in processing area (loaded chunks minus the post-processing buffer area)
@@ -133,7 +131,7 @@ void EntityHandler::Update()
 
 void EntityHandler::Cleanup()
 {
-    Entity* entity = head;
+    Entity* entity = GetHead();
     while (entity)
     {
         Entity* next = entity->getNext();
