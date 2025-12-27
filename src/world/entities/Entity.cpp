@@ -41,7 +41,7 @@ float world::GetMaxHealth(EntityType type)
 
 world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& stream) :
     Transform(stream), next(nullptr), dimensions(dimensions),
-    appliedMovement(false), doDeque(false), type(type)
+    appliedMovement(false), doDeque(false), type(type), acceleration(0.0f,0.0f)
 {
     stream >> id;
     stream >> health;
@@ -51,7 +51,7 @@ world::Entity::Entity(EntityType type,gl::Frame dimensions,Util::ByteStream& str
 
 world::Entity::Entity(const glm::vec2 position,gl::Frame dimensions,const EntityType type) :
     Transform(position), next(nullptr), id((Util::GetTimeBasedID() << 22) | Util::GetRadomNumber(22)),
-    dimensions(dimensions), appliedMovement(false), doDeque(false), type(type)
+    dimensions(dimensions), appliedMovement(false), doDeque(false), type(type), velocity(0.0f,0.0f), acceleration(0.0f,0.0f)
 {
     max_health = GetMaxHealth(type);
     health = max_health;
