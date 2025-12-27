@@ -90,19 +90,19 @@ namespace world
         Item(const Item& other);
 
         void serialize(Util::ByteStream& stream) override;
-
         void update() override;
         void render() override;
         void onCollision(Entity* other) override;
-
         Sprite& getSprite(int) override;
 
         Tool getTool() const;
         int getStackLimit() const;
-
         int getAmount() const;
-        void setAmount(int amount);
         bool operator==(const Item& item) const;
+
+        void setAmount(int amount);
+        // deletes item and sets to null if successful
+        bool combine(Item*& other);
     };
 
     void RemoveAmount(Item*& item,int amount);

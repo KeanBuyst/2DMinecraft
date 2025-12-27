@@ -29,13 +29,23 @@ UI::Inventory::~Inventory()
 
 bool UI::Inventory::addItem(world::Item* item)
 {
+    int emptySlot = -1;
     for (auto i = 0; i < getCount(); ++i)
     {
-        if (cells[i].item == nullptr)
+        world::Item*& slot = cells[i].item;
+        if (slot)
         {
-            cells[i].item = item;
-            return true;
+            if (slot->combine(item))
+                return true;
+        } else if (emptySlot == -1)
+        {
+            emptySlot = i;
         }
+    }
+    if (emptySlot != -1)
+    {
+        cells[emptySlot].item = item;
+        return true;
     }
     return false;
 }

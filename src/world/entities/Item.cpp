@@ -446,15 +446,35 @@ int world::Item::getAmount() const
     return amount;
 }
 
+bool world::Item::operator==(const Item& item) const
+{
+    return material == item.material;
+}
+
 void world::Item::setAmount(const int amount)
 {
     this->amount = amount;
 }
 
-bool world::Item::operator==(const Item& item) const
+bool world::Item::combine(Item*& other)
 {
-    return material == item.material;
+    if (material != other->material) return false;
+
+    amount += other->amount;
+    int limit = getStackLimit();
+    if (amount > limit)
+    {
+        int overflow = amount - limit;
+        if (overflow > limit) overflow = limit;
+        other->setAmount(overflow);
+        return true;
+    }
+
+    delete other;
+    other = nullptr;
+    return true;
 }
+
 
 void world::RemoveAmount(Item*& item, const int amount)
 {

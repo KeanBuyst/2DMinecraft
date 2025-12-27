@@ -24,7 +24,7 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Multiple biomes
 * Structures
 * Combat
-* Multiple entities
+* Different entity types
 * Entity spawning
 * Better file compression
 
