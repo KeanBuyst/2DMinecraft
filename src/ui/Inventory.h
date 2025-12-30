@@ -5,7 +5,7 @@
 
 namespace UI
 {
-    struct Inventory : UIComponent
+    class Inventory : public UIComponent
     {
     public:
         Inventory(glm::vec2 position, uint8_t width, uint8_t height);
@@ -41,20 +41,24 @@ namespace UI
         Cell* cells;
     };
 
-    struct Hotbar : Inventory
+    class Hotbar : public Inventory
     {
+    private:
+        int selected_slot;
+    public:
         Hotbar();
 
         void update() override;
         void setSelectedSlot(int slot);
         world::Item*& getSelectedItem() const;
-
-    private:
-        int selected_slot;
     };
 
-    struct MouseItemHolder : Inventory
+    class MouseItemHolder : public Inventory
     {
+    private:
+        Inventory* lastInv;
+        int lastSlot;
+    public:
         MouseItemHolder();
         void update() override;
         void setItem(world::Item* item);
@@ -62,13 +66,11 @@ namespace UI
 
         world::Item* getItem() const;
         void setLastSlot(world::Item*& item) const;
-    private:
-        Inventory* lastInv;
-        int lastSlot;
     };
 
-    struct PlayerInventory : Inventory
+    class PlayerInventory : public Inventory
     {
+    public:
         PlayerInventory();
 
         void update() override;

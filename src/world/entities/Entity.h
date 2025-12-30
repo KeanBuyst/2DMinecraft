@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <SDL_events.h>
 #include <vector>
 
 #include "Sprite.h"

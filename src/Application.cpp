@@ -6,7 +6,6 @@
 #include <cstring>
 
 #include "Constants.h"
-#include "glew.h"
 #include "ext/matrix_clip_space.hpp"
 #include "resources/Storage.h"
 #include "world/generation/Generation.h"
@@ -24,14 +23,14 @@ using namespace world;
 int SCREEN_WIDTH = 1280;
 int SCREEN_HEIGHT = 720;
 
-const Uint8* Application::curr_keystate = nullptr;
-Uint8 Application::prev_keystate[SDL_NUM_SCANCODES] = {};
+const bool* Application::curr_keystate = nullptr;
+bool Application::prev_keystate[SDL_SCANCODE_COUNT] = {};
 
 Uint32 Application::currentMouseState = 0;
 Uint32 Application::previousMouseState = 0;
 
 int Application::scrollDir = 0;
-glm::ivec2 Application::mousePos;
+glm::vec2 Application::mousePos;
 UI::MouseItemHolder Application::item_holder;
 
 glm::vec4 VIEW_PORT;
@@ -45,15 +44,14 @@ void GLAPIENTRY MessageCallback(GLenum source,GLenum type,GLuint id,GLenum sever
 
 Application::Application() {
     // initialize SDL
-    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO))
     {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         exit(-1);
     }
 
     // create window
-    window = SDL_CreateWindow("2DMinecraft - 0",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT,
+    window = SDL_CreateWindow("2DMinecraft - 0", SCREEN_WIDTH, SCREEN_HEIGHT,
         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
     if (!window)
     {
@@ -72,7 +70,7 @@ Application::Application() {
     // Initialize GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
-        SDL_GL_DeleteContext(context);
+        SDL_GL_DestroyContext(context);
         SDL_DestroyWindow(window);
         SDL_Quit();
         printf("GLEW could not initialize!");
@@ -176,7 +174,7 @@ void Application::run() {
         currentMouseState = SDL_GetMouseState(&mousePos.x,&mousePos.y);
 
         // update key state
-        memcpy(prev_keystate, curr_keystate, SDL_NUM_SCANCODES);
+        memcpy(prev_keystate, curr_keystate, SDL_SCANCODE_COUNT);
         curr_keystate = SDL_GetKeyboardState(nullptr);
 
         events(running);
@@ -187,19 +185,19 @@ void Application::run() {
 
 bool Application::isMouseDown(const int button)
 {
-    return currentMouseState & SDL_BUTTON(button);
+    return currentMouseState & SDL_BUTTON_MASK(button);
 }
 
 bool Application::isMousePressed(const int button)
 {
-    return (currentMouseState & SDL_BUTTON(button)) &&
-              !(previousMouseState & SDL_BUTTON(button));
+    return (currentMouseState & SDL_BUTTON_MASK(button)) &&
+              !(previousMouseState & SDL_BUTTON_MASK(button));
 }
 
 bool Application::isMouseReleased(const int button)
 {
-    return !(currentMouseState & SDL_BUTTON(button)) &&
-               (previousMouseState & SDL_BUTTON(button));
+    return !(currentMouseState & SDL_BUTTON_MASK(button)) &&
+               (previousMouseState & SDL_BUTTON_MASK(button));
 }
 
 bool Application::isKeyDown(const SDL_Scancode key)
@@ -238,7 +236,7 @@ Application::~Application() {
     player->serialize(stream);
     delete player;
 
-    SDL_GL_DeleteContext(context);
+    SDL_GL_DestroyContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
@@ -246,15 +244,15 @@ Application::~Application() {
 glm::vec2 Application::GetWorldMouse()
 {
     // change to view port local position
-    const float x = (((static_cast<float>(mousePos.x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / PIXEL_SCALE;
-    const float y = (( -((static_cast<float>(mousePos.y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / PIXEL_SCALE);
-    return glm::vec2(x,y) + world::origin;
+    const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / PIXEL_SCALE;
+    const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / PIXEL_SCALE);
+    return glm::vec2(x,y) + origin;
 }
 
 glm::vec2 Application::GetUIMouse()
 {
-    const float x = (((static_cast<float>(mousePos.x) / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / UI::CELL_SIZE;
-    const float y = (( -((static_cast<float>(mousePos.y) / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / UI::CELL_SIZE);
+    const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / UI::CELL_SIZE;
+    const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / UI::CELL_SIZE);
     return {x,y};
 }
 
@@ -266,7 +264,7 @@ void Application::events(bool& running)
     while (SDL_PollEvent(&e))
     {
         switch (e.type) {
-            case SDL_MOUSEBUTTONDOWN:
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
             {
                 const glm::vec2 mouse = GetWorldMouse();
                     const glm::vec2 chunk = world::ToChunkSpace(mouse);
@@ -288,14 +286,14 @@ void Application::events(bool& running)
                 }
                 break;
             }
-            case SDL_MOUSEWHEEL:
+            case SDL_EVENT_MOUSE_WHEEL:
                 scrollDir = e.wheel.y;
                 break;
-            case SDL_QUIT:
+            case SDL_EVENT_QUIT:
                 running = false;
                 break;
-            case SDL_WINDOWEVENT:
-                if (e.window.event == SDL_WINDOWEVENT_RESIZED) {
+            case SDL_EVENT_WINDOW_RESIZED:
+                {
                     SCREEN_WIDTH = e.window.data1;
                     SCREEN_HEIGHT = e.window.data2;
                     updateViewPort();
@@ -341,15 +339,15 @@ void Application::update()
         fullscreen = !fullscreen;
         if (fullscreen)
         {
-            SDL_DisplayMode displayMode;
-            SDL_GetCurrentDisplayMode(0, &displayMode);
-            SCREEN_WIDTH = displayMode.w;
-            SCREEN_HEIGHT = displayMode.h;
-            SDL_SetWindowFullscreen(window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+            SDL_DisplayID id = SDL_GetPrimaryDisplay();
+            const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(id);
+            SCREEN_WIDTH = mode->w;
+            SCREEN_HEIGHT = mode->h;
+            SDL_SetWindowFullscreen(window, true);
         }
         else
         {
-            SDL_SetWindowFullscreen(window, 0);
+            SDL_SetWindowFullscreen(window, false);
             SCREEN_WIDTH = 1280;
             SCREEN_HEIGHT = 720;
             SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);

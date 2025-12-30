@@ -34,8 +34,9 @@ namespace UI
         world::Item* item;
     };
 
-    struct UIComponent
+    class UIComponent
     {
+    public:
         virtual ~UIComponent() = default;
 
         virtual void update() {}

@@ -8,15 +8,15 @@ include(FetchContent)
 find_package(OpenGL REQUIRED)
 find_package(GLU REQUIRED)
 
-# Fetch SDL2
+# Fetch SDL3
 FetchContent_Declare(
-        SDL2
+        SDL3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-2.30.8
+        GIT_TAG release-3.2.28
         GIT_SHALLOW TRUE
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
-FetchContent_MakeAvailable(SDL2)
+FetchContent_MakeAvailable(SDL3)
 
 # Fetch GLM (headers only library)
 FetchContent_Declare(
@@ -91,7 +91,7 @@ add_executable(2DMC
 
 # Link libraries based on the platform
 if (WIN32)
-    target_link_libraries(2DMC SDL2-static ${glew_SOURCE_DIR}/lib/Release/x64/glew32s.lib opengl32)
+    target_link_libraries(2DMC SDL3-static ${glew_SOURCE_DIR}/lib/Release/x64/glew32s.lib opengl32)
 else()
-    target_link_libraries(2DMC SDL2-static glew_s GL GLU pthread)
+    target_link_libraries(2DMC SDL3-static glew_s GL GLU pthread)
 endif()

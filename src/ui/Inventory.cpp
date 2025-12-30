@@ -19,7 +19,6 @@ UI::Inventory::~Inventory()
 {
     // delete all items as well. Since they only exist in the inventory
     // Thus die with the inventory
-    // TODO implement a way to store the inventory to be reloaded if necessary
     for (auto i = 0; i < getCount(); ++i)
     {
         delete cells[i].item;

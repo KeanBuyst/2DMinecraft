@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "gl/Shader.h"
 #include "ui/Inventory.h"
@@ -44,13 +44,13 @@ private:
 
   void updateViewPort() const;
 
-  static Uint8 prev_keystate[SDL_NUM_SCANCODES];
-  static const Uint8* curr_keystate;
+  static bool prev_keystate[SDL_SCANCODE_COUNT];
+  static const bool* curr_keystate;
 
   static Uint32 currentMouseState;
   static Uint32 previousMouseState;
 
-  static glm::ivec2 mousePos;
+  static glm::vec2 mousePos;
 
   bool fullscreen = false;
   bool keypressed = false;

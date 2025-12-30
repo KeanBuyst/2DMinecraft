@@ -156,8 +156,16 @@ void world::Player::update()
             if (distance <= MAX_DIST)
             {
                 Block block = m_world.getBlock(pos);
-                if (block.getType() != EMPTY)
+                if (!block.isEmpty())
                 {
+                    BlockType type = block.getType();
+                    bool wall = false;
+                    if (type == EMPTY)
+                    {
+                        type = block.getWall();
+                        wall = true;
+                    }
+
                     int state = block.getBreakState();
                     Item*& item = hotbar.getSelectedItem();
 
@@ -169,7 +177,7 @@ void world::Player::update()
                     {
                         tool = item->getTool();
                     }
-                    break_state += tool.getToolBonus(block.getType()) * delta_time;
+                    break_state += tool.getToolBonus(type) * delta_time;
 
                     if (break_state >= 1.0f)
                     {
@@ -179,9 +187,10 @@ void world::Player::update()
                         if (state > 10)
                         {
                             const glm::vec2 dropPoint(block.position.x + 0.5f, block.position.y + 0.5f);
-                            auto* newItem = new Item(dropPoint,block.getType());
+                            auto* newItem = new Item(dropPoint,type);
                             block.setBreakState(0);
-                            block.setType(EMPTY);
+                            if (wall) block.setWall(EMPTY);
+                            else block.setType(EMPTY);
                             m_world.setBlock(block,true);
                             EntityHandler::Add(newItem);
                         } else
@@ -221,25 +230,31 @@ void world::Player::update()
         }
         arm_rotation = 0.0f;
     }
-    // block placing
+    // block placing & interaction
     if (Application::isMousePressed(SDL_BUTTON_RIGHT))
     {
         if (Application::item_holder.getItem() == nullptr)
         {
             Item*& item = hotbar.getSelectedItem();
-            if (item != nullptr && item->material.isBlock())
+
+            const glm::vec2 pos = Application::GetWorldMouse();
+            const float distance = Util::Distance2(origin, pos);
+            if (distance <= MAX_DIST)
             {
-                const glm::vec2 pos = Application::GetWorldMouse();
-                const float distance = Util::Distance2(origin, pos);
-                if (distance <= MAX_DIST)
+                Block block = m_world.getBlock(pos);
+                switch (block.getType())
                 {
-                    Block block = m_world.getBlock(pos);
-                    if (block.getType() == EMPTY)
+                case EMPTY:
+                    if (item != nullptr && item->material.isBlock())
                     {
                         block.setType(item->material);
                         RemoveAmount(item,1);
                         m_world.setBlock(block);
                     }
+                    break;
+                case CRAFTING_TABLE:
+                    // TODO add crafting menu (after inventory rework)
+                    break;
                 }
             }
         }
