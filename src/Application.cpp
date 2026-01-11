@@ -1,22 +1,25 @@
 #include "Application.h"
 
-#include <glm.hpp>
+#include <activation.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include <filesystem>
 #include <iostream>
 #include <cstring>
 
 #include "Constants.h"
-#include "ext/matrix_clip_space.hpp"
+#include "Util.h"
 #include "resources/Storage.h"
 #include "world/generation/Generation.h"
 #include "gl/Texture.h"
+#include "libs/SDL_shadercross.h"
 #include "resources/Resources.h"
-#include "ui/Inventory.h"
+#include "world/entities/EntityHandler.h"
+/*#include "ui/Inventory.h"
 #include "ui/UI.h"
 #include "world/crafting/Crafting.h"
 #include "world/entities/EntityHandler.h"
-#include "world/entities/Item.h"
-#include "world/entities/Player.h"
+*/
 
 using namespace world;
 
@@ -31,65 +34,48 @@ Uint32 Application::previousMouseState = 0;
 
 int Application::scrollDir = 0;
 glm::vec2 Application::mousePos;
-UI::MouseItemHolder Application::item_holder;
+//UI::MouseItemHolder Application::item_holder;
 
-glm::vec4 VIEW_PORT;
-
-void GLAPIENTRY MessageCallback(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,
-    const GLchar* message,const void* userParam)
-{
-    std::cerr << "GL CALLBACK: " << (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : "") << " type = "<< type
-    << ", severity = " << severity << ", message = " << message << std::endl;
-}
+SDL_GPUDevice* Application::GPU_DEVICE = nullptr;
+SDL_Window* Application::WINDOW = nullptr;
 
 Application::Application() {
     // initialize SDL
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO))
     {
-        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        exit(-1);
+        SDL_Log("SDL could not initialize\n%s", SDL_GetError());
+        throw "SDL could not initialize";
     }
+    if (!SDL_ShaderCross_Init()) {
+        SDL_Log("ShaderCross could not initialize\n%s", SDL_GetError());
+        throw "ShaderCross could not initialize";
+    }
+
 
     // create window
-    window = SDL_CreateWindow("2DMinecraft - 0", SCREEN_WIDTH, SCREEN_HEIGHT,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-    if (!window)
+    WINDOW = SDL_CreateWindow("2DMinecraft - 0", SCREEN_WIDTH, SCREEN_HEIGHT,
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    if (!WINDOW)
     {
-        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        exit(-1);
-    }
-    // OpenGL context
-    context = SDL_GL_CreateContext(window);
-    if (!context) {
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        printf("OpenGL context could not initialize! SDL_Error: %s\n", SDL_GetError());
-        exit(-1);
+        SDL_Log("Window could not be created\n%s", SDL_GetError());
+        throw "Window could not be created";
     }
 
-    // Initialize GLEW
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        SDL_GL_DestroyContext(context);
-        SDL_DestroyWindow(window);
-        SDL_Quit();
-        printf("GLEW could not initialize!");
-        exit(-1);
+   GPU_DEVICE = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_MSL,
+                            true, nullptr);
+    if (!GPU_DEVICE)
+    {
+        SDL_Log("Error: SDL_CreateGPUDevice\n%s",SDL_GetError());
+        throw "Error: SDL_CreateGPUDevice";
     }
 
-    std::cout << "Initialized libraries" << std::endl;
+    if (!SDL_ClaimWindowForGPUDevice(GPU_DEVICE,WINDOW))
+    {
+        SDL_Log( "Error: SDL_ClaimWindowForGPUDevice\n%s",SDL_GetError());
+        throw "Error: SDL_ClaimWindowForGPUDevice";
+    }
 
-    // error messages
-    glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(MessageCallback,nullptr);
-    // enable Alpha blending (allows textures with empty pixels to be transparent)
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_STENCIL_TEST);
-    glDisable(GL_ALPHA_TEST);
-    glDepthFunc(GL_LESS);
+    std::cout << "Initialized SDL and window" << std::endl;
 
     // Init key state
     curr_keystate = SDL_GetKeyboardState(nullptr);
@@ -97,26 +83,8 @@ Application::Application() {
     // init data path
     std::filesystem::create_directories(res::basePath);
 
-    terrain_shader = std::make_unique<gl::ShaderProgram>();
-    terrain_shader->bind(gl::GetShader("terrain.vert"));
-    terrain_shader->bind(gl::GetShader("terrain.geom"));
-    terrain_shader->bind(gl::GetShader("terrain.frag"));
-    terrain_shader->build();
-
-    entity_shader = std::make_unique<gl::ShaderProgram>();
-    entity_shader->bind(gl::GetShader("entity.vert"));
-    entity_shader->bind(gl::GetShader("entity.frag"));
-    entity_shader->build();
-
+    World::Init();
     EntityHandler::Init();
-
-    ui_shader = std::make_unique<gl::ShaderProgram>();
-    ui_shader->bind(gl::GetShader("ui.vert"));
-    ui_shader->bind(gl::GetShader("ui.geom"));
-    ui_shader->bind(gl::GetShader("ui.frag"));
-    ui_shader->build();
-
-    UI::Renderer::Init();
 
     // load resources
     res::load();
@@ -138,10 +106,10 @@ Application::Application() {
         player = new Player(origin);
     }
 
-    m_world.init();
+    world_ptr = new World();
 
     // Crafting handler
-    Crafting::Init();
+    //Crafting::Init();
 
     // vsync
     SDL_GL_SetSwapInterval(1);
@@ -157,10 +125,7 @@ void Application::run() {
     EntityHandler::Add(player);
 
     // Mouse item holder (always last in order)
-    UI::Renderer::Add(&item_holder);
-
-    glClearColor(0.529f,0.8078f,0.9215686f,1.0f);
-
+    //UI::Renderer::Add(&item_holder);
 
     // reset clock
     last_frame_time = SDL_GetTicks();
@@ -220,10 +185,14 @@ int Application::GetMouseScroll()
     return scrollDir;
 }
 
-Application::~Application() {
+Application::~Application()
+{
+    SDL_WaitForGPUIdle(GPU_DEVICE);
+    World::Cleanup();
+    delete world_ptr;
     EntityHandler::Cleanup();
-    UI::Renderer::Cleanup();
-    Crafting::Destroy();
+    // UI::Renderer::Cleanup();
+    // Crafting::Destroy();
     res::clear();
 
     // save player state
@@ -236,25 +205,26 @@ Application::~Application() {
     player->serialize(stream);
     delete player;
 
-    SDL_GL_DestroyContext(context);
-    SDL_DestroyWindow(window);
+    SDL_DestroyGPUDevice(GPU_DEVICE);
+    SDL_DestroyWindow(WINDOW);
+    SDL_ShaderCross_Quit();
     SDL_Quit();
 }
 // Vector returned has not been floored, thus remember to floor when converting to block positions
 glm::vec2 Application::GetWorldMouse()
 {
     // change to view port local position
-    const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / PIXEL_SCALE;
-    const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / PIXEL_SCALE);
+    const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_SIZE.x) / BLOCK_SIZE;
+    const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE.y) / BLOCK_SIZE);
     return glm::vec2(x,y) + origin;
 }
 
-glm::vec2 Application::GetUIMouse()
+/*glm::vec2 Application::GetUIMouse()
 {
     const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / UI::CELL_SIZE;
     const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / UI::CELL_SIZE);
     return {x,y};
-}
+}*/
 
 void Application::events(bool& running)
 {
@@ -272,7 +242,7 @@ void Application::events(bool& running)
                 {
                     case SDL_BUTTON_MIDDLE:
                         {
-                            Block block = m_world.getBlock(mouse);
+                            Block block = world_ptr->getBlock(mouse);
                             std::cout << "\n-------------------------\n"
                                       << "Block data at (" << mouse.x << ", " << mouse.y << ") in chunk (" << chunk.x << ", " << chunk.y << ")"
                                       << "\nType: " << std::to_string(block.getType())
@@ -296,7 +266,6 @@ void Application::events(bool& running)
                 {
                     SCREEN_WIDTH = e.window.data1;
                     SCREEN_HEIGHT = e.window.data2;
-                    updateViewPort();
                 }
                 break;
         }
@@ -326,12 +295,12 @@ void Application::update()
     if (now - last_title_update >= 1000) {
         last_title_update = now;
         const std::string title = "2DMinecraft - " + std::to_string(static_cast<int>(frame_rate));
-        SDL_SetWindowTitle(window, title.c_str());
+        SDL_SetWindowTitle(WINDOW,title.c_str());
     }
     // NB!! Order is important. UI then entities
     // update mouse item holder
-    item_holder.setPosition(GetUIMouse() - 0.4f);
-    UI::Renderer::Update();
+    //item_holder.setPosition(GetUIMouse() - 0.4f);
+    //UI::Renderer::Update();
 
     // full screen
     if (isKeyPressed(SDL_SCANCODE_F11))
@@ -343,14 +312,14 @@ void Application::update()
             const SDL_DisplayMode* mode = SDL_GetCurrentDisplayMode(id);
             SCREEN_WIDTH = mode->w;
             SCREEN_HEIGHT = mode->h;
-            SDL_SetWindowFullscreen(window, true);
+            SDL_SetWindowFullscreen(WINDOW, true);
         }
         else
         {
-            SDL_SetWindowFullscreen(window, false);
+            SDL_SetWindowFullscreen(WINDOW, false);
             SCREEN_WIDTH = 1280;
             SCREEN_HEIGHT = 720;
-            SDL_SetWindowSize(window, SCREEN_WIDTH, SCREEN_HEIGHT);
+            SDL_SetWindowSize(WINDOW, SCREEN_WIDTH, SCREEN_HEIGHT);
         }
     }
 
@@ -360,45 +329,34 @@ void Application::update()
     origin = player->position;
 }
 
+struct Uniforms
+{
+    glm::mat4 ortho;
+    glm::vec2 origin;
+};
+
 void Application::render()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // draw
-    // Tile shader to draw world
-    terrain_shader->use();
+    SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(GPU_DEVICE);
 
-    updateViewPort();
-    terrain_shader->useTexture("atlas",0);
+    // uniform matrix data
+    glm::mat4 matrix = gl::GetOrthoMat();
+    Uniforms uniforms = {matrix,origin * BLOCK_SIZE};
+    SDL_PushGPUVertexUniformData(cmd,0,&uniforms,sizeof(Uniforms));
 
-    m_world.render();
-    // end tile drawing
+    // set up swapchain
+    SDL_GPUTexture* swapChain;
+    uint32_t width, height;
 
-    // Entity drawing
-    entity_shader->use();
+    if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmd,WINDOW,&swapChain,&width,&height) || !swapChain)
+    {
+        SDL_Log("Render frame skipped");
+        SDL_SubmitGPUCommandBuffer(cmd);
+        return;
+    }
 
-    updateViewPort();
-    EntityHandler::Render(entity_shader.get());
-    // end entity drawing
+    world_ptr->render(cmd,swapChain,width,height);
+    EntityHandler::Render(cmd,swapChain,width,height);
 
-    // UI rendering
-    glDisable(GL_DEPTH_TEST);
-    ui_shader->use();
-
-    updateViewPort();
-    UI::Renderer::Render(ui_shader.get());
-    glEnable(GL_DEPTH_TEST);
-    // end UI rendering
-
-    SDL_GL_SwapWindow(window);
-}
-
-void Application::updateViewPort() const {
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-    const float aspect = roundf((static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * VIEW_SIZE); // round to help against artifcates
-
-    glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SIZE, VIEW_SIZE,-5.0f,5.0f);
-    VIEW_PORT = glm::vec4(-aspect,aspect,-VIEW_SIZE,VIEW_SIZE);
-
-    terrain_shader->sendMatrix("ortho", mat);
+    SDL_SubmitGPUCommandBuffer(cmd);
 }

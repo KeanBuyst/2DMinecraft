@@ -31,12 +31,12 @@ world::Player::Player(Util::ByteStream& stream)
     sprites[2].flip(flags);
     sprites[3].flip(flags);
 
-    hotbar.load(stream);
-    inventory.load(stream);
+    //hotbar.load(stream);
+    //inventory.load(stream);
 
-    hotbar.setVisible(true);
-    UI::Renderer::Add(&hotbar);
-    UI::Renderer::Add(&inventory);
+    //hotbar.setVisible(true);
+    //UI::Renderer::Add(&hotbar);
+    //UI::Renderer::Add(&inventory);
 
     // set up pivot points
     sprites[0].pivot_point = {0, sprites[0].position.y};
@@ -56,9 +56,9 @@ world::Player::Player(glm::vec2 position)
           Sprite(lower_frame, res::atlas::entities->format(8, 8, 4, 12)), // leg 2
       }, break_state(0.0f), arm_rotation(0.0f), arm_dir(4.0f), leg_dir(-1.0f)
 {
-    hotbar.setVisible(true);
-    UI::Renderer::Add(&hotbar);
-    UI::Renderer::Add(&inventory);
+    //hotbar.setVisible(true);
+    //UI::Renderer::Add(&hotbar);
+    //UI::Renderer::Add(&inventory);
 
     // set up pivot points
     sprites[0].pivot_point = {0,sprites[0].position.y};
@@ -68,13 +68,13 @@ world::Player::Player(glm::vec2 position)
     sprites[4].pivot_point = pivot;
 
     // test items
-    hotbar.addItem(new Item(DIAMOND_PICKAXE));
+    //hotbar.addItem(new Item(DIAMOND_PICKAXE));
 }
 
 world::Player::~Player()
 {}
 
-void world::Player::drop(Item* item)
+/*void world::Player::drop(Item* item)
 {
     float direction = sprites[0].isFlipped() ? -1.0f : 1.0f;
 
@@ -84,7 +84,7 @@ void world::Player::drop(Item* item)
     item->rotation = 0.0f;
     item->velocity = (velocity + glm::vec2(direction,0.0f)) * 2.0f;
     EntityHandler::Add(item);
-}
+}*/
 
 void world::Player::update()
 {
@@ -94,7 +94,7 @@ void world::Player::update()
 
     if (Application::isKeyPressed(SDL_SCANCODE_E))
     {
-        inventory.setVisible(!inventory.isVisible());
+        //inventory.setVisible(!inventory.isVisible());
     }
     if (Application::isKeyDown(SDL_SCANCODE_A))
     {
@@ -127,7 +127,7 @@ void world::Player::update()
 
     // Inventory actions
     // dropping item
-    if (Application::isKeyPressed(SDL_SCANCODE_Q))
+    /*if (Application::isKeyPressed(SDL_SCANCODE_Q))
     {
         Item*& item = hotbar.getSelectedItem();
         if (item != nullptr)
@@ -258,7 +258,7 @@ void world::Player::update()
                 }
             }
         }
-    }
+    }*/
 
     // head animation
     const glm::vec2 mousePos = Application::GetWorldMouse();
@@ -311,7 +311,7 @@ void world::Player::render()
         sprite.render(this);
     }
     // holding item render
-    Item*& item = hotbar.getSelectedItem();
+    /*Item*& item = hotbar.getSelectedItem();
     if (item == nullptr)
     {
 
@@ -333,7 +333,7 @@ void world::Player::render()
     item->position = net_position + position;
     item->rotation = net_rotation;
     item->getSprite(0).flip(sprites[1].isFlipped());
-    item->render();
+    item->render();*/
 }
 
 void world::Player::onCollision(Entity* other)
@@ -346,8 +346,8 @@ void world::Player::serialize(Util::ByteStream& stream)
     Entity::serialize(stream);
     uint8_t flags = sprites[0].isFlipped();
     stream << flags;
-    hotbar.serialize(stream);
-    inventory.serialize(stream);
+    //hotbar.serialize(stream);
+    //inventory.serialize(stream);
 }
 
 world::Sprite& world::Player::getSprite(int index)
@@ -357,12 +357,12 @@ world::Sprite& world::Player::getSprite(int index)
     return sprites[index];
 }
 
-UI::Hotbar& world::Player::getHotbar()
+/*UI::Hotbar& world::Player::getHotbar()
 {
     return hotbar;
-}
+}*/
 
-UI::PlayerInventory& world::Player::getInventory()
+/*UI::PlayerInventory& world::Player::getInventory()
 {
     return inventory;
-}
+}*/

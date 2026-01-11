@@ -60,10 +60,10 @@ Procedure::HitBoxResult Procedure::HitBox(Entity* entity)
     for (float y = dimensions.bottom + shift; y < dimensions.top; y += 1.0f)
     {
         glm::vec2 left_p(pos.x + dimensions.left,pos.y + y);
-        const Block block = m_world.getBlock(left_p);
+        const Block block = world_ptr->getBlock(left_p);
         if (block.isCollidable())
         {
-            result.translation.x = (block.position.x + 1.0f) - left_p.x - (1.0f / PIXEL_SCALE);
+            result.translation.x = (block.position.x + 1.0f) - left_p.x - (1.0f / BLOCK_SIZE);
             result.left = true;
         }
     }
@@ -72,11 +72,11 @@ Procedure::HitBoxResult Procedure::HitBox(Entity* entity)
     for (float y = dimensions.bottom + shift; y < dimensions.top; y += 1.0f)
     {
         glm::vec2 right_p(pos.x + dimensions.right,pos.y + y);
-        const Block block = m_world.getBlock(right_p);
+        const Block block = world_ptr->getBlock(right_p);
         if (block.isCollidable())
         {
             // using pos instead of right_p prevents kick back from colliding with walls
-            result.translation.x = block.position.x - right_p.x + (1.0f / PIXEL_SCALE);
+            result.translation.x = block.position.x - right_p.x + (1.0f / BLOCK_SIZE);
             result.right = true;
         }
     }
@@ -85,10 +85,10 @@ Procedure::HitBoxResult Procedure::HitBox(Entity* entity)
     for (float x = dimensions.left + shift; x < dimensions.right; x += 1.0f)
     {
         glm::vec2 top_p(pos.x + x,pos.y + dimensions.top);
-        const Block block = m_world.getBlock(top_p);
+        const Block block = world_ptr->getBlock(top_p);
         if (block.isCollidable())
         {
-            result.translation.y = block.position.y - top_p.y + (1.0f / PIXEL_SCALE);
+            result.translation.y = block.position.y - top_p.y + (1.0f / BLOCK_SIZE);
             result.top = true;
         }
     }
@@ -97,11 +97,11 @@ Procedure::HitBoxResult Procedure::HitBox(Entity* entity)
     for (float x = dimensions.left + shift; x < dimensions.right; x += 1.0f)
     {
         glm::vec2 bottom_p(pos.x + x,pos.y + dimensions.bottom);
-        const Block block = m_world.getBlock(bottom_p);
+        const Block block = world_ptr->getBlock(bottom_p);
         if (block.isCollidable())
         {
             // apply pixel shift 1 / 16 = 0.0625 = 1 pixel
-            result.translation.y = ((block.position.y + 1.0f) - bottom_p.y) - (1.0f / PIXEL_SCALE);
+            result.translation.y = ((block.position.y + 1.0f) - bottom_p.y) - (1.0f / BLOCK_SIZE);
             result.bottom = true;
         }
     }

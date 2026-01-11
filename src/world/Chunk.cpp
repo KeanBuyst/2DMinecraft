@@ -92,8 +92,6 @@ uint32_t& Chunk::GetData(const int y, const int x)
 	// make x indicate the rows to improve memory efficiency during generation due to
 	// x being the first iteration in generation.
 	if (y < 0 || y >= CHUNK_SIZE || x < 0 || x >= CHUNK_SIZE)
-		throw std::out_of_range("Chunk::GetData(y: " +
-			std::to_string(y) + ",x: " +
-			std::to_string(x) + ") is out of chunk bounds");
+		throw ("Chunk::GetData(y: " + std::to_string(y) + ",x: " + std::to_string(x) + ") is out of chunk bounds").c_str();
 	return blocks[x * CHUNK_SIZE + y];
 }

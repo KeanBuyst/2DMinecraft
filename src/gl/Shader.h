@@ -2,32 +2,32 @@
 
 #include <string>
 #include <unordered_map>
-#include <glm.hpp>
+#include <glm/glm.hpp>
+#include <SDL3/SDL_gpu.h>
 
 namespace gl
 {
-    uint32_t GetShader(const std::string& path);
+    enum ShaderType
+    {
+        COMPUTE,
+        VERTEX,
+        FRAGMENT
+    };
 
-    class ShaderProgram
+    class Shader
     {
     public:
-        ShaderProgram();
-        ~ShaderProgram();
-        void bind(uint32_t shader) const;
-        void use() const;
-        void build();
+        Shader(std::string name, ShaderType type);
+        ~Shader();
 
-        void sendMatrix(const char* name, glm::mat4& matrix);
-        void useTexture(const char* name,unsigned int slot);
-        void sendVector2(const char* name, glm::vec2& vector);
-        void sendValue(const char* name,float value);
-
-        uint32_t ID;
+        operator SDL_GPUShader*();
     private:
-        bool built = false;
-        std::unordered_map<const char*,int> cache;
+        const std::string name;
 
-        int locator(const char* name);
+        SDL_GPUShader* obj;
     };
+
+    SDL_GPUComputePipeline* GetComputePipline(std::string name);
+    glm::mat4 GetOrthoMat();
 }
 

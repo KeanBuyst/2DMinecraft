@@ -12,7 +12,7 @@ namespace EntityHandler
     void Cleanup();
 
     void Update();
-    void Render(gl::ShaderProgram* shader);
+    void Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, uint32_t width, uint32_t height);
 
     world::Entity* GetHead();
 

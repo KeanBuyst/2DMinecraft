@@ -415,14 +415,14 @@ void world::Item::render()
 
 void world::Item::onCollision(Entity* other)
 {
-    if (other->type == EntityType::PLAYER)
+    /*if (other->type == EntityType::PLAYER)
     {
         Player& player = reinterpret_cast<Player&>(*other);
         if (player.getHotbar().addItem(this) || player.getInventory().addItem(this))
         {
             deque(true);
         }
-    }
+    }*/
 }
 
 world::Sprite& world::Item::getSprite(int)

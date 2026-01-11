@@ -2,8 +2,9 @@
 
 #include <iostream>
 
-glm::vec2 world::origin = glm::vec2(CHUNK_SIZE / 2.0f,CHUNK_SIZE / 2.0f);
+glm::vec2 world::origin = glm::vec2(0.0f,10.0f);
 glm::ivec2 world::chunk_origin = ToChunkSpace(world::origin);
+glm::vec2 VIEW_SIZE = glm::vec2(VIEW_SCALE,VIEW_SCALE);
 
 float world::delta_time = 0.0f;
 

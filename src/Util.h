@@ -4,7 +4,7 @@
 #include <cstring>
 #include <random>
 #include <stdexcept>
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #include <iostream>
 #include <istream>
 #include <streambuf>

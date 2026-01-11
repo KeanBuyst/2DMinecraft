@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Chunk.h"
-#include "entities/Entity.h"
+//#include "entities/Entity.h"
 
 namespace world 
 {

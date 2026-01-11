@@ -1,60 +1,27 @@
-cmake_minimum_required(VERSION 3.5)
-project(2DMC)
+cmake_minimum_required(VERSION 3.15)
+
+set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_SOURCE_DIR}/triplets" CACHE PATH "Custom triplets")
+set(VCPKG_TARGET_TRIPLET "x64-mingw-mixed" CACHE STRING "Force custom mixed triplet")
+
+project(2DMC LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-include(FetchContent)
+find_package(SDL3 CONFIG REQUIRED)
+find_package(glm CONFIG REQUIRED)
+find_package(directx-dxc CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
-find_package(OpenGL REQUIRED)
-find_package(GLU REQUIRED)
+find_package(spirv_cross_core CONFIG REQUIRED)
+find_package(spirv_cross_glsl CONFIG REQUIRED)
+find_package(spirv_cross_hlsl CONFIG REQUIRED)
+find_package(spirv_cross_msl CONFIG REQUIRED)
+find_package(spirv_cross_cpp CONFIG REQUIRED)
+find_package(spirv_cross_reflect CONFIG REQUIRED)
+find_package(spirv_cross_c CONFIG REQUIRED)
 
-# Fetch SDL3
-FetchContent_Declare(
-        SDL3
-        GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG release-3.2.28
-        GIT_SHALLOW TRUE
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(SDL3)
+add_library(spirv_cross_c_shared ALIAS spirv-cross-c)
 
-# Fetch GLM (headers only library)
-FetchContent_Declare(
-        GLM
-        GIT_REPOSITORY https://github.com/g-truc/glm.git
-        GIT_TAG 1.0.1
-        GIT_SHALLOW TRUE
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-)
-FetchContent_MakeAvailable(GLM)
-
-# Fetch GLEW
-IF (WIN32)
-    FetchContent_Declare(
-            GLEW
-            URL https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0-win32.zip
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
-ELSE ()
-    FetchContent_Declare(
-            GLEW
-            URL https://github.com/nigels-com/glew/releases/download/glew-2.2.0/glew-2.2.0.tgz
-            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-    )
-ENDIF ()
-FetchContent_MakeAvailable(GLEW)
-
-if (NOT WIN32)
-    # Build GLEW as a static library
-    add_subdirectory(${glew_SOURCE_DIR}/build/cmake ${glew_BINARY_DIR})
-endif()
-
-# Add include directories
-include_directories(${SDL2_SOURCE_DIR}/include)
-include_directories(${glm_SOURCE_DIR}/glm)
-include_directories(${glew_SOURCE_DIR}/include)
-
-# Add the executable
 add_executable(2DMC
         src/main.cpp
         src/Application.cpp
@@ -67,31 +34,46 @@ add_executable(2DMC
         src/resources/Storage.cpp
         src/gl/Shader.cpp
         src/resources/Metadata.cpp
-        src/libs/stb_image.cpp
         src/Util.cpp
         src/world/generation/Light.cpp
         src/Constants.cpp
         src/world/generation/OreGeneration.cpp
+        src/Noise.cpp
         src/world/entities/EntityHandler.cpp
         src/world/entities/Entity.cpp
-        src/Noise.cpp
         src/world/generation/CaveGeneration.cpp
         src/world/generation/BlockBorder.cpp
         src/world/entities/Item.cpp
-        src/ui/Inventory.cpp
+#[[        src/ui/Inventory.cpp
         src/ui/UI.cpp
-        src/world/crafting/Crafting.cpp
+        src/world/crafting/Crafting.cpp]]
         src/world/entities/Procedure.cpp
         src/world/entities/Sprite.cpp
         src/world/entities/Player.cpp
-        src/world/entities/Player.h
         src/gl/Frame.cpp
         src/resources/Resources.cpp
+        src/libs/SDL_shadercross.c
+        src/libs/stb_image.cpp
 )
 
-# Link libraries based on the platform
-if (WIN32)
-    target_link_libraries(2DMC SDL3-static ${glew_SOURCE_DIR}/lib/Release/x64/glew32s.lib opengl32)
-else()
-    target_link_libraries(2DMC SDL3-static glew_s GL GLU pthread)
+# tick shadercross to seeing DXC enabled
+target_compile_definitions(2DMC PRIVATE SDL_SHADERCROSS_DXC=1)
+
+if(MINGW)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
 endif()
+
+target_link_libraries(2DMC PRIVATE
+        glm::glm
+        SDL3::SDL3
+        Microsoft::DirectXShaderCompiler
+        imgui::imgui
+
+        spirv-cross-core
+        spirv-cross-glsl
+        spirv-cross-hlsl
+        spirv-cross-msl
+        spirv-cross-cpp
+        spirv-cross-reflect
+        spirv-cross-c
+)

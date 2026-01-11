@@ -5,7 +5,6 @@
 #include <chrono>
 
 #include "Application.h"
-#include "glew.h"
 #include "gl/Shader.h"
 
 // Jan 1, 2024
@@ -52,11 +51,11 @@ void Util::decreaseMagnitude(float& vector, const float scaler)
 
 void Util::drawDebugLines(const glm::vec2* points, int size)
 {
-    glBegin(GL_LINE_LOOP);
+    /*glBegin(GL_LINE_LOOP);
     for (int i = 0; i < size; ++i) {
         glVertex2f((points[i].x - world::origin.x) * world::PIXEL_SCALE, (points[i].y - world::origin.y) * world::PIXEL_SCALE);
     }
-    glEnd();
+    glEnd();*/
 }
 
 Util::ByteStream::ByteStream(std::vector<uint8_t>* array) : stream(nullptr), vector(array), cursor(0)

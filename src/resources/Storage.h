@@ -1,7 +1,7 @@
 #pragma once
 
 #include <fstream>
-#include <glm.hpp>
+#include <glm/glm.hpp>
 
 namespace res
 {

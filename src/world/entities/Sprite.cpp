@@ -50,22 +50,22 @@ void world::Sprite::render(const Entity* entity)
     const glm::vec2 b_BR = glm::floor(bottomRight);
 
     // bottom left
-    light_BL = static_cast<float>(m_world.getBlock(b_BL).getLightLevel());
+    light_BL = static_cast<float>(world_ptr->getBlock(b_BL).getLightLevel());
 
     // top right
     if (b_TR == b_BL) light_TR = light_BL;
-    else light_TR = static_cast<float>(m_world.getBlock(b_TR).getLightLevel());
+    else light_TR = static_cast<float>(world_ptr->getBlock(b_TR).getLightLevel());
 
     // top left
     if (b_TL == b_TR) light_TL = light_TR;
     else if (b_TL == b_BL) light_TL = light_BL;
-    else light_TL = static_cast<float>(m_world.getBlock(b_TL).getLightLevel());
+    else light_TL = static_cast<float>(world_ptr->getBlock(b_TL).getLightLevel());
 
     // bottom right
     if (b_BR == b_BL) light_BR = light_BL;
     else if (b_BR == b_TR) light_BR = light_TR;
     else if (b_BR == b_TL) light_BR = light_TL;
-    else light_BR = static_cast<float>(m_world.getBlock(b_BR).getLightLevel());
+    else light_BR = static_cast<float>(world_ptr->getBlock(b_BR).getLightLevel());
 
 
     const glm::vec2 texBottomLeft = {flipped ? texture_map.right : texture_map.left, texture_map.bottom};
@@ -73,10 +73,10 @@ void world::Sprite::render(const Entity* entity)
     const glm::vec2 texTopRight = {flipped ? texture_map.left : texture_map.right, texture_map.top};
     const glm::vec2 texTopLeft = {flipped ? texture_map.right : texture_map.left, texture_map.top};
 
-    bottomLeft = (bottomLeft - origin) * PIXEL_SCALE;
-    topRight = (topRight - origin) * PIXEL_SCALE;
-    topLeft = (topLeft - origin) * PIXEL_SCALE;
-    bottomRight = (bottomRight - origin) * PIXEL_SCALE;
+    bottomLeft = (bottomLeft - origin) * BLOCK_SIZE;
+    topRight = (topRight - origin) * BLOCK_SIZE;
+    topLeft = (topLeft - origin) * BLOCK_SIZE;
+    bottomRight = (bottomRight - origin) * BLOCK_SIZE;
 
     // Insert two triangles (6 vertices)
     std::initializer_list<EntityHandler::EntityRenderData> data = {

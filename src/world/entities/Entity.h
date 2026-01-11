@@ -14,9 +14,10 @@ namespace EntityHandler
 {
     struct EntityRenderData
     {
-        glm::vec2 vertex;
-        glm::vec2 texel;
-        float lightLevel;
+        glm::vec2 position;
+        glm::vec2 uv;
+        float light;
+        uint32_t padding;
     };
 
     struct EntityRenderBatch
@@ -39,7 +40,7 @@ namespace EntityHandler
                 itemBatch.insert(itemBatch.end(),data);
             } else
             {
-                throw std::runtime_error("Invalid entity render batch type");
+                throw "Invalid entity render batch type";
             }
         }
 

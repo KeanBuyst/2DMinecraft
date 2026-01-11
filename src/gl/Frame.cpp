@@ -16,9 +16,9 @@ gl::Frame gl::GetFrame(float pX, float pY, float pWidth, float pHeight)
     pX -= pWidth / 2.0f;
     pY -= pHeight / 2.0f;
     return {
-        pX / world::PIXEL_SCALE,
-        (pX + pWidth) / world::PIXEL_SCALE,
-        (pY + pHeight) / world::PIXEL_SCALE,
-        pY / world::PIXEL_SCALE
+        pX / BLOCK_SIZE,
+        (pX + pWidth) / BLOCK_SIZE,
+        (pY + pHeight) / BLOCK_SIZE,
+        pY / BLOCK_SIZE
     };
 }

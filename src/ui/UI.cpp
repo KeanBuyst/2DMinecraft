@@ -70,7 +70,7 @@ void UI::Renderer::Add(UIComponent* component)
     buffer.push_back(component);
 }
 
-void UI::Renderer::Render(gl::ShaderProgram* shader)
+void UI::Renderer::Render(gl::Shader* shader)
 {
     static std::vector<RenderCell> render_cells;
     render_cells.clear();

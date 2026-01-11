@@ -3,53 +3,14 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
-#include "../glew.h"
+#include <glm/ext/matrix_clip_space.hpp>
+
+#include "../Application.h"
+#include "../libs/SDL_shadercross.h"
 
 using namespace gl;
 
-std::string readFile(const std::string& filePath);
-
-/*
-* .vert - a vertex shader
-* .geom - a geometry shader
-* .frag - a fragment shader
-* .comp - a compute shader
-*/
-GLuint gl::GetShader(const std::string& path)
-{
-	const std::string format = path.substr(path.size() - 5, 5);
-	GLenum type;
-	if (format == ".vert") type = GL_VERTEX_SHADER;
-	else if (format == ".geom") type = GL_GEOMETRY_SHADER;
-	else if (format == ".frag") type = GL_FRAGMENT_SHADER;
-	else if (format == ".comp") type = GL_COMPUTE_SHADER;
-	else
-	{
-		std::cerr << "Invalid shader format:" << format.c_str() << std::endl;
-		exit(-1);
-	}
-
-	// load code
-	const std::string data = readFile("../shaders/" + path);
-
-	const GLchar* code = data.c_str();
-
-	const GLuint shader = glCreateShader(type);
-	glShaderSource(shader, 1, &code,nullptr);
-	glCompileShader(shader);
-
-	// error handling
-	GLint success;
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		GLchar infoLog[1024];
-		glGetShaderInfoLog(shader, 1024,nullptr, infoLog);
-		std::cerr << "ERROR::SHADER_COMPILATION_ERROR of type: " << format << "\n" << infoLog << "\n" << std::endl;
-		exit(-1);
-	}
-
-	return shader;
-}
+static std::string PATH = "../shaders/";
 
 std::string readFile(const std::string& filePath) {
 	std::ifstream file;
@@ -67,82 +28,158 @@ std::string readFile(const std::string& filePath) {
 	return buffer.str();
 }
 
-ShaderProgram::ShaderProgram()
+SDL_PropertiesID GetProperties()
 {
-	ID = glCreateProgram();
-	std::cout << "Creating Shader (" << ID << ")" << std::endl;
-}
-
-ShaderProgram::~ShaderProgram()
-{
-	std::cout << "Deleting Shader (" << ID << ")" << std::endl;
-	glDeleteProgram(ID);
-}
-
-void ShaderProgram::bind(const GLuint shader) const
-{
-	if (built)
+	// only create properties once
+	static SDL_PropertiesID id = 0;
+	if (id == 0)
 	{
-		std::cerr << "Attempted to add shader to linked shader program" << std::endl;
-		exit(-1);
+		id = SDL_CreateProperties();
+		SDL_SetBooleanProperty(id,SDL_SHADERCROSS_PROP_SHADER_DEBUG_ENABLE_BOOLEAN,true);
+		SDL_SetStringProperty(id,"SDL.shadercross.hlsl.profile","cs_6_0");
 	}
-	glAttachShader(ID,shader);
-	glDeleteShader(shader);
+	return id;
 }
 
-void ShaderProgram::build()
+SDL_ShaderCross_SPIRV_Info LoadShaderFile(std::string name, SDL_ShaderCross_ShaderStage stage)
 {
-	glLinkProgram(ID);
+	size_t codeSize;
+	std::string file = PATH + name + ".hlsl";
+	const char* code = reinterpret_cast<const char*>(SDL_LoadFile(file.c_str(),&codeSize));
 
-	// check if linking was successful
-	GLint success;
-	glGetProgramiv(ID, GL_LINK_STATUS, &success);
-	if (!success)
+	SDL_PropertiesID props = GetProperties();
+	SDL_SetStringProperty(props,SDL_PROP_GPU_SHADER_CREATE_NAME_STRING,name.c_str());
+
+	std::string worldWidth = std::to_string(world::WORLD_WIDTH * world::CHUNK_SIZE) + ".0f";
+	std::string worldHeight = std::to_string(world::WORLD_HEIGHT * world::CHUNK_SIZE) + ".0f";
+	std::string chunkSize = std::to_string(world::CHUNK_SIZE) + ".0f";
+	std::string blockSize = std::to_string(BLOCK_SIZE);
+
+	SDL_ShaderCross_HLSL_Define shaderDefines[] = {
+		{ const_cast<char*>("WIDTH"),const_cast<char*>(worldWidth.c_str()) },
+		{ const_cast<char*>("HEIGHT"),const_cast<char*>(worldHeight.c_str()) },
+		{const_cast<char*>("CHUNK_SIZE"),const_cast<char*>(chunkSize.c_str()) },
+		{const_cast<char*>("BLOCK_SIZE"),const_cast<char*>(blockSize.c_str()) },
+		{NULL,NULL}
+	};
+
+	SDL_ShaderCross_HLSL_Info hlslInfo = {
+		code,
+		"main",
+		PATH.c_str(),
+		shaderDefines,
+		stage,
+		props
+	};
+
+	size_t byteSize;
+	Uint8* bytes = reinterpret_cast<Uint8*>(SDL_ShaderCross_CompileSPIRVFromHLSL(&hlslInfo,&byteSize));
+	if (!bytes)
 	{
-		GLchar infoLog[1024];
-		glGetProgramInfoLog(ID, 1024,nullptr, infoLog);
-		std::cerr << "ERROR::PROGRAM_LINKING_ERROR\n" << infoLog << "\n" << std::endl;
-		exit(-1);
+		SDL_Log("Error: SDL_ShaderCross_CompileSPIRVFromHLSL\n%s", SDL_GetError());
+		throw "Error: SDL_ShaderCross_CompileSPIRVFromHLSL";
 	}
 
-	built = true;
+	return {
+		bytes,
+		byteSize,
+		"main",
+		stage,
+		props
+	};
 }
 
-void ShaderProgram::use() const
+Shader::Shader(std::string name, ShaderType type) : name(name)
 {
-	glUseProgram(ID);
-}
+	// TODO cache compiled shaders
+	// if (SDL_CreateDirectory("cache"))
+	// {
+	// 	SDL_Log("Error: SDL_CreateDirectory -> %s", SDL_GetError());
+	// 	throw "Error: SDL_CreateDirectory";
+	// }
 
-void ShaderProgram::sendMatrix(const GLchar* name, glm::mat4& matrix)
-{
-	glUniformMatrix4fv(locator(name), 1, GL_FALSE, &matrix[0][0]);
-}
-
-void ShaderProgram::useTexture(const GLchar* name, const unsigned int slot)
-{
-	glUniform1i(locator(name), slot);
-}
-
-void ShaderProgram::sendVector2(const GLchar* name, glm::vec2& vector)
-{
-	glUniform2fv(locator(name), 1, &vector[0]);
-}
-
-void ShaderProgram::sendValue(const char* name, float value)
-{
-	glUniform1f(locator(name),value);
-}
-
-GLint ShaderProgram::locator(const GLchar* name)
-{
-	try
+	SDL_ShaderCross_ShaderStage stage;
+	switch (type)
 	{
-		return cache.at(name);
+	case VERTEX:
+		stage = SDL_SHADERCROSS_SHADERSTAGE_VERTEX;
+		break;
+	case FRAGMENT:
+		stage = SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT;
+		break;
+	default:
+		throw "Error: ShaderType unmapped";
 	}
-	catch (std::out_of_range& e)
+
+	SDL_ShaderCross_SPIRV_Info info = LoadShaderFile(name,stage);
+
+	SDL_ShaderCross_GraphicsShaderMetadata* meta = SDL_ShaderCross_ReflectGraphicsSPIRV(
+		info.bytecode,
+		info.bytecode_size,
+		0
+	);
+	if (!meta)
 	{
-		const GLint key = glGetUniformLocation(ID, name);
-		cache[name] = key;
-		return key;
+		SDL_Log("Error: SDL_ShaderCross_ReflectGraphicsSPIRV\n%s",SDL_GetError());
+		SDL_free(const_cast<Uint8*>(info.bytecode));
+		throw "Error: SDL_ShaderCross_ReflectGraphicsSPIRV";
 	}
+
+	obj = SDL_ShaderCross_CompileGraphicsShaderFromSPIRV(Application::GPU_DEVICE,&info,&meta->resource_info,0);
+	if (!obj)
+	{
+		SDL_Log("Error: SDL_ShaderCross_CompileGraphicsShaderFromSPIRV\n%s", SDL_GetError());
+		throw "Error: SDL_ShaderCross_CompileGraphicsShaderFromSPIRV";
+	}
+	SDL_free(meta);
+	SDL_free(const_cast<Uint8*>(info.bytecode));
+	SDL_Log("Creating Shader (%s)", name.c_str());
+}
+
+Shader::~Shader()
+{
+	SDL_Log("Deleting Shader (%s)", name.c_str());
+	SDL_ReleaseGPUShader(Application::GPU_DEVICE,obj);
+}
+
+Shader::operator SDL_GPUShader*()
+{
+	return obj;
+}
+
+SDL_GPUComputePipeline* gl::GetComputePipline(std::string name)
+{
+	SDL_ShaderCross_SPIRV_Info info = LoadShaderFile(name,SDL_SHADERCROSS_SHADERSTAGE_COMPUTE);
+
+	SDL_ShaderCross_ComputePipelineMetadata* meta = SDL_ShaderCross_ReflectComputeSPIRV(
+			info.bytecode,
+			info.bytecode_size,
+			0
+		);
+	if (!meta)
+	{
+		SDL_Log("Error: SDL_ShaderCross_ReflectComputeSPIRV\n%s",SDL_GetError());
+		SDL_free(const_cast<Uint8*>(info.bytecode));
+		throw "Error: SDL_ShaderCross_ReflectComputeSPIRV";
+	}
+
+	SDL_GPUComputePipeline* pipeline = SDL_ShaderCross_CompileComputePipelineFromSPIRV(Application::GPU_DEVICE,&info,meta,0);
+	if (!pipeline)
+	{
+		SDL_Log("Error: SDL_ShaderCross_CompileComputePipelineFromSPIRV\n%s",SDL_GetError());
+		SDL_free(meta);
+		SDL_free(const_cast<Uint8*>(info.bytecode));
+		throw "Error: SDL_ShaderCross_CompileComputePipelineFromSPIRV";
+	}
+	SDL_free(meta);
+	SDL_free(const_cast<Uint8*>(info.bytecode));
+	return pipeline;
+}
+
+glm::mat4 gl::GetOrthoMat()
+{
+	const float aspect = (static_cast<float>(SCREEN_WIDTH) / static_cast<float>(SCREEN_HEIGHT)) * VIEW_SCALE;
+	VIEW_SIZE.x = aspect;
+	glm::mat4 mat = glm::ortho<float>(-aspect, aspect, -VIEW_SCALE, VIEW_SCALE,-5.0f,5.0f);
+	return mat;
 }

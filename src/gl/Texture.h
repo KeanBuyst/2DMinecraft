@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-#include <glm.hpp>
+#include <SDL3/SDL_gpu.h>
 
 #include "Frame.h"
 
@@ -10,16 +10,16 @@ namespace gl
 	class Texture 
 	{
 	private:
-		uint32_t id;
+		static SDL_GPUSampler* sampler;
+		SDL_GPUTexture* texture;
 		int width, height;
 	public:
+		static SDL_GPUSampler* GetSampler();
 		explicit Texture(const char* path);
 		~Texture();
 
-		void bind(unsigned int slot) const;
-		void unbind();
+		operator SDL_GPUTexture*();
 
-		uint32_t getID();
 		int getWidth();
 		int getHeight();
 

@@ -53,7 +53,7 @@ namespace UI
     namespace Renderer
     {
         void Init();
-        void Render(gl::ShaderProgram* shader);
+        void Render(gl::Shader* shader);
         void Update();
         void Cleanup();
         void Add(UIComponent* component);

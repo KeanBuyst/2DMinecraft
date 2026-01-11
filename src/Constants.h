@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm.hpp>
+#include <glm/glm.hpp>
 
 namespace world
 {
@@ -13,13 +13,14 @@ namespace world
     constexpr float WORLD_SIZE = 10.0f; // since we want a block position to represent 1. 1/10 = 0.1
     constexpr int WORLD_WIDTH = 7; // min is 3x3
     constexpr int WORLD_HEIGHT = 5;
-    constexpr float PIXEL_SCALE = 16.0f;
     constexpr int POST_GEN_BUF = 1; // must be twice as less as WORLD_(WIDTH and HEIGHT)
     // physics
     constexpr float GRAVITY = 48.0f;
     constexpr float DRAG = 2.4f;
     constexpr float FRICTION = 10.6f;
     constexpr float MAX_SPEED = 30.0f;
+    // entities
+    constexpr uint32_t MAX_SPRITES_INIT = 1024; // 2^10
 
     extern glm::vec2 origin;
     extern glm::ivec2 chunk_origin;
@@ -34,8 +35,8 @@ namespace world
     void ChunkToGlobal(glm::ivec2& position,glm::ivec2 chunk);
 }
 
-namespace gl
-{
-    // light.h
-    constexpr int LIGHT_MAP_SIZE = world::REGION_SIZE * world::CHUNK_SIZE;
-}
+constexpr float BLOCK_SIZE = 16.0f;
+// view port is from -VIEW_SIZE to VIEW_SIZE,
+// horizontal is also effected by aspect ratio
+constexpr float VIEW_SCALE = world::CHUNK_SIZE * BLOCK_SIZE;
+extern glm::vec2 VIEW_SIZE;

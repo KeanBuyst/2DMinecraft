@@ -9,13 +9,8 @@ void res::load()
 {
     atlas::tiles = new gl::Texture("../assets/tiles.png");
     atlas::items = new gl::Texture("../assets/items.png");
-    atlas::uiMap = new gl::Texture("../assets/ui.png");
+    //atlas::uiMap = new gl::Texture("../assets/ui.png");
     atlas::entities = new gl::Texture("../assets/entities.png");
-
-    atlas::tiles->bind(0);
-    atlas::entities->bind(1);
-    atlas::items->bind(2);
-    atlas::uiMap->bind(3);
 }
 
 void res::clear()
