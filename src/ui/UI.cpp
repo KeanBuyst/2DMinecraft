@@ -1,13 +1,17 @@
 #include "UI.h"
 
+#include <imgui.h>
+#include <imgui_impl_sdl3.h>
+#include <imgui_impl_sdlgpu3.h>
+
+#include "../Application.h"
 #include "../Util.h"
-#include "../glew.h"
 #include "../world/entities/Item.h"
 
-static GLuint VAO;
-static GLuint VBO;
-
 std::vector<UI::UIComponent*> buffer;
+
+static int RENDER_WIDTH = SCREEN_WIDTH;
+static int RENDER_HEIGHT = SCREEN_HEIGHT;
 
 struct RenderCell
 {
@@ -19,37 +23,22 @@ struct RenderCell
 
 void UI::Renderer::Init()
 {
-    buffer.reserve(5);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
 
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RenderCell),
-        reinterpret_cast<void*>(offsetof(RenderCell, position)));
-    glEnableVertexAttribArray(0);
-
-    // type attribute
-    glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(RenderCell),
-        reinterpret_cast<void*>(offsetof(RenderCell, type)));
-    glEnableVertexAttribArray(1);
-
-    // item attribute
-    glVertexAttribIPointer(2, 1, GL_INT, sizeof(RenderCell),
-        reinterpret_cast<void*>(offsetof(RenderCell, item)));
-    glEnableVertexAttribArray(2);
-
-    // stack size attribute
-    glVertexAttribIPointer(3, 1, GL_INT, sizeof(RenderCell),
-        reinterpret_cast<void*>(offsetof(RenderCell, stack_size)));
-    glEnableVertexAttribArray(3);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
+    ImGui_ImplSDL3_InitForSDLGPU(Application::WINDOW);
+    ImGui_ImplSDLGPU3_InitInfo init_info = {};
+    init_info.Device = Application::GPU_DEVICE;
+    init_info.ColorTargetFormat = SDL_GetGPUSwapchainTextureFormat(Application::GPU_DEVICE, Application::WINDOW);
+    init_info.MSAASamples = SDL_GPU_SAMPLECOUNT_1;
+    ImGui_ImplSDLGPU3_Init(&init_info);
 }
+
+void UI::Renderer::Event(SDL_Event* event)
+{
+    ImGui_ImplSDL3_ProcessEvent(event);
+}
+
 
 void UI::Renderer::Update()
 {
@@ -61,8 +50,9 @@ void UI::Renderer::Update()
 
 void UI::Renderer::Cleanup()
 {
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    ImGui_ImplSDL3_Shutdown();
+    ImGui_ImplSDLGPU3_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void UI::Renderer::Add(UIComponent* component)
@@ -70,52 +60,44 @@ void UI::Renderer::Add(UIComponent* component)
     buffer.push_back(component);
 }
 
-void UI::Renderer::Render(gl::Shader* shader)
+void UI::Renderer::Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, uint32_t width, uint32_t height)
 {
-    static std::vector<RenderCell> render_cells;
-    render_cells.clear();
+    ImGui_ImplSDLGPU3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
 
-    shader->useTexture("tileAtlas",0);
-    shader->useTexture("itemAtlas",2);
-    shader->useTexture("uiAtlas",3);
+    // start render
 
-    for (UIComponent*& comp : buffer)
+    for (UIComponent*& component : buffer)
     {
-        if (!comp->isVisible()) continue;
-
-        const Cell* cells = comp->getCells();
-        for (auto i = 0; i < comp->getCount(); ++i)
+        if (component->isVisible())
         {
-            // ignore empty cells
-            if (cells[i].type == EMPTY_CELL && cells[i].item == nullptr)
-                continue;
-
-            int amount = 0;
-
-            int item;
-            if (cells[i].item == nullptr)
-                item = -1;
-            else
-            {
-                item = cells[i].item->material.getRenderData();
-                amount = cells[i].item->getAmount();
-            }
-            const int width = comp->getSize().x;
-            glm::vec2 position = glm::vec2(i % width, i / width) + comp->getPosition();
-            render_cells.push_back({
-                position * CELL_SIZE,
-                cells[i].type,
-                item,
-                amount
-            });
+            component->render();
         }
     }
 
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    // end render
 
-    glBufferData(GL_ARRAY_BUFFER,render_cells.size() * sizeof(RenderCell), render_cells.data(),GL_STATIC_DRAW);
-    glDrawArrays(GL_POINTS,0,render_cells.size());
+    ImGui::Render();
+    ImDrawData* draw_data = ImGui::GetDrawData();
+
+    Imgui_ImplSDLGPU3_PrepareDrawData(draw_data,cmd);
+
+    // Setup and start a render pass
+    SDL_GPUColorTargetInfo target_info = {};
+    target_info.texture = swapChain;
+    target_info.clear_color = SDL_FColor { 0.0f, 0.0f, 0.0f, 0.0f };
+    target_info.load_op = SDL_GPU_LOADOP_LOAD;
+    target_info.store_op = SDL_GPU_STOREOP_STORE;
+    target_info.mip_level = 0;
+    target_info.layer_or_depth_plane = 0;
+    target_info.cycle = false;
+    SDL_GPURenderPass* render_pass = SDL_BeginGPURenderPass(cmd, &target_info, 1, nullptr);
+
+    // Render ImGui
+    ImGui_ImplSDLGPU3_RenderDrawData(draw_data, cmd, render_pass);
+
+    SDL_EndGPURenderPass(render_pass);
 }
 
 bool UI::isCell(const CellType& type)

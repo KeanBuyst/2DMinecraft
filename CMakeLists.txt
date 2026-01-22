@@ -44,9 +44,9 @@ add_executable(2DMC
         src/world/generation/CaveGeneration.cpp
         src/world/generation/BlockBorder.cpp
         src/world/entities/Item.cpp
-#[[        src/ui/Inventory.cpp
+        src/ui/Inventory.cpp
         src/ui/UI.cpp
-        src/world/crafting/Crafting.cpp]]
+        #src/world/crafting/Crafting.cpp
         src/world/entities/Procedure.cpp
         src/world/entities/Sprite.cpp
         src/world/entities/Player.cpp

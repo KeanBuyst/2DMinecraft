@@ -20,8 +20,8 @@ EntityHandler::EntityRenderData* EntityHandler::EntityRenderBatch::data()
     combined.reserve(size());
 
     combined.insert(combined.end(), tileBatch.begin(), tileBatch.end());
-    combined.insert(combined.end(), entityBatch.begin(), entityBatch.end());
     combined.insert(combined.end(), itemBatch.begin(), itemBatch.end());
+    combined.insert(combined.end(), entityBatch.begin(), entityBatch.end());
 
     return combined.data();
 }

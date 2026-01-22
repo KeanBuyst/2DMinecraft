@@ -14,12 +14,8 @@
 #include "gl/Texture.h"
 #include "libs/SDL_shadercross.h"
 #include "resources/Resources.h"
-#include "world/entities/EntityHandler.h"
-/*#include "ui/Inventory.h"
 #include "ui/UI.h"
-#include "world/crafting/Crafting.h"
 #include "world/entities/EntityHandler.h"
-*/
 
 using namespace world;
 
@@ -34,7 +30,7 @@ Uint32 Application::previousMouseState = 0;
 
 int Application::scrollDir = 0;
 glm::vec2 Application::mousePos;
-//UI::MouseItemHolder Application::item_holder;
+UI::MouseItemHolder Application::item_holder;
 
 SDL_GPUDevice* Application::GPU_DEVICE = nullptr;
 SDL_Window* Application::WINDOW = nullptr;
@@ -85,6 +81,7 @@ Application::Application() {
 
     World::Init();
     EntityHandler::Init();
+    UI::Renderer::Init();
 
     // load resources
     res::load();
@@ -125,7 +122,7 @@ void Application::run() {
     EntityHandler::Add(player);
 
     // Mouse item holder (always last in order)
-    //UI::Renderer::Add(&item_holder);
+    UI::Renderer::Add(&item_holder);
 
     // reset clock
     last_frame_time = SDL_GetTicks();
@@ -191,7 +188,7 @@ Application::~Application()
     World::Cleanup();
     delete world_ptr;
     EntityHandler::Cleanup();
-    // UI::Renderer::Cleanup();
+    UI::Renderer::Cleanup();
     // Crafting::Destroy();
     res::clear();
 
@@ -219,13 +216,6 @@ glm::vec2 Application::GetWorldMouse()
     return glm::vec2(x,y) + origin;
 }
 
-/*glm::vec2 Application::GetUIMouse()
-{
-    const float x = (((mousePos.x / (static_cast<float>(SCREEN_WIDTH) / 2.0)) - 1) * VIEW_PORT.y) / UI::CELL_SIZE;
-    const float y = (( -((mousePos.y / (static_cast<float>(SCREEN_HEIGHT) / 2.0)) - 1) * VIEW_SIZE) / UI::CELL_SIZE);
-    return {x,y};
-}*/
-
 void Application::events(bool& running)
 {
     scrollDir = 0;
@@ -233,11 +223,12 @@ void Application::events(bool& running)
     SDL_Event e;
     while (SDL_PollEvent(&e))
     {
+        UI::Renderer::Event(&e);
         switch (e.type) {
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
             {
                 const glm::vec2 mouse = GetWorldMouse();
-                    const glm::vec2 chunk = world::ToChunkSpace(mouse);
+                    const glm::vec2 chunk = ToChunkSpace(mouse);
                 switch (e.button.button)
                 {
                     case SDL_BUTTON_MIDDLE:
@@ -298,9 +289,7 @@ void Application::update()
         SDL_SetWindowTitle(WINDOW,title.c_str());
     }
     // NB!! Order is important. UI then entities
-    // update mouse item holder
-    //item_holder.setPosition(GetUIMouse() - 0.4f);
-    //UI::Renderer::Update();
+    UI::Renderer::Update();
 
     // full screen
     if (isKeyPressed(SDL_SCANCODE_F11))
@@ -357,6 +346,7 @@ void Application::render()
 
     world_ptr->render(cmd,swapChain,width,height);
     EntityHandler::Render(cmd,swapChain,width,height);
+    UI::Renderer::Render(cmd,swapChain,width,height);
 
     SDL_SubmitGPUCommandBuffer(cmd);
 }

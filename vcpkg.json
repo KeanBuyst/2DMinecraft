@@ -1,5 +1,17 @@
 {
   "name" : "2dmc",
   "version-string" : "0.0.1",
-  "dependencies" : [ "sdl3", "glm", "spirv-cross", "directx-dxc", "imgui" ]
+  "dependencies" : [
+    "sdl3",
+    "glm",
+    "spirv-cross",
+    "directx-dxc",
+    {
+      "name": "imgui",
+      "features": [
+        "sdl3-binding",
+        "sdlgpu3-binding"
+      ]
+    }
+  ]
 }

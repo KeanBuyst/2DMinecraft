@@ -1,37 +1,40 @@
 #include "Inventory.h"
 
+#include <imgui.h>
+
 #include "../Application.h"
+#include "../resources/Resources.h"
 #include "../world/crafting/Crafting.h"
 #include "../world/entities/EntityHandler.h"
 #include "../world/entities/Item.h"
 
-UI::Inventory::Inventory(glm::vec2 position,const uint8_t width, const uint8_t height)
-    : position(position), width(width), height(height), updated(false), visible(false)
+constexpr static ImVec2 ITEM_SIZE = ImVec2(8.0f * GUI_SCALE,8.0f * GUI_SCALE);
+
+static ImGuiWindowFlags GetWindowFlags()
 {
-    cells = new Cell[getCount()];
-    for (auto i = 0; i < getCount(); ++i)
-    {
-        cells[i] = {INVENTORY_SLOT,nullptr};
-    }
+    return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
+         | ImGuiWindowFlags_NoResize   | ImGuiWindowFlags_NoCollapse
+         | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove
+         | ImGuiWindowFlags_AlwaysAutoResize;
 }
 
 UI::Inventory::~Inventory()
 {
     // delete all items as well. Since they only exist in the inventory
     // Thus die with the inventory
-    for (auto i = 0; i < getCount(); ++i)
+    for (auto i = 0; i < count; ++i)
     {
-        delete cells[i].item;
+        delete items[i];
     }
-    delete[] cells;
+    delete[] items;
 }
 
 bool UI::Inventory::addItem(world::Item* item)
 {
     int emptySlot = -1;
-    for (auto i = 0; i < getCount(); ++i)
+    for (auto i = 0; i < count; ++i)
     {
-        world::Item*& slot = cells[i].item;
+        world::Item*& slot = items[i];
         if (slot)
         {
             if (slot->combine(item))
@@ -43,7 +46,7 @@ bool UI::Inventory::addItem(world::Item* item)
     }
     if (emptySlot != -1)
     {
-        cells[emptySlot].item = item;
+        items[emptySlot] = item;
         return true;
     }
     return false;
@@ -51,9 +54,13 @@ bool UI::Inventory::addItem(world::Item* item)
 
 void UI::Inventory::setItem(const int index, world::Item* item)
 {
-    if (index < getCount() && index >= 0)
+    if (index < count && index >= 0)
     {
-        cells[index].item = item;
+        if (items[index])
+        {
+            delete items[index];
+        }
+        items[index] = item;
     } else
     {
         std::cerr << "ERROR: (setItem) invalid slot index" << std::endl;
@@ -62,37 +69,17 @@ void UI::Inventory::setItem(const int index, world::Item* item)
 
 world::Item* UI::Inventory::getItem(int index)
 {
-    if (index < getCount() && index >= 0)
+    if (index < count && index >= 0)
     {
-        return cells[index].item;
+        return items[index];
     }
     std::cerr << "ERROR: (getItem) invalid slot index" << std::endl;
     return nullptr;
 }
 
-glm::vec2 UI::Inventory::getPosition() const
-{
-    return position;
-}
-
-void UI::Inventory::setPosition(glm::vec2 position)
-{
-    this->position = position;
-}
-
-glm::ivec2 UI::Inventory::getSize() const
-{
-    return {width,height};
-}
-
 int UI::Inventory::getCount() const
 {
-    return width * height;
-}
-
-const UI::Cell* UI::Inventory::getCells() const
-{
-    return cells;
+    return count;
 }
 
 void UI::Inventory::serialize(Util::ByteStream& stream)
@@ -100,9 +87,9 @@ void UI::Inventory::serialize(Util::ByteStream& stream)
     // store items (other data is static)
     for (auto i = 0; i < getCount(); ++i)
     {
-        if (cells[i].item)
+        if (items[i])
         {
-            cells[i].item->serialize(stream);
+            items[i]->serialize(stream);
         }
         else
         {
@@ -121,19 +108,19 @@ void UI::Inventory::load(Util::ByteStream& stream)
         stream >> type;
         if (type != 0)
         {
-            if (cells[i].item)
+            if (items[i])
             {
                 std::cerr << "Inventory load conflicting with already populated inventory\nOverriding item" << std::endl;
-                delete cells[i].item;
+                delete items[i];
             }
-            cells[i].item = new world::Item(stream);
+            items[i] = new world::Item(stream);
         }
     }
 }
 
 void UI::Inventory::update()
 {
-    updated = false;
+    /*updated = false;
     if (!visible) return;
     int index;
     if (Application::item_holder.getItem() == nullptr)
@@ -207,7 +194,7 @@ void UI::Inventory::update()
                 }
             }
         }
-    }
+    }*/
 }
 
 bool UI::Inventory::isVisible() const
@@ -220,33 +207,168 @@ void UI::Inventory::setVisible(const bool visible)
     this->visible = visible;
 }
 
-UI::Cell& UI::Inventory::at(int x, int y)
+void UI::Inventory::DrawSlot(void** slot_ptr)
 {
-    return cells[y * width + x];
-}
+    const static ImVec2 slotSize = ImVec2(12.0f * GUI_SCALE,12.0f * GUI_SCALE);
 
-UI::Cell* UI::Inventory::GetMouseSlot(int& index)
-{
-    glm::vec2 pos = Application::GetUIMouse() - position;
-    index = static_cast<int>(floorf(pos.y)) * width + static_cast<int>(floorf(pos.x));
-    if (index < 0 || index >= getCount()) return nullptr;
-    if (isCell(cells[index].type)) return nullptr;
-    return &cells[index];
+    static SDL_GPUTextureSamplerBinding uiBinding = {0,0};
+    static SDL_GPUTextureSamplerBinding tileBinding = {0,0};
+    static SDL_GPUTextureSamplerBinding itemBinding = {0,0};
+
+    world::Item*& item = reinterpret_cast<world::Item*&>(*slot_ptr);
+    gl::TextureMap uv;
+    ImVec2 cPos = ImGui::GetCursorScreenPos();
+
+    // render cell
+    gl::Texture& ui = *res::atlas::uiMap;
+    if (!uiBinding.texture) uiBinding = ui.GetBinding();
+
+    ImGui::Image(reinterpret_cast<ImTextureID>(&uiBinding),
+        slotSize,ImVec2(0.0f,0.0f),ImVec2(12.0f/256.0f,12.0f/256.0f));
+
+    // render item if item
+    if (item)
+    {
+        ImGui::SetCursorScreenPos(ImVec2(cPos.x + 2.0f * GUI_SCALE,cPos.y + 2.0f * GUI_SCALE));
+
+        SDL_GPUTextureSamplerBinding* binding = nullptr;
+
+        const world::Material& mat = item->material;
+        uint8_t index = mat.getRaw();
+        if (mat.isBlock())
+        {
+            if (index != 0)
+            {
+                gl::Texture& tiles = *res::atlas::tiles;
+                if (!tileBinding.texture) tileBinding = tiles.GetBinding();
+                binding = &tileBinding;
+
+                glm::vec2 pixelPos = glm::vec2((index - 1) % TILES_PER_ROW, (index - 1) / TILES_PER_ROW) * 8.0f;
+                uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
+            }
+        }
+        else
+        {
+            gl::Texture& tiles = *res::atlas::items;
+            if (!itemBinding.texture) itemBinding = tiles.GetBinding();
+            binding = &itemBinding;
+
+            glm::vec2 pixelPos = glm::vec2(index % TILES_PER_ROW, index / TILES_PER_ROW) * 8.0f;
+            uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
+        }
+
+        if (binding)
+        {
+            ImGui::Image(reinterpret_cast<ImTextureID>(binding),
+                ITEM_SIZE,ImVec2(uv.left,uv.top),ImVec2(uv.right,uv.bottom));
+        }
+    }
+
+    ImGui::SetCursorScreenPos(cPos);
+
+    ImGui::PushID(slot_ptr);
+
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,ImVec4(1.0f, 1.0f, 1.0f, 0.1f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,ImVec4(1.0f, 1.0f, 1.0f, 0.2f));
+
+    ImGui::Button("##slot",slotSize);
+
+    if (ImGui::IsItemClicked() && item)
+    {
+        Application::item_holder.setItem(item);
+        item = nullptr;
+    }
+
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseReleased(0))
+    {
+        if (Application::item_holder.getItem())
+        {
+            if (item)
+            {
+                if (*item == *Application::item_holder.getItem())
+                {
+                    world::Item* data = Application::item_holder.getItem();
+                    if (item->combine(data))
+                    {
+                        Application::item_holder.setItem(nullptr);
+                    }
+                }
+            }
+            else
+            {
+                item = Application::item_holder.getItem();
+                Application::item_holder.setItem(nullptr);
+            }
+        }
+    }
+
+    ImGui::PopStyleColor(2);
+
+    // draw item count
+    if (item && item->getAmount() > 1)
+    {
+        ImVec2 p_max = ImGui::GetItemRectMax();
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+        std::string number = std::to_string(item->getAmount());
+
+        float padding = 4.0f;
+        ImVec2 textSize = ImGui::CalcTextSize(number.c_str());
+
+        ImVec2 textPos = ImVec2(
+            p_max.x - textSize.x - padding,
+            p_max.y - textSize.y - padding
+        );
+
+        draw_list->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0,0,0,255), number.c_str());
+        draw_list->AddText(textPos, IM_COL32(255,255,255,255), number.c_str());
+    }
+
+
+    ImGui::PopID();
 }
 
 // HOTBAR
 
-UI::Hotbar::Hotbar() : Inventory({-4.5f,-13.0f},9,1)
+UI::Hotbar::Hotbar() : Inventory()
 {
     selected_slot = 0;
-    cells[0].type = SELECTED_SLOT;
+
+    count = 9;
+    items = new world::Item*[count];
+    for (auto i = 0; i < count; ++i)
+    {
+        items[i] = nullptr;
+    }
+}
+
+void UI::Hotbar::render()
+{
+    ImGui::SetNextWindowPos(ImVec2(10.0f,10.0f), ImGuiCond_Always);
+
+    ImGui::Begin("Hotbar",nullptr,GetWindowFlags());
+
+    for (int i = 0; i < count; ++i)
+    {
+        ImVec4 color;
+        if (selected_slot == i)
+        {
+            color = ImVec4(1.0f,1.0f,0.0f,0.1f);
+        }
+        ImGui::PushStyleColor(ImGuiCol_Button,color);
+        DrawSlot((void**)(items + i));
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+    }
+
+    ImGui::End();
 }
 
 void UI::Hotbar::update()
 {
     Inventory::update();
     // Key slot selection
-    for (auto i = 0; i < 9; ++i)
+    for (auto i = 0; i < count; ++i)
     {
         if (Application::isKeyPressed(static_cast<SDL_Scancode>(SDL_SCANCODE_1 + i)))
         {
@@ -263,21 +385,22 @@ void UI::Hotbar::update()
 
 void UI::Hotbar::setSelectedSlot(const int slot)
 {
-    cells[selected_slot].type = INVENTORY_SLOT;
     selected_slot = slot;
     if (selected_slot < 0) selected_slot += 9;
     if (selected_slot > 8) selected_slot -= 9;
-    cells[selected_slot].type = SELECTED_SLOT;
 }
 
 world::Item*& UI::Hotbar::getSelectedItem() const
 {
-    return cells[selected_slot].item;
+    return items[selected_slot];
 }
 
-UI::MouseItemHolder::MouseItemHolder() : Inventory({0,0},1,1)
+UI::MouseItemHolder::MouseItemHolder() : Inventory()
 {
-    cells[0].type = EMPTY_CELL;
+    count = 1;
+    items = new world::Item*[1];
+    items[0] = nullptr;
+
     visible = true;
     lastSlot = 0;
     lastInv = nullptr;
@@ -285,7 +408,7 @@ UI::MouseItemHolder::MouseItemHolder() : Inventory({0,0},1,1)
 
 void UI::MouseItemHolder::setItem(world::Item* item)
 {
-    cells[0].item = item;
+    items[0] = item;
 }
 
 void UI::MouseItemHolder::saveLastSlot(Inventory* last,const int slot)
@@ -296,7 +419,7 @@ void UI::MouseItemHolder::saveLastSlot(Inventory* last,const int slot)
 
 world::Item* UI::MouseItemHolder::getItem() const
 {
-    return cells[0].item;
+    return items[0];
 }
 
 void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
@@ -312,46 +435,89 @@ void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
     else lastInv->setItem(lastSlot,item);
 }
 
+void UI::MouseItemHolder::render()
+{
+    static SDL_GPUTextureSamplerBinding tileBinding = {0,0};
+    static SDL_GPUTextureSamplerBinding itemBinding = {0,0};
+
+    if (items[0])
+    {
+        gl::TextureMap uv;
+        world::Material& mat = items[0]->material;
+        uint8_t index = mat.getRaw();
+
+        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+
+        SDL_GPUTextureSamplerBinding* binding;
+        if (mat.isBlock())
+        {
+            gl::Texture& tiles = *res::atlas::tiles;
+            if (!tileBinding.texture) tileBinding = tiles.GetBinding();
+            binding = &tileBinding;
+
+            glm::vec2 pixelPos = glm::vec2((index - 1) % TILES_PER_ROW, (index - 1) / TILES_PER_ROW) * 8.0f;
+            uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
+        } else
+        {
+            gl::Texture& tiles = *res::atlas::items;
+            if (!itemBinding.texture) itemBinding = tiles.GetBinding();
+            binding = &itemBinding;
+
+            glm::vec2 pixelPos = glm::vec2(index % TILES_PER_ROW, index / TILES_PER_ROW) * 8.0f;
+            uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
+        }
+
+        ImVec2 mousePos = ImGui::GetMousePos();
+        mousePos.x -= ITEM_SIZE.x / 2;
+        mousePos.y -= ITEM_SIZE.y / 2;
+
+        ImVec2 p_min = mousePos;
+        ImVec2 p_max = ImVec2(mousePos.x + ITEM_SIZE.x, mousePos.y + ITEM_SIZE.y);
+
+        drawList->AddImage(reinterpret_cast<ImTextureID>(binding),p_min,p_max,
+            ImVec2(uv.left,uv.top),ImVec2(uv.right,uv.bottom));
+    }
+}
+
 void UI::MouseItemHolder::update()
 {}
 
-UI::PlayerInventory::PlayerInventory(): Inventory({-4.5f,-11.5f},9,7)
+UI::PlayerInventory::PlayerInventory(): Inventory(), width(9),height(3)
 {
-    // set blank cells
-    for (auto y = 3; y < 7; ++y)
+    count = width * height;
+    items = new world::Item*[count];
+    for (auto i = 0; i < count; ++i)
     {
-        for (auto x = 0; x < 6; ++x)
-        {
-            at(x,y).type = BLANK_CELL;
-        }
+        items[i] = nullptr;
     }
-    // set armour slots
-    at(8,6).type = HELMET_SLOT;
-    at(8,5).type = CHESTPLATE_SLOT;
-    at(8,4).type = LEGGINGS_SLOT;
-    at(8,3).type = BOOTS_SLOT;
-    // set trinket slots
-    for (auto i = 0; i < 2; ++i)
+}
+
+void UI::PlayerInventory::render()
+{
+    ImGui::SetNextWindowPos(ImVec2(10.0f,10.0f + 12.0f * GUI_SCALE), ImGuiCond_Always);
+
+    ImGui::Begin("Inventory",nullptr,GetWindowFlags());
+
+    ImGui::SeparatorText("Inventory");
+
+    for (int y = 0; y < height; ++y)
     {
-        at(6 + i,6).type = HAT_SLOT;
-        at(6 + i,5).type = NECKLACE_SLOT;
-        at(6 + i,4).type = RING_SLOT;
-        at(6 + i,3).type = SHOES_SLOT;
+        for (int x = 0; x < width; ++x)
+        {
+            int index = x + y * width;
+            DrawSlot((void**)(items + index));
+            ImGui::SameLine();
+        }
+        ImGui::NewLine();
     }
 
-    // set crafting
-    at(1,5).type = INVENTORY_SLOT;
-    at(1,4).type = INVENTORY_SLOT;
-    at(2,5).type = INVENTORY_SLOT;
-    at(2,4).type = INVENTORY_SLOT;
-    at(3,5).type = ARROW_CELL;
-    at(4,5).type = INVENTORY_SLOT;
+    ImGui::End();
 }
 
 void UI::PlayerInventory::update()
 {
-    bool previous;
-    world::Item*& c5 = at(4,5).item;
+    /*bool previous;
+    world::Item*& c5 = at(4,5);
     if (c5) previous = true;
 
     Inventory::update();
@@ -398,5 +564,5 @@ void UI::PlayerInventory::update()
             delete c5;
             c5 = nullptr;
         }
-    }
+    }*/
 }

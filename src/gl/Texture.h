@@ -23,6 +23,8 @@ namespace gl
 		int getWidth();
 		int getHeight();
 
+		SDL_GPUTextureSamplerBinding GetBinding();
+
 		TextureMap format(float pX, float pY, float pWidth, float pHeight);
 	};
 }

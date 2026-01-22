@@ -165,7 +165,7 @@ void EntityHandler::Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, 
         .texture = swapChain,
         .mip_level = 0,
         .layer_or_depth_plane = 0,
-        .clear_color = {0.529f,0.8078f,0.9215686f,1.0f},
+        .clear_color = {0.0f,0.0f,0.0f,0.0f},
         .load_op = SDL_GPU_LOADOP_LOAD,
         .store_op = SDL_GPU_STOREOP_STORE,
         .cycle = false
@@ -206,19 +206,20 @@ void EntityHandler::Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, 
         index += render_batch.tileBatch.size();
     }
 
+    if (!render_batch.itemBatch.empty())
+    {
+        texture_binding.texture = *res::atlas::items;
+        SDL_BindGPUFragmentSamplers(render_pass,0,&texture_binding,1);
+        SDL_DrawGPUPrimitives(render_pass,render_batch.itemBatch.size(),1,index,0);
+        index += render_batch.itemBatch.size();
+    }
+
     if (!render_batch.entityBatch.empty())
     {
         texture_binding.texture = *res::atlas::entities;
         SDL_BindGPUFragmentSamplers(render_pass,0,&texture_binding,1);
         SDL_DrawGPUPrimitives(render_pass,render_batch.entityBatch.size(),1,index,0);
         index += render_batch.entityBatch.size();
-    }
-
-    if (!render_batch.itemBatch.empty())
-    {
-        texture_binding.texture = *res::atlas::items;
-        SDL_BindGPUFragmentSamplers(render_pass,0,&texture_binding,1);
-        SDL_DrawGPUPrimitives(render_pass,render_batch.itemBatch.size(),1,index,0);
     }
 
     SDL_EndGPURenderPass(render_pass);

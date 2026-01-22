@@ -7,7 +7,8 @@
 #include <string_view>
 
 #include "../resources/Storage.h"
-//#include "entities/EntityHandler.h"
+
+#include "entities/EntityHandler.h"
 #include "generation/Generation.h"
 
 using namespace world;
@@ -97,7 +98,7 @@ void Region::fetch(Chunk &chunk)
 	}
 
 	// load entities from chunk
-	/*std::vector<uint8_t>& array = entityChunkBuffer[index];
+	std::vector<uint8_t>& array = entityChunkBuffer[index];
 	if (!array.empty())
 	{
 		Util::ByteStream stream(&array);
@@ -111,7 +112,7 @@ void Region::fetch(Chunk &chunk)
 		}
 		// remove contents for re-addition during saving
 		array.clear();
-	}*/
+	}
 
 	chunk.lightUpdated = false;
 	chunk.flag = flag;

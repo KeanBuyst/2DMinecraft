@@ -346,9 +346,9 @@ gl::TextureMap GetMapping(uint8_t index)
     float y = static_cast<float>(index / 16) / 16.0f;
     return {
         x,
-        x + 0.0625f,
+        x + TILE_UV_SIZE,
          y,
-        y + 0.0625f
+        y + TILE_UV_SIZE
     };
 }
 
@@ -415,14 +415,14 @@ void world::Item::render()
 
 void world::Item::onCollision(Entity* other)
 {
-    /*if (other->type == EntityType::PLAYER)
+    if (other->type == EntityType::PLAYER)
     {
         Player& player = reinterpret_cast<Player&>(*other);
         if (player.getHotbar().addItem(this) || player.getInventory().addItem(this))
         {
             deque(true);
         }
-    }*/
+    }
 }
 
 world::Sprite& world::Item::getSprite(int)

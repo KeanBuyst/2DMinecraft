@@ -1,4 +1,6 @@
 #pragma once
+#include <SDL3/SDL_events.h>
+
 #include "../gl/Shader.h"
 
 // forward declaration
@@ -39,12 +41,8 @@ namespace UI
     public:
         virtual ~UIComponent() = default;
 
+        virtual void render() = 0;
         virtual void update() {}
-
-        virtual glm::vec2 getPosition() const = 0;
-        virtual glm::ivec2 getSize() const = 0;
-        virtual int getCount() const = 0;
-        virtual const Cell* getCells() const = 0;
 
         virtual bool isVisible() const = 0;
         virtual void setVisible(bool visible) = 0;
@@ -53,7 +51,8 @@ namespace UI
     namespace Renderer
     {
         void Init();
-        void Render(gl::Shader* shader);
+        void Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, uint32_t width, uint32_t height);
+        void Event(SDL_Event* event);
         void Update();
         void Cleanup();
         void Add(UIComponent* component);

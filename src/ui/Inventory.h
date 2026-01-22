@@ -8,7 +8,7 @@ namespace UI
     class Inventory : public UIComponent
     {
     public:
-        Inventory(glm::vec2 position, uint8_t width, uint8_t height);
+        Inventory() = default;
         Inventory(const Inventory& other) = delete;
         ~Inventory() override;
 
@@ -16,12 +16,7 @@ namespace UI
         void setItem(int index,world::Item* item);
 
         world::Item* getItem(int index);
-
-        glm::vec2 getPosition() const override;
-        void setPosition(glm::vec2 position);
-        glm::ivec2 getSize() const override;
-        int getCount() const override;
-        const Cell* getCells() const override;
+        int getCount() const;
 
         virtual void serialize(Util::ByteStream& stream);
         virtual void load(Util::ByteStream& stream);
@@ -31,14 +26,13 @@ namespace UI
         bool isVisible() const override;
         void setVisible(bool visible) override;
     protected:
-        Cell& at(int x, int y);
-        Cell* GetMouseSlot(int& index);
+        void DrawSlot(void** slot_ptr);
 
-        glm::vec2 position;
-        uint8_t width,height;
+        world::Item** items;
+        size_t count;
+
         bool updated;
         bool visible;
-        Cell* cells;
     };
 
     class Hotbar : public Inventory
@@ -48,6 +42,7 @@ namespace UI
     public:
         Hotbar();
 
+        void render() override;
         void update() override;
         void setSelectedSlot(int slot);
         world::Item*& getSelectedItem() const;
@@ -60,6 +55,7 @@ namespace UI
         int lastSlot;
     public:
         MouseItemHolder();
+        void render() override;
         void update() override;
         void setItem(world::Item* item);
         void saveLastSlot(Inventory* last,int slot);
@@ -73,6 +69,9 @@ namespace UI
     public:
         PlayerInventory();
 
+        void render() override;
         void update() override;
+    private:
+        int width,height;
     };
 }

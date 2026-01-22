@@ -67,14 +67,12 @@ Texture::Texture(const char* path)
 
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(Application::GPU_DEVICE, &transferInfo);
 
-	// --- STEP 3: Map & Copy (Load the Truck) ---
 	void* mapPtr = SDL_MapGPUTransferBuffer(Application::GPU_DEVICE, transferBuffer, false);
 	memcpy(mapPtr, data, dataSize);
 	SDL_UnmapGPUTransferBuffer(Application::GPU_DEVICE, transferBuffer);
 
 	stbi_image_free(data);
 
-	// --- STEP 4: The Copy Pass (Drive the Truck to VRAM) ---
 	SDL_GPUCommandBuffer* cmd = SDL_AcquireGPUCommandBuffer(Application::GPU_DEVICE);
 	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cmd);
 
@@ -110,6 +108,14 @@ Texture::~Texture()
 Texture::operator SDL_GPUTexture*()
 {
 	return texture;
+}
+
+SDL_GPUTextureSamplerBinding Texture::GetBinding()
+{
+	return {
+		texture,
+		GetSampler()
+	};
 }
 
 int Texture::getWidth()

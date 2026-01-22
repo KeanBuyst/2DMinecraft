@@ -23,10 +23,9 @@ public:
   static bool isMousePressed(int button);
   static bool isMouseReleased(int button);
   static glm::vec2 GetWorldMouse();
-  //static glm::vec2 GetUIMouse();
   static int GetMouseScroll();
 
-  //static UI::MouseItemHolder item_holder;
+  static UI::MouseItemHolder item_holder;
   static SDL_GPUDevice* GPU_DEVICE;
   static SDL_Window* WINDOW;
 
