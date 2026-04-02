@@ -1,41 +1,10 @@
 #pragma once
+
 #include <SDL3/SDL_events.h>
-
 #include "../gl/Shader.h"
-
-// forward declaration
-namespace world
-{
-    struct Item;
-}
 
 namespace UI
 {
-    constexpr float CELL_SIZE = 20.0f;
-
-    enum CellType : uint8_t
-    {
-        EMPTY_CELL,
-        INVENTORY_SLOT,
-        SELECTED_SLOT,
-        ARROW_CELL,
-        BLANK_CELL,
-        HELMET_SLOT,
-        CHESTPLATE_SLOT,
-        LEGGINGS_SLOT,
-        BOOTS_SLOT,
-        HAT_SLOT,
-        NECKLACE_SLOT,
-        RING_SLOT,
-        SHOES_SLOT
-    };
-
-    struct Cell
-    {
-        CellType type;
-        world::Item* item;
-    };
-
     class UIComponent
     {
     public:
@@ -57,7 +26,4 @@ namespace UI
         void Cleanup();
         void Add(UIComponent* component);
     }
-
-    bool isCell(const CellType& type);
-    bool isSlot(const CellType& type);
 }

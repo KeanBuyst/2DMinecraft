@@ -58,11 +58,9 @@ namespace UI
         int lastSlot;
     public:
         MouseItemHolder();
+        world::Item*& item();
         void render() override;
-        void setItem(world::Item* item);
         void saveLastSlot(Inventory* last,int slot);
-
-        world::Item* getItem() const;
         void setLastSlot(world::Item*& item) const;
     };
 

@@ -149,7 +149,7 @@ void world::Player::update()
     if (Application::isMouseDown(SDL_BUTTON_LEFT))
     {
         // break block
-        if (Application::item_holder.getItem() == nullptr)
+        if (Application::item_holder.item() == nullptr)
         {
             const glm::vec2 pos = Application::GetWorldMouse();
             const float distance = Util::Distance2(origin, pos);
@@ -209,12 +209,12 @@ void world::Player::update()
     }
     if (Application::isMouseReleased(SDL_BUTTON_LEFT))
     {
-        Item* item = Application::item_holder.getItem();
+        Item* item = Application::item_holder.item();
         if (item != nullptr)
         {
             // also drop item
             drop(item);
-            Application::item_holder.setItem(nullptr);
+            Application::item_holder.item() = nullptr;
         } else
         {
             // reset block break state
@@ -233,7 +233,7 @@ void world::Player::update()
     // block placing & interaction
     if (Application::isMousePressed(SDL_BUTTON_RIGHT))
     {
-        if (Application::item_holder.getItem() == nullptr)
+        if (!Application::item_holder.item())
         {
             Item*& item = hotbar.getSelectedItem();
 

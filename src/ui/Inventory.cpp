@@ -7,14 +7,12 @@
 #include "../world/entities/EntityHandler.h"
 #include "../world/entities/Item.h"
 
-constexpr static ImVec2 ITEM_SIZE = ImVec2(8.0f * GUI_SCALE,8.0f * GUI_SCALE);
-
 static ImGuiWindowFlags GetWindowFlags()
 {
     return ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar
          | ImGuiWindowFlags_NoResize   | ImGuiWindowFlags_NoCollapse
          | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMove
-         | ImGuiWindowFlags_AlwaysAutoResize;
+         | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings;
 }
 
 UI::Inventory::~Inventory()
@@ -135,7 +133,7 @@ void UI::Inventory::setVisible(const bool visible)
     this->visible = visible;
 }
 
-void DrawItem(const world::Material& mat,ImVec2 itemSize)
+void DrawItem(const world::Material& mat,int amount,ImVec2 itemSize)
 {
     static SDL_GPUTextureSamplerBinding tileBinding = {0,0};
     static SDL_GPUTextureSamplerBinding itemBinding = {0,0};
@@ -170,6 +168,25 @@ void DrawItem(const world::Material& mat,ImVec2 itemSize)
     {
         ImGui::Image(reinterpret_cast<ImTextureID>(binding),
             itemSize,ImVec2(uv.left,uv.top),ImVec2(uv.right,uv.bottom));
+
+        // draw item count
+        if (amount > 1)
+        {
+            ImVec2 p_max = ImGui::GetItemRectMax();
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
+            std::string number = std::to_string(amount);
+
+            ImVec2 textSize = ImGui::CalcTextSize(number.c_str());
+
+            ImVec2 textPos = ImVec2(
+                p_max.x - textSize.x,
+                p_max.y - textSize.y
+            );
+
+            draw_list->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0,0,0,255), number.c_str());
+            draw_list->AddText(textPos, IM_COL32(255,255,255,255), number.c_str());
+        }
     }
 }
 
@@ -190,26 +207,7 @@ void UI::Inventory::DrawSlot(const world::Material& mat,int amount,glm::vec2 siz
     if (!mat.isEmpty())
     {
         ImGui::SetCursorScreenPos(ImVec2(cPos.x + 2.0f * GUI_SCALE,cPos.y + 2.0f * GUI_SCALE));
-        DrawItem(mat,ImVec2(size.x - 4.0f * GUI_SCALE,size.y - 4.0f * GUI_SCALE));
-
-        // draw item count
-        if (amount > 1)
-        {
-            ImVec2 p_max = ImGui::GetItemRectMax();
-            ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-            std::string number = std::to_string(amount);
-
-            ImVec2 textSize = ImGui::CalcTextSize(number.c_str());
-
-            ImVec2 textPos = ImVec2(
-                p_max.x - textSize.x,
-                p_max.y - textSize.y
-            );
-
-            draw_list->AddText(ImVec2(textPos.x + 1, textPos.y + 1), IM_COL32(0,0,0,255), number.c_str());
-            draw_list->AddText(textPos, IM_COL32(255,255,255,255), number.c_str());
-        }
+        DrawItem(mat,amount,ImVec2(size.x - 4.0f * GUI_SCALE,size.y - 4.0f * GUI_SCALE));
     }
 
     ImGui::SetCursorScreenPos(cPos);
@@ -231,23 +229,23 @@ void UI::Inventory::CreateSlot(void** slot_ptr)
 
     if (ImGui::IsItemClicked() && item)
     {
-        Application::item_holder.setItem(item);
+        Application::item_holder.item() = item;
         item = nullptr;
         updated = true;
     }
 
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseReleased(0))
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && Application::item_holder.item())
     {
-        if (Application::item_holder.getItem())
+        if (ImGui::IsMouseReleased(0))
         {
             if (item)
             {
-                if (*item == *Application::item_holder.getItem())
+                if (*item == *Application::item_holder.item())
                 {
-                    world::Item* data = Application::item_holder.getItem();
+                    world::Item* data = Application::item_holder.item();
                     if (item->combine(data))
                     {
-                        Application::item_holder.setItem(nullptr);
+                        Application::item_holder.item() = nullptr;
                         delete data;
                         updated = true;
                     }
@@ -255,9 +253,22 @@ void UI::Inventory::CreateSlot(void** slot_ptr)
             }
             else
             {
-                item = Application::item_holder.getItem();
-                Application::item_holder.setItem(nullptr);
+                item = Application::item_holder.item();
+                Application::item_holder.item() = nullptr;
                 updated = true;
+            }
+        } else if (ImGui::IsMouseClicked(1))
+        {
+            world::Item*& held = Application::item_holder.item();
+            if (item && *item == *held && item->getAmount() != item->getStackLimit())
+            {
+                item->setAmount(item->getAmount() + 1);
+                world::RemoveAmount(held,1);
+            } else
+            {
+                item = new world::Item(*held);
+                item->setAmount(1);
+                world::RemoveAmount(held,1);
             }
         }
     }
@@ -345,20 +356,15 @@ UI::MouseItemHolder::MouseItemHolder() : Inventory()
     lastInv = nullptr;
 }
 
-void UI::MouseItemHolder::setItem(world::Item* item)
+world::Item*& UI::MouseItemHolder::item()
 {
-    items[0] = item;
+    return items[0];
 }
 
 void UI::MouseItemHolder::saveLastSlot(Inventory* last,const int slot)
 {
     lastSlot = slot;
     lastInv = last;
-}
-
-world::Item* UI::MouseItemHolder::getItem() const
-{
-    return items[0];
 }
 
 void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
@@ -376,45 +382,24 @@ void UI::MouseItemHolder::setLastSlot(world::Item*& item) const
 
 void UI::MouseItemHolder::render()
 {
-    static SDL_GPUTextureSamplerBinding tileBinding = {0,0};
-    static SDL_GPUTextureSamplerBinding itemBinding = {0,0};
-
     if (items[0])
     {
-        gl::TextureMap uv;
-        world::Material& mat = items[0]->material;
-        uint8_t index = mat.getRaw();
+        ImVec2 size(SLOT_SIZE.x - 4.0f * GUI_SCALE,SLOT_SIZE.y - 4.0f * GUI_SCALE);
+        ImVec2 pos = ImGui::GetMousePos();
+        pos.x -= size.x / 2.0f;
+        pos.y -= size.y / 2.0f;
+        ImGui::SetNextWindowPos(pos);
 
-        ImDrawList* drawList = ImGui::GetForegroundDrawList();
+        ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
 
-        SDL_GPUTextureSamplerBinding* binding;
-        if (mat.isBlock())
-        {
-            gl::Texture& tiles = *res::atlas::tiles;
-            if (!tileBinding.texture) tileBinding = tiles.GetBinding();
-            binding = &tileBinding;
+        ImGui::BeginTooltip();
 
-            glm::vec2 pixelPos = glm::vec2((index - 1) % TILES_PER_ROW, (index - 1) / TILES_PER_ROW) * 8.0f;
-            uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
-        } else
-        {
-            gl::Texture& tiles = *res::atlas::items;
-            if (!itemBinding.texture) itemBinding = tiles.GetBinding();
-            binding = &itemBinding;
+        DrawItem(items[0]->material,items[0]->getAmount(),size);
 
-            glm::vec2 pixelPos = glm::vec2(index % TILES_PER_ROW, index / TILES_PER_ROW) * 8.0f;
-            uv = tiles.format(pixelPos.x,pixelPos.y,8.0f,8.0f);
-        }
+        ImGui::EndTooltip();
 
-        ImVec2 mousePos = ImGui::GetMousePos();
-        mousePos.x -= ITEM_SIZE.x / 2;
-        mousePos.y -= ITEM_SIZE.y / 2;
-
-        ImVec2 p_min = mousePos;
-        ImVec2 p_max = ImVec2(mousePos.x + ITEM_SIZE.x, mousePos.y + ITEM_SIZE.y);
-
-        drawList->AddImage(reinterpret_cast<ImTextureID>(binding),p_min,p_max,
-            ImVec2(uv.left,uv.top),ImVec2(uv.right,uv.bottom));
+        ImGui::PopStyleColor(2);
     }
 }
 
@@ -524,7 +509,7 @@ void UI::PlayerInventory::render()
         }
         ImGui::PushID(i + ingredients.items);
         ImGui::Button("##slot",ImVec2(slotSize.x,slotSize.y));
-        if (ImGui::IsItemClicked() && !Application::item_holder.getItem())
+        if (ImGui::IsItemClicked() && !Application::item_holder.item())
         {
             bool enoughItems = true;
             bool excessItems = true;
@@ -580,7 +565,7 @@ void UI::PlayerInventory::render()
                 }
                 world::Item* result = new world::Item(recipes[indexOfRecipe].result.item);
                 result->setAmount(recipes[indexOfRecipe].result.amount);
-                Application::item_holder.setItem(result);
+                Application::item_holder.item() = result;
             }
         }
         else if (!invalidIndex && ImGui::IsItemHovered())
@@ -599,7 +584,7 @@ void UI::PlayerInventory::render()
                         break;
                     }
                 }
-                DrawItem(ing.items[j].item,ImVec2(12.0f,12.0f));
+                DrawItem(ing.items[j].item,1,ImVec2(12.0f,12.0f));
                 ImGui::SameLine();
                 ImGui::Text("%hu",ing.items[j]);
                 ImGui::SameLine();

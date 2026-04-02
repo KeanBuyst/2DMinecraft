@@ -99,21 +99,3 @@ void UI::Renderer::Render(SDL_GPUCommandBuffer* cmd,SDL_GPUTexture* swapChain, u
 
     SDL_EndGPURenderPass(render_pass);
 }
-
-bool UI::isCell(const CellType& type)
-{
-    switch (type)
-    {
-    case EMPTY_CELL:
-    case ARROW_CELL:
-    case BLANK_CELL:
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool UI::isSlot(const CellType& type)
-{
-    return !isCell(type);
-}
