@@ -551,7 +551,6 @@ inline void World::update_chunks()
 		auto direction = current - chunk_origin;
 		auto quantity = glm::abs(direction);
 
-		int count = 0;
 		// update chunks
 		for (auto y = 0; y < WORLD_HEIGHT; ++y)
 		{
@@ -563,7 +562,6 @@ inline void World::update_chunks()
 					// fetch all chunks
 					handler.save(chunks[x][y]);
 					GetChunk(x,y,current);
-					++count;
 					continue;
 				}
 				int x_index = direction.x < 0 ? (WORLD_WIDTH - 1) - x : x;
@@ -596,12 +594,10 @@ inline void World::update_chunks()
 				{
 					// replace old chunk
 					GetChunk(x_index,y_index,current);
-					++count;
 				}
 			}
 		}
-		std::cout << "Displacement in chunks: " << direction.x << " " << direction.y;
-		std::cout << "\nChunks fetched from region: " << count << std::endl;
+		std::cout << "Displacement in chunks: " << direction.x << " " << direction.y << std::endl;
 		chunk_origin = current;
 
 		for (auto y = POST_GEN_BUF; y < WORLD_HEIGHT - POST_GEN_BUF; ++y)

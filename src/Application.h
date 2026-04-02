@@ -47,13 +47,11 @@ private:
   static Uint32 previousMouseState;
 
   static glm::vec2 mousePos;
+  static int scrollDir;
 
   bool fullscreen = false;
   bool keypressed = false;
   Uint32 last_frame_time;
   float frame_rate = -1.0f;
-
   world::Player* player;
-
-  static int scrollDir;
 };

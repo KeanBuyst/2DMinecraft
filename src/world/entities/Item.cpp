@@ -237,6 +237,8 @@ bool world::Tool::isApplicable(const BlockType t) const
     }
 }
 
+world::Material world::Material::EMPTY;
+
 world::Material::Material() : mat(0), block(true)
 {}
 
@@ -314,7 +316,7 @@ bool world::Material::isItem() const
 
 bool world::Material::isEmpty() const
 {
-    return block && mat == EMPTY;
+    return block && mat == BlockType::EMPTY;
 }
 
 int world::Material::getRenderData() const
@@ -403,11 +405,6 @@ void world::Item::serialize(Util::ByteStream& stream)
     stream << static_cast<uint8_t>(amount);
 }
 
-void world::Item::update()
-{
-    Entity::update();
-}
-
 void world::Item::render()
 {
     sprite.render(this);
@@ -420,7 +417,8 @@ void world::Item::onCollision(Entity* other)
         Player& player = reinterpret_cast<Player&>(*other);
         if (player.getHotbar().addItem(this) || player.getInventory().addItem(this))
         {
-            deque(true);
+            if (amount) deque(true);
+            else deque(false);
         }
     }
 }
@@ -456,7 +454,7 @@ void world::Item::setAmount(const int amount)
     this->amount = amount;
 }
 
-bool world::Item::combine(Item*& other)
+bool world::Item::combine(Item* other)
 {
     if (material != other->material) return false;
 
@@ -466,12 +464,10 @@ bool world::Item::combine(Item*& other)
     {
         int overflow = amount - limit;
         if (overflow > limit) overflow = limit;
-        other->setAmount(overflow);
-        return true;
+        other->amount = overflow;
+        return false;
     }
-
-    delete other;
-    other = nullptr;
+    other->amount = 0;
     return true;
 }
 

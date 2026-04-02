@@ -2,6 +2,8 @@
 #include "UI.h"
 
 #include "../Util.h"
+#include "../crafting/Recipe.h"
+#include "../world/entities/Item.h"
 
 namespace UI
 {
@@ -18,15 +20,16 @@ namespace UI
         world::Item* getItem(int index);
         int getCount() const;
 
+        void update() override;
+
         virtual void serialize(Util::ByteStream& stream);
         virtual void load(Util::ByteStream& stream);
-
-        void update() override;
 
         bool isVisible() const override;
         void setVisible(bool visible) override;
     protected:
-        void DrawSlot(void** slot_ptr);
+        void DrawSlot(const world::Material& mat,int amount, glm::vec2 size = SLOT_SIZE);
+        void CreateSlot(void** slot_ptr);
 
         world::Item** items;
         size_t count;
@@ -56,7 +59,6 @@ namespace UI
     public:
         MouseItemHolder();
         void render() override;
-        void update() override;
         void setItem(world::Item* item);
         void saveLastSlot(Inventory* last,int slot);
 
@@ -66,12 +68,21 @@ namespace UI
 
     class PlayerInventory : public Inventory
     {
+    private:
+        int width,height;
+        std::vector<crafting::Recipe> recipes;
+        crafting::Ingredients ingredients;
+
+        int crafting_shift;
+
+        void UpdateRecipies();
     public:
         PlayerInventory();
+        ~PlayerInventory() override;
+
+        void setVisible(bool visible) override;
 
         void render() override;
         void update() override;
-    private:
-        int width,height;
     };
 }

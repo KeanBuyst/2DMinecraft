@@ -82,7 +82,7 @@ void ComputeTile(uint2 rPos, float2 tPos){
         }
     }
 
-    const float contrast = 4.0f;
+    const float contrast = 2.0f;
     float BL = pow(((light[0] + light[1] + light[3] + light[4]) * 0.25f),contrast);
     float TL = pow(((light[3] + light[4] + light[6] + light[7]) * 0.25f),contrast);
     float BR = pow(((light[1] + light[2] + light[4] + light[5]) * 0.25f),contrast);

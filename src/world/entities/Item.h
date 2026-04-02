@@ -50,6 +50,8 @@ namespace world
         uint8_t mat;
         bool block;
     public:
+        static Material EMPTY;
+
         Material();
         Material(const ItemType& item);
         Material(const BlockType& block);
@@ -90,7 +92,6 @@ namespace world
         Item(const Item& other);
 
         void serialize(Util::ByteStream& stream) override;
-        void update() override;
         void render() override;
         void onCollision(Entity* other) override;
         Sprite& getSprite(int) override;
@@ -101,8 +102,9 @@ namespace world
         bool operator==(const Item& item) const;
 
         void setAmount(int amount);
-        // deletes item and sets to null if successful
-        bool combine(Item*& other);
+        // returns true if other has been completely combined with the item
+        // and thus its amount is 0
+        bool combine(Item* other);
     };
 
     void RemoveAmount(Item*& item,int amount);

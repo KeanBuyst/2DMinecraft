@@ -46,7 +46,6 @@ add_executable(2DMC
         src/world/entities/Item.cpp
         src/ui/Inventory.cpp
         src/ui/UI.cpp
-        #src/world/crafting/Crafting.cpp
         src/world/entities/Procedure.cpp
         src/world/entities/Sprite.cpp
         src/world/entities/Player.cpp
@@ -54,6 +53,7 @@ add_executable(2DMC
         src/resources/Resources.cpp
         src/libs/SDL_shadercross.c
         src/libs/stb_image.cpp
+        src/crafting/Recipe.cpp
 )
 
 # tick shadercross to seeing DXC enabled

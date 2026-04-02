@@ -39,6 +39,7 @@ constexpr int TILES_PER_ROW = 16;
 constexpr float BLOCK_SIZE = 16.0f;
 constexpr float TILE_UV_SIZE = 1.0f / BLOCK_SIZE;
 constexpr float GUI_SCALE = 4.0f;
+constexpr static glm::vec2 SLOT_SIZE = glm::vec2(12.0f * GUI_SCALE,12.0f * GUI_SCALE);
 // view port is from -VIEW_SIZE to VIEW_SIZE,
 // horizontal is also effected by aspect ratio
 constexpr float VIEW_SCALE = world::CHUNK_SIZE * BLOCK_SIZE;
