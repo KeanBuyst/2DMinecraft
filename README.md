@@ -18,6 +18,7 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Block breaking and block placing
 * Items
 * Entity Collision
+* Crafting
 
 ### Planned feature's
 * Metadata Tiles & Entities (e.g. chests)
