@@ -23,24 +23,61 @@ std::string name(const glm::ivec2& position)
 	return std::to_string(position.x) + "." + std::to_string(position.y);
 }
 
-Region::Region(const glm::ivec2 position) : position(position)
+template<typename T>
+static void decompress(std::ifstream& stream, T* ptr, size_t size)
 {
-	DataFile file(name(position) + ".region",std::ios::in);
-	if (file.available())
+	const T* end = ptr + size;
+	while (ptr < end)
 	{
-		file.read(flags, SIZE);
-		file.read(tileBuffer,BUFFER_SIZE);
+		char byteFlags;
+		if (!stream.read(&byteFlags, sizeof(byteFlags))) return;
+
+		for (size_t payload_index = 0; payload_index < 8 && ptr < end; ++payload_index)
+		{
+			if (byteFlags & (1 << payload_index))
+			{
+				uint16_t runLength;
+				if (!stream.read(reinterpret_cast<char*>(&runLength), sizeof(runLength)))
+					return;
+
+				T type;
+				if (!stream.read(reinterpret_cast<char*>(&type), sizeof(T)))
+					return;
+
+				for (uint32_t i = 0; i <= runLength && ptr < end; ++i)
+				{
+					*(ptr++) = type;
+				}
+			}
+			else
+			{
+				if (!stream.read(reinterpret_cast<char*>(ptr++), sizeof(T)))
+					return;
+			}
+		}
+	}
+}
+
+Region::Region(const glm::ivec2 position) : position(position), fileName(basePath + name(position) + ".region")
+{
+	std::ifstream file(fileName,std::ios::binary | std::ios::in);
+
+	if (file.is_open())
+	{
+		// decompression
+		decompress(file,flags, SIZE);
+		decompress(file,tileBuffer,BUFFER_SIZE);
 
 		// load entity region data
 		uint16_t size;
 		int chunkIndex = 0;
-		while (file.hasNext())
+		while (file.peek() != EOF)
 		{
-			file.read(&size,1);
+			file.read(reinterpret_cast<char*>(&size),2);
 			if (size != 0)
 			{
 				entityChunkBuffer[chunkIndex].resize(size);
-				file.read(entityChunkBuffer[chunkIndex].data(),size);
+				file.read(reinterpret_cast<char*>(entityChunkBuffer[chunkIndex].data()),size);
 			}
 			++chunkIndex;
 		}
@@ -50,28 +87,68 @@ Region::Region(const glm::ivec2 position) : position(position)
 	else std::cout << "Creating region at " << position.x << "," << position.y << std::endl;
 }
 
+template<typename T>
+static void compress(std::ofstream& stream,const T* ptr, size_t size)
+{
+	char byteFlags;
+	// byte group
+	uint16_t runLength;
+	T type;
+
+	static constexpr size_t payload_capacity = 1 + ((sizeof(runLength) + sizeof(type)) * (sizeof(byteFlags) * 8));
+	char payload[payload_capacity];
+
+	const T* end = ptr + size;
+	while (ptr < end)
+	{
+		size_t payload_index = 1;
+		byteFlags = 0;
+		for (size_t byte_i = 0; byte_i < 8; ++byte_i)
+		{
+			if (ptr == end) break;
+			type = *(ptr++);
+			if (ptr < end && std::memcmp(ptr, &type, sizeof(T)) == 0)
+			{
+				runLength = 0;
+				byteFlags |= 1 << byte_i;
+				while (ptr < end && std::memcmp(ptr, &type, sizeof(T)) == 0 &&
+					runLength < std::numeric_limits<uint16_t>::max())
+				{
+					++runLength;
+					++ptr;
+				}
+
+				std::memcpy(payload + payload_index, &runLength, sizeof(runLength));
+				payload_index += sizeof(runLength);
+			}
+			std::memcpy(payload + payload_index, &type, sizeof(T));
+			payload_index += sizeof(T);
+		}
+		payload[0] = byteFlags;
+		stream.write(payload,payload_index);
+	}
+}
+
 Region::~Region()
 {
-	/*
-	 Error accorded here when setting block (block outside loaded chunks)
-	 and loading region at same time. At least I believe this was the cause. Accorded during
-	 logic error of setting plant. Important notice for potential similar future errors.
-	 */
-	DataFile file(name(position) + ".region",std::ios::out);
+	// write tiles to data file
 
-	file.write(flags, SIZE);
-	file.write(tileBuffer, BUFFER_SIZE);
+	std::ofstream file(fileName,std::ios::binary | std::ios::out);
 
+	compress(file,flags, SIZE);
+	compress(file,tileBuffer, BUFFER_SIZE);
+
+	// write entities to data file
 	for (auto index = 0; index < SIZE; ++index)
 	{
 		auto& array = entityChunkBuffer[index];
 
 		uint16_t size = static_cast<uint16_t>(array.size());
-		file.write(&size,1);
+		file.write(reinterpret_cast<char*>(&size),2);
 
 		if (array.empty()) continue;
 
-		file.write(array.data(),size);
+		file.write(reinterpret_cast<char*>(array.data()),size);
 	}
 
 	file.flush();

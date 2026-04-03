@@ -1,7 +1,7 @@
 #pragma once
-
 #include "Chunk.h"
-//#include "entities/Entity.h"
+
+#include <string>
 
 namespace world 
 {
@@ -27,6 +27,8 @@ namespace world
 
 		void save(const Chunk& chunk);
 	private:
+		std::string fileName;
+
 		uint8_t flags[REGION_SIZE * REGION_SIZE] = { 0 };
 		uint32_t tileBuffer[REGION_SIZE * REGION_SIZE * CHUNK_SIZE * CHUNK_SIZE] = { 0 };
 		// each index represents a chunk of entity data for that chunk

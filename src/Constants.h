@@ -17,7 +17,7 @@ namespace world
     // physics
     constexpr float GRAVITY = 48.0f;
     constexpr float DRAG = 2.4f;
-    constexpr float FRICTION = 10.6f;
+    constexpr float FRICTION = 14.6f;
     constexpr float MAX_SPEED = 30.0f;
     // entities
     constexpr uint32_t MAX_SPRITES_INIT = 1024; // 2^10

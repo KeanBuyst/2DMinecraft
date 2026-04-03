@@ -113,7 +113,7 @@ void world::Player::update()
     }
     if (Application::isKeyPressed(SDL_SCANCODE_SPACE) && collision.bottom)
     {
-        velocity.y = 20.0f;
+        velocity.y = 15.0f;
     }
     if (Application::isKeyUp(SDL_SCANCODE_A) || Application::isKeyUp(SDL_SCANCODE_D))
     {
@@ -253,7 +253,7 @@ void world::Player::update()
                     }
                     break;
                 case CRAFTING_TABLE:
-                    // TODO add crafting menu (after inventory rework)
+                    // TODO add crafting menu
                     break;
                 }
             }

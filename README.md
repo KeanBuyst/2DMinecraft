@@ -19,6 +19,7 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Items
 * Entity Collision
 * Crafting
+* File compression
 
 ### Planned feature's
 * Metadata Tiles & Entities (e.g. chests)
@@ -27,18 +28,6 @@ Simple 2D Minecraft clone written in C++ with SDL2 and glew.
 * Combat
 * Different entity types
 * Entity spawning
-* Better file compression
 
 ## Build
-CMake build system
-
-Tested on both **Windows** and **Linux**
-```
-git clone https://github.com/KeanBuyst/2DMinecraft.git
-cd ./2DMinecarft
-mkdir build
-cd ./build
-cmake ..
-make
-```
-If your pc dosent have `glu` installed. Please install it. (only necessary if error in the cmake compilation accoure)
+TODO
